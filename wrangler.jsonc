@@ -1,0 +1,16 @@
+{
+  "name": "flicksy",
+  "main": "src/index.js",
+  "compatibility_date": "2025-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "flicksy-db",
+      "database_id": "867a5c76-e017-4fd8-9b0e-9ebf15dd535b"
+    }
+  ]
+}
