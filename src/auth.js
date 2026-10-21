@@ -1,0 +1,109 @@
+// Telegram login: checks the signed data Telegram gives the Mini App, and finds/creates the user.
+
+const MAX_INITDATA_AGE_SECONDS = 24 * 60 * 60; // reject login data older than 24 hours
+
+const USER_SELECT =
+  "SELECT id, telegram_id, username, display_name, photo_url, is_private, created_at " +
+  "FROM users WHERE telegram_id = ?1";
+
+function hexToBytes(hex) {
+  if (typeof hex !== "string" || !/^[0-9a-f]{64}$/i.test(hex)) return null;
+  const bytes = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+// Returns { user } (the Telegram user object) if the data is genuine, otherwise { error }.
+async function verifyInitData(initData, botToken, nowSeconds) {
+  if (!initData || !botToken) return { error: "unauthorized" };
+
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  const hashBytes = hexToBytes(hash);
+  if (!hashBytes) return { error: "unauthorized" };
+  params.delete("hash");
+
+  const pairs = [];
+  for (const [key, value] of params.entries()) {
+    pairs.push(key + "=" + value);
+  }
+  pairs.sort();
+  const dataCheckString = pairs.join("\n");
+
+  const enc = new TextEncoder();
+  const k1 = await crypto.subtle.importKey(
+    "raw",
+    enc.encode("WebAppData"),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const secret = await crypto.subtle.sign("HMAC", k1, enc.encode(botToken));
+  const k2 = await crypto.subtle.importKey(
+    "raw",
+    secret,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+  const valid = await crypto.subtle.verify("HMAC", k2, hashBytes, enc.encode(dataCheckString));
+  if (!valid) return { error: "unauthorized" };
+
+  const authDate = parseInt(params.get("auth_date") || "0", 10);
+  if (!authDate || nowSeconds - authDate > MAX_INITDATA_AGE_SECONDS) {
+    return { error: "expired" };
+  }
+
+  let user;
+  try {
+    user = JSON.parse(params.get("user") || "null");
+  } catch (e) {
+    return { error: "unauthorized" };
+  }
+  if (!user || typeof user.id !== "number") return { error: "unauthorized" };
+
+  return { user: user };
+}
+
+export async function authenticate(request, env) {
+  if (!env.BOT_TOKEN) return { error: "server_misconfigured", status: 500 };
+
+  const header = request.headers.get("Authorization") || "";
+  if (!header.startsWith("tma ")) return { error: "unauthorized", status: 401 };
+  const initData = header.slice(4);
+
+  const result = await verifyInitData(initData, env.BOT_TOKEN, Math.floor(Date.now() / 1000));
+  if (result.error) return { error: result.error, status: 401 };
+  return { user: result.user };
+}
+
+export async function getOrCreateUser(env, tgUser, refresh) {
+  if (!refresh) {
+    const existing = await env.DB.prepare(USER_SELECT).bind(tgUser.id).first();
+    if (existing) return existing;
+  }
+  return await upsertUser(env, tgUser);
+}
+
+async function upsertUser(env, tgUser) {
+  const displayName =
+    [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ").trim() ||
+    tgUser.username ||
+    "User";
+
+  await env.DB.prepare(
+    "INSERT INTO users (telegram_id, display_name, photo_url, language_code, last_seen_at) " +
+      "VALUES (?1, ?2, ?3, ?4, datetime('now')) " +
+      "ON CONFLICT(telegram_id) DO UPDATE SET " +
+      "display_name = excluded.display_name, " +
+      "photo_url = excluded.photo_url, " +
+      "language_code = excluded.language_code, " +
+      "last_seen_at = datetime('now')"
+  )
+    .bind(tgUser.id, displayName, tgUser.photo_url || null, tgUser.language_code || null)
+    .run();
+
+  return await env.DB.prepare(USER_SELECT).bind(tgUser.id).first();
+}
