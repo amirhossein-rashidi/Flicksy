@@ -7,6 +7,7 @@ import { authenticate, getOrCreateUser } from "./auth.js";
 import { handleHealth } from "./health.js";
 import { handleSearch } from "./search.js";
 import { handleLibraryList, handleLibrarySet, handleLibraryDelete } from "./library.js";
+import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet } from "./episodes.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -46,6 +47,14 @@ export default {
           if (method === "GET") return await handleLibraryList(url, env, user);
           if (method === "PUT") return await handleLibrarySet(request, env, user);
           if (method === "DELETE") return await handleLibraryDelete(url, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/tv" && method === "GET") {
+          return await handleTvInfo(url, env, user);
+        }
+        if (path === "/api/episodes") {
+          if (method === "GET") return await handleSeasonEpisodes(url, env, user);
+          if (method === "PUT") return await handleEpisodesSet(request, env, user);
           return json({ error: "method_not_allowed" }, 405);
         }
         return json({ error: "not_found" }, 404);
