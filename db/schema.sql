@@ -99,3 +99,18 @@ CREATE INDEX IF NOT EXISTS idx_follows_followed ON follows (followed_id);
 CREATE INDEX IF NOT EXISTS idx_activities_actor ON activities (actor_id, id DESC);
 
 INSERT INTO schema_version (version) SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM schema_version);
+
+-- ===== Migration 2: episode tracking (step 12) =====
+CREATE TABLE IF NOT EXISTS episode_progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title_id INTEGER NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  season_number INTEGER NOT NULL,
+  episode_number INTEGER NOT NULL,
+  watched_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_id, title_id, season_number, episode_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_episode_progress_user_title ON episode_progress (user_id, title_id);
+
+INSERT INTO schema_version (version) SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 2);
