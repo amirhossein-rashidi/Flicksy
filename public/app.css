@@ -130,3 +130,38 @@ footer { margin-top: 28px; font-size: 11px; line-height: 1.8; color: #6f6f8d; te
 .credit { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); direction: ltr; text-align: left; }
 .credit img { display: block; height: 14px; width: auto; margin-bottom: 10px; }
 .credit p { font-size: 12px; line-height: 1.7; color: #8d8dac; margin: 0; }
+
+/* episodes */
+.eps .msg { margin: 10px 4px; }
+.prog-row { display: flex; justify-content: space-between; font-size: 13px; color: #c3c3dc; margin: 0 2px 8px; }
+.bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(135deg, #8a4dff, #5b5cff); transition: width .2s; }
+.season-actions { display: flex; gap: 8px; margin: 10px 0; }
+.minibtn {
+  padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
+  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #d6d6ea;
+}
+.minibtn.primary { background: linear-gradient(135deg, #8a4dff, #5b5cff); border-color: transparent; color: #fff; font-weight: 700; }
+.banner { margin: 10px 0; padding: 12px; border-radius: 12px; background: rgba(80,200,140,.12); border: 1px solid rgba(80,200,140,.3); }
+.banner p { margin: 0 0 10px; font-size: 13px; line-height: 1.8; color: #c8f0dc; }
+.season { margin-top: 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+.season-head {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px; background: none; border: none; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.season-count { font-size: 12px; font-weight: 400; color: #a7a7c4; }
+.season-body { padding: 0 10px 10px; }
+.ep {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: start;
+  padding: 9px 4px; background: none; border: none; border-top: 1px solid rgba(255,255,255,.06);
+  color: #d6d6ea; font-size: 14px; cursor: pointer;
+}
+.check {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #fff;
+}
+.ep.done .check { background: linear-gradient(135deg, #8a4dff, #5b5cff); border-color: transparent; }
+.ep.done .ep-name { color: #9a9ab8; }
+.ep-text { display: flex; flex-direction: column; min-width: 0; }
+.ep-date { font-size: 11px; color: #7b7b9a; direction: ltr; text-align: start; }
