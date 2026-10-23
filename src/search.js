@@ -1,6 +1,6 @@
 // Title search (via TMDB), marking which results are already in the user's library.
 
-import { json } from "./util.js";
+import { json, tmdbLang } from "./util.js";
 import { tmdbGet, mapSearchResults } from "./tmdb.js";
 
 export async function handleSearch(url, env, user) {
@@ -14,7 +14,7 @@ export async function handleSearch(url, env, user) {
   try {
     const res = await tmdbGet(
       env,
-      "/search/multi?include_adult=false&language=fa-IR&page=1&query=" + encodeURIComponent(q),
+      "/search/multi?include_adult=false&language=" + tmdbLang(url) + "&page=1&query=" + encodeURIComponent(q),
       3600
     );
     data = res.data;
@@ -27,7 +27,7 @@ export async function handleSearch(url, env, user) {
   return json({ results: results });
 }
 
-async function attachLibraryState(env, userId, results) {
+export async function attachLibraryState(env, userId, results) {
   const ids = results.map((r) => r.tmdb_id).filter((n) => Number.isInteger(n));
   if (ids.length === 0) return;
 
