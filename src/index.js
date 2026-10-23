@@ -7,6 +7,8 @@ import { authenticate, getOrCreateUser } from "./auth.js";
 import { handleHealth } from "./health.js";
 import { handleSearch } from "./search.js";
 import { handleLibraryList, handleLibrarySet, handleLibraryDelete } from "./library.js";
+import { handleDiscover } from "./discover.js";
+import { handleTitle } from "./title.js";
 import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet } from "./episodes.js";
 
 function tooMany() {
@@ -48,6 +50,12 @@ export default {
           if (method === "PUT") return await handleLibrarySet(request, env, user);
           if (method === "DELETE") return await handleLibraryDelete(url, env, user);
           return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/discover" && method === "GET") {
+          return await handleDiscover(url, env, user);
+        }
+        if (path === "/api/title" && method === "GET") {
+          return await handleTitle(url, env, user);
         }
         if (path === "/api/tv" && method === "GET") {
           return await handleTvInfo(url, env, user);
