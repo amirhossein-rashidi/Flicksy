@@ -24,3 +24,21 @@ export function parseTitleRef(tmdbId, mediaType) {
   if (!MEDIA_TYPES.includes(mediaType)) return null;
   return { tmdbId: id, mediaType: mediaType };
 }
+
+// Languages the app offers and the matching TMDB language codes.
+export const LANGS = {
+  en: "en-US",
+  fa: "fa-IR",
+  ar: "ar-SA",
+  tr: "tr-TR",
+  ru: "ru-RU",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+};
+
+// Reads ?lang=xx from the URL and returns the TMDB language code (English if unknown).
+export function tmdbLang(url) {
+  const code = url.searchParams.get("lang") || "en";
+  return LANGS[code] || LANGS.en;
+}
