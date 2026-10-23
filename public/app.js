@@ -1,31 +1,130 @@
 (function () {
-  var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
-  var STATUS_LABEL = {
-    want: "می‌خواهم ببینم",
-    watching: "در حال تماشا",
-    watched: "دیده‌ام",
-    paused: "متوقف‌شده",
-    dropped: "رهاشده"
-  };
+  "use strict";
 
+  var t = function (key, params) { return I18N.t(key, params); };
   var $ = function (id) { return document.getElementById(id); };
-  var qEl = $("q"), msgEl = $("msg"), listEl = $("results");
-  var libMsgEl = $("lib-msg"), libListEl = $("lib-results"), chipsEl = $("chips");
-  var nameEl = $("hello-name"), avatarEl = $("avatar");
 
+  var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
+  var LS_LANG = "flicksy_lang";
+  var TABS = ["home", "discover", "library", "profile"];
+  var TAB_ICON = { home: "home", discover: "compass", library: "bookmark", profile: "user" };
+
+  // ---------- state ----------
   var initData = "";
-  var timer = null, controller = null;
-  var searchResults = [];
-  var libFilter = null, libStale = true, libLoading = false;
-  var sheetItem = null, selStatus = null, selRating = null, saving = false;
+  var me = null;
+  var currentTab = "home";
+  var mine = {};          // "type:id" -> { status, rating }   (the user's own state, shared by all screens)
+  var rowsCache = {};     // "lang:kind" -> { items } or { promise }
+  var library = { items: [], loaded: false, stale: true, loading: null };
+  var detailStack = [];
+  var heroTimer = null;
+  var disc = { q: "", filter: "all", results: [], status: "idle", timer: null, controller: null };
+  var libView = { type: "all", status: null };
+  var tg = null;
 
-  // ---------- small helpers ----------
-  function setMsg(el, text, isError) {
-    el.textContent = text || "";
-    el.classList.toggle("error", !!isError);
-    el.classList.toggle("hidden", !text);
+  // ---------- icons (drawn with code, no files) ----------
+  var ICONS = {
+    home: ["M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],
+    compass: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", "M16 8l-2 6-6 2 2-6z"],
+    bookmark: ["M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"],
+    user: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M4 21a8 8 0 0 1 16 0"],
+    star: ["M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"],
+    check: ["M5 12.5l4.5 4.5L19 7"],
+    plus: ["M12 5v14M5 12h14"],
+    chevron: ["M9 6l6 6-6 6"],
+    back: ["M15 5l-7 7 7 7"],
+    globe: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", "M2 12h20", "M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"],
+    info: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", "M12 11v5", "M12 8h.01"],
+    x: ["M6 6l12 12M18 6L6 18"],
+    sliders: ["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"],
+    film: ["M4 4h16v16H4z", "M8 4v16M16 4v16M4 8h4M4 16h4M16 8h4M16 16h4"],
+    search: ["M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16z", "M21 21l-4.3-4.3"],
+    play: ["M7 4l13 8-13 8z"]
+  };
+  var FILLED = { star: true, play: true };
+
+  function icon(name, size) {
+    var ns = "http://www.w3.org/2000/svg";
+    var s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("width", size || 20);
+    s.setAttribute("height", size || 20);
+    s.setAttribute("aria-hidden", "true");
+    s.setAttribute("class", "ic" + (FILLED[name] ? " ic-fill" : ""));
+    (ICONS[name] || []).forEach(function (d) {
+      var p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      s.appendChild(p);
+    });
+    return s;
   }
 
+  // ---------- small helpers ----------
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+  }
+
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  function button(className, text, handler) {
+    var b = el("button", className, text);
+    b.type = "button";
+    if (handler) b.addEventListener("click", handler);
+    return b;
+  }
+
+  function iconButton(className, iconName, label, handler) {
+    var b = button(className, null, handler);
+    b.setAttribute("aria-label", label);
+    b.appendChild(icon(iconName, 20));
+    return b;
+  }
+
+  function msg(text, isError) { return el("div", "msg" + (isError ? " error" : ""), text); }
+
+  function key(item) { return item.media_type + ":" + item.tmdb_id; }
+
+  function getMine(item) {
+    var m = mine[key(item)];
+    if (m) return m;
+    return { status: item.status || null, rating: item.my_rating || null };
+  }
+
+  function ingest(items) {
+    (items || []).forEach(function (it) {
+      if (it.status !== undefined) mine[key(it)] = { status: it.status || null, rating: it.my_rating || null };
+    });
+  }
+
+  function displayTitle(item) {
+    if (item.title_en !== undefined && I18N.lang !== "fa") return item.title_en || item.title || "";
+    return item.title || item.original_title || "";
+  }
+
+  function typeLabel(item) { return item.media_type === "tv" ? t("type_tv") : t("type_movie"); }
+
+  function formatRuntime(minutes) {
+    if (!minutes) return "";
+    var h = Math.floor(minutes / 60), m = minutes % 60;
+    return h > 0 ? t("runtime_hm", { h: h, m: m }) : t("runtime_m", { m: m });
+  }
+
+  function toast(text, isError) {
+    var box = $("toast");
+    box.textContent = text;
+    box.className = "toast show" + (isError ? " error" : "");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { box.className = "toast"; }, 2800);
+  }
+
+  function haptic() {
+    try { if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light"); } catch (e) {}
+  }
+
+  // ---------- server calls ----------
   function readInitData() {
     try {
       var h = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -33,9 +132,7 @@
       if (fromHash) return fromHash;
     } catch (e) {}
     try {
-      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
-        return Telegram.WebApp.initData;
-      }
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) return Telegram.WebApp.initData;
     } catch (e) {}
     return "";
   }
@@ -53,376 +150,929 @@
     });
   }
 
-  // Turns a failed response into a Persian message.
-  function problem(res, fallback) {
-    if (res.status === 401) {
-      if (res.data && res.data.error === "expired") {
-        return "نشست منقضی شده؛ برنامه را دوباره از تلگرام باز کن.";
-      }
-      return "ورود ناموفق بود. برنامه را دوباره از تلگرام باز کن.";
-    }
-    if (res.status === 429) return "کمی آرام‌تر؛ چند ثانیه دیگر دوباره امتحان کن.";
-    return fallback;
+  // Adds the chosen language to a URL.
+  function L(path) { return path + (path.indexOf("?") < 0 ? "?" : "&") + "lang=" + I18N.lang; }
+
+  function problem(res, fallbackKey) {
+    if (res.status === 401) return t(res.data && res.data.error === "expired" ? "err_expired" : "err_login");
+    if (res.status === 429) return t("err_rate");
+    return t(fallbackKey || "err_generic");
   }
 
-  function el(tag, className, text) {
-    var node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+  function setStatus(item, status, rating) {
+    return api("/api/library", {
+      method: "PUT",
+      body: { tmdb_id: item.tmdb_id, media_type: item.media_type, status: status, rating: rating || null }
+    }).then(function (res) {
+      if (res.status !== 200) { toast(problem(res, "err_save"), true); return false; }
+      mine[key(item)] = { status: res.data.status, rating: res.data.my_rating || null };
+      library.stale = true;
+      haptic();
+      return true;
+    }).catch(function () { toast(t("err_network"), true); return false; });
   }
 
-  function posterNode(item, className) {
-    var node = el(item.poster ? "img" : "div", className || "poster");
-    if (item.poster) { node.src = item.poster; node.alt = ""; node.loading = "lazy"; }
-    return node;
-  }
-
-  function mineText(item) {
-    if (!item.status) return "";
-    var t = STATUS_LABEL[item.status] || "";
-    if (item.my_rating) t += " · ★ " + item.my_rating;
-    return t;
-  }
-
-  function fillMeta(container, item) {
-    container.textContent = "";
-    container.appendChild(el("span", "badge", item.media_type === "tv" ? "سریال" : "فیلم"));
-    if (item.year) container.appendChild(el("span", "", String(item.year)));
-    if (item.rating) container.appendChild(el("span", "", "★ " + item.rating));
-    var mine = mineText(item);
-    if (mine) container.appendChild(el("span", "mine", mine));
-  }
-
-  function card(item, withOverview) {
-    var li = el("li");
-    li.appendChild(posterNode(item));
-    var info = el("div", "info");
-    info.appendChild(el("p", "title", item.title || item.original_title));
-    if (item.original_title && item.original_title !== item.title) {
-      info.appendChild(el("p", "orig", item.original_title));
-    }
-    var meta = el("div", "meta");
-    fillMeta(meta, item);
-    info.appendChild(meta);
-    if (withOverview && item.overview) info.appendChild(el("p", "ov", item.overview));
-    li.appendChild(info);
-    li.addEventListener("click", function () { openSheet(item); });
-    return li;
-  }
-
-  // ---------- search ----------
-  function renderSearch() {
-    listEl.textContent = "";
-    searchResults.forEach(function (r) { listEl.appendChild(card(r, true)); });
-  }
-
-  function search(text) {
-    if (controller) controller.abort();
-    controller = new AbortController();
-    setMsg(msgEl, "در حال جست‌وجو…");
-    api("/api/search?q=" + encodeURIComponent(text), { signal: controller.signal })
+  function removeFromLibrary(item) {
+    return api("/api/library?tmdb_id=" + item.tmdb_id + "&media_type=" + item.media_type, { method: "DELETE" })
       .then(function (res) {
-        if (res.status !== 200) {
-          setMsg(msgEl, problem(res, "جست‌وجو فعلاً در دسترس نیست. کمی بعد دوباره امتحان کن."), true);
-          return;
-        }
-        searchResults = res.data.results || [];
-        renderSearch();
-        setMsg(msgEl, searchResults.length ? "" : "نتیجه‌ای پیدا نشد.");
-      })
-      .catch(function (e) {
-        if (e && e.name === "AbortError") return;
-        setMsg(msgEl, "اتصال برقرار نشد. اینترنت را بررسی کن.", true);
-      });
+        if (res.status !== 200) { toast(problem(res, "err_save"), true); return false; }
+        mine[key(item)] = { status: null, rating: null };
+        library.stale = true;
+        haptic();
+        return true;
+      }).catch(function () { toast(t("err_network"), true); return false; });
   }
 
-  qEl.addEventListener("input", function () {
-    clearTimeout(timer);
-    var text = qEl.value.trim();
-    if (text.length < 2) {
-      if (controller) controller.abort();
-      searchResults = [];
-      listEl.textContent = "";
-      setMsg(msgEl, "حداقل دو حرف بنویس.");
-      return;
-    }
-    timer = setTimeout(function () { search(text); }, 400);
-  });
+  function fetchRow(kind) {
+    var k = I18N.lang + ":" + kind;
+    var c = rowsCache[k];
+    if (c && c.items) return Promise.resolve(c.items);
+    if (c && c.promise) return c.promise;
+    var p = api(L("/api/discover?kind=" + kind)).then(function (res) {
+      if (res.status !== 200) { delete rowsCache[k]; return null; }
+      var items = res.data.results || [];
+      ingest(items);
+      rowsCache[k] = { items: items };
+      return items;
+    }).catch(function () { delete rowsCache[k]; return null; });
+    rowsCache[k] = { promise: p };
+    return p;
+  }
 
-  // ---------- library ----------
-  function renderChips(counts) {
-    chipsEl.textContent = "";
-    var total = 0;
-    STATUS_ORDER.forEach(function (s) { total += counts[s] || 0; });
+  function ensureLibrary(force) {
+    if (!force && library.loaded && !library.stale) return Promise.resolve(true);
+    if (library.loading) return library.loading;
+    library.loading = api("/api/library").then(function (res) {
+      library.loading = null;
+      if (res.status !== 200) return false;
+      library.items = res.data.items || [];
+      library.loaded = true;
+      library.stale = false;
+      ingest(library.items);
+      return true;
+    }).catch(function () { library.loading = null; return false; });
+    return library.loading;
+  }
 
-    function addChip(label, value) {
-      var c = el("button", "chip" + (libFilter === value ? " active" : ""), label);
-      c.type = "button";
-      c.addEventListener("click", function () {
-        libFilter = value;
-        loadLibrary();
-      });
-      chipsEl.appendChild(c);
+  // ---------- shared pieces ----------
+  function posterNode(item, className) {
+    if (item.poster) {
+      var img = el("img", className || "poster");
+      img.src = item.poster;
+      img.alt = "";
+      img.loading = "lazy";
+      img.addEventListener("error", function () { img.classList.add("broken"); });
+      return img;
     }
-    addChip("همه (" + total + ")", null);
-    STATUS_ORDER.forEach(function (s) {
-      addChip(STATUS_LABEL[s] + " (" + (counts[s] || 0) + ")", s);
+    var ph = el("div", (className || "poster") + " ph");
+    ph.appendChild(icon("film", 26));
+    return ph;
+  }
+
+  function ratingBadge(value) {
+    var b = el("span", "badge-rate");
+    b.appendChild(icon("star", 11));
+    b.appendChild(document.createTextNode(" " + value));
+    return b;
+  }
+
+  function statusBadge(status) {
+    var b = el("span", "badge-status s-" + status);
+    if (status === "watched") b.appendChild(icon("check", 12));
+    else b.textContent = t("status_" + status);
+    return b;
+  }
+
+  function posterCard(item) {
+    var card = el("button", "pcard");
+    card.type = "button";
+    var box = el("div", "pimg");
+    box.appendChild(posterNode(item));
+    if (item.rating) box.appendChild(ratingBadge(item.rating));
+    var m = getMine(item);
+    if (m.status) box.appendChild(statusBadge(m.status));
+    card.appendChild(box);
+    card.appendChild(el("div", "ptitle", displayTitle(item)));
+    var sub = [];
+    if (item.year) sub.push(String(item.year));
+    sub.push(typeLabel(item));
+    card.appendChild(el("div", "psub", sub.join(" · ")));
+    card.addEventListener("click", function () { openDetail(item); });
+    return card;
+  }
+
+  function sectionHeader(text) { return el("h2", "sec-title", text); }
+
+  function rowSkeleton() {
+    var row = el("div", "hscroll");
+    for (var i = 0; i < 4; i++) {
+      var s = el("div", "pcard");
+      s.appendChild(el("div", "pimg skel"));
+      s.appendChild(el("div", "ptitle skel-line"));
+      row.appendChild(s);
+    }
+    return row;
+  }
+
+  function cardsRow(items) {
+    var row = el("div", "hscroll");
+    items.forEach(function (it) { row.appendChild(posterCard(it)); });
+    return row;
+  }
+
+  // A titled row that fills itself when the data arrives.
+  function lazyRow(titleKey, kind, filterFn) {
+    var wrap = el("section", "section");
+    wrap.appendChild(sectionHeader(t(titleKey)));
+    var holder = rowSkeleton();
+    wrap.appendChild(holder);
+    fetchRow(kind).then(function (items) {
+      if (!items) { holder.replaceWith(msg(t("err_load"), true)); return; }
+      var list = filterFn ? items.filter(filterFn) : items;
+      if (!list.length) { wrap.remove(); return; }
+      holder.replaceWith(cardsRow(list));
     });
+    return wrap;
   }
 
-  function loadLibrary() {
-    if (libLoading) return;
-    libLoading = true;
-    setMsg(libMsgEl, "در حال بارگذاری…");
-    var path = "/api/library" + (libFilter ? "?status=" + libFilter : "");
-    api(path).then(function (res) {
-      libLoading = false;
-      if (res.status !== 200) {
-        setMsg(libMsgEl, problem(res, "بارگذاری کتابخانه ممکن نشد."), true);
-        return;
-      }
-      libStale = false;
-      renderChips(res.data.counts || {});
-      libListEl.textContent = "";
-      var items = res.data.items || [];
-      items.forEach(function (it) { libListEl.appendChild(card(it, false)); });
-      setMsg(libMsgEl, items.length ? "" : "اینجا هنوز چیزی نیست. از تب جست‌وجو اضافه کن.");
-    }).catch(function () {
-      libLoading = false;
-      setMsg(libMsgEl, "اتصال برقرار نشد.", true);
-    });
-  }
-
-  // ---------- tabs ----------
-  function showTab(name) {
-    var isSearch = name === "search";
-    $("view-search").classList.toggle("hidden", !isSearch);
-    $("view-library").classList.toggle("hidden", isSearch);
-    $("tab-search").classList.toggle("active", isSearch);
-    $("tab-library").classList.toggle("active", !isSearch);
-    if (!isSearch && libStale) loadLibrary();
-  }
-  $("tab-search").addEventListener("click", function () { showTab("search"); });
-  $("tab-library").addEventListener("click", function () { showTab("library"); });
-
-  // ---------- title sheet ----------
-  function buildSheetButtons() {
-    var st = $("statuses");
-    st.textContent = "";
-    STATUS_ORDER.forEach(function (s) {
-      var b = el("button", "pill" + (selStatus === s ? " sel" : ""), STATUS_LABEL[s]);
-      b.type = "button";
-      b.addEventListener("click", function () { selStatus = s; buildSheetButtons(); });
-      st.appendChild(b);
-    });
-
-    var rt = $("ratings");
-    rt.textContent = "";
-    for (var n = 1; n <= 10; n++) {
-      (function (num) {
-        var b = el("button", "pill" + (selRating === num ? " sel" : ""), String(num));
-        b.type = "button";
-        b.addEventListener("click", function () {
-          selRating = selRating === num ? null : num;
-          buildSheetButtons();
-        });
-        rt.appendChild(b);
-      })(n);
-    }
-    $("save").disabled = !selStatus || saving;
-  }
-
-  function openSheet(item) {
-    sheetItem = item;
-    selStatus = item.status || null;
-    selRating = item.my_rating || null;
-    saving = false;
-
-    var p = $("sheet-poster");
-    var newPoster = posterNode(item);
-    newPoster.id = "sheet-poster";
-    p.replaceWith(newPoster);
-
-    $("sheet-title").textContent = item.title || item.original_title;
-    var orig = item.original_title && item.original_title !== item.title ? item.original_title : "";
-    $("sheet-orig").textContent = orig;
-    $("sheet-orig").classList.toggle("hidden", !orig);
-    fillMeta($("sheet-meta"), item);
-    setMsg($("sheet-msg"), "");
-    $("remove").classList.toggle("hidden", !item.status);
-
-    buildSheetButtons();
-    $("overlay").classList.remove("hidden");
-    document.body.classList.add("locked");
-    if (item.media_type === "tv") {
-      loadEps(item);
-    } else {
-      ep = null;
-      epsEl.classList.add("hidden");
-    }
+  // ---------- bottom sheets ----------
+  function syncLock() {
+    var open = detailStack.length > 0 || $("sheet-root").children.length > 0;
+    document.body.classList.toggle("locked", open);
   }
 
   function closeSheet() {
-    $("overlay").classList.add("hidden");
-    document.body.classList.remove("locked");
-    sheetItem = null;
-    ep = null;
-    epsEl.classList.add("hidden");
+    clear($("sheet-root"));
+    syncLock();
   }
 
-  function syncItem(tmdbId, mediaType, status, myRating) {
-    searchResults.forEach(function (r) {
-      if (r.tmdb_id === tmdbId && r.media_type === mediaType) {
-        r.status = status;
-        r.my_rating = myRating;
-      }
-    });
-    renderSearch();
-    libStale = true;
-    if (!$("view-library").classList.contains("hidden")) loadLibrary();
+  function openSheet(build) {
+    closeSheet();
+    var ov = el("div", "sheet-ov");
+    var sh = el("div", "sheet");
+    sh.appendChild(el("div", "grab"));
+    build(sh);
+    ov.appendChild(sh);
+    ov.addEventListener("click", function (e) { if (e.target === ov) closeSheet(); });
+    $("sheet-root").appendChild(ov);
+    requestAnimationFrame(function () { ov.classList.add("on"); });
+    syncLock();
   }
 
-  $("save").addEventListener("click", function () {
-    if (!sheetItem || !selStatus || saving) return;
-    saving = true;
-    $("save").disabled = true;
-    $("save").textContent = "در حال ذخیره…";
-    var item = sheetItem;
-    api("/api/library", {
-      method: "PUT",
-      body: { tmdb_id: item.tmdb_id, media_type: item.media_type, status: selStatus, rating: selRating }
-    }).then(function (res) {
-      saving = false;
-      $("save").textContent = "ذخیره";
-      if (res.status === 200) {
-        item.status = res.data.status;
-        item.my_rating = res.data.my_rating;
-        syncItem(item.tmdb_id, item.media_type, item.status, item.my_rating);
-        closeSheet();
-      } else {
-        setMsg($("sheet-msg"), problem(res, "ذخیره نشد. کمی بعد دوباره امتحان کن."), true);
-        $("save").disabled = false;
-      }
-    }).catch(function () {
-      saving = false;
-      $("save").textContent = "ذخیره";
-      $("save").disabled = false;
-      setMsg($("sheet-msg"), "اتصال برقرار نشد.", true);
+  // ---------- navigation ----------
+  function renderNav() {
+    var nav = $("nav");
+    clear(nav);
+    TABS.forEach(function (name) {
+      var b = el("button", "nav-item" + (name === currentTab ? " active" : ""));
+      b.type = "button";
+      b.appendChild(icon(TAB_ICON[name], 22));
+      b.appendChild(el("span", "", t("nav_" + name)));
+      b.addEventListener("click", function () { goTab(name); });
+      nav.appendChild(b);
     });
-  });
+  }
 
-  $("remove").addEventListener("click", function () {
-    if (!sheetItem || saving) return;
-    saving = true;
-    var item = sheetItem;
-    api("/api/library?tmdb_id=" + item.tmdb_id + "&media_type=" + item.media_type, { method: "DELETE" })
-      .then(function (res) {
-        saving = false;
-        if (res.status === 200) {
-          item.status = null;
-          item.my_rating = null;
-          syncItem(item.tmdb_id, item.media_type, null, null);
-          closeSheet();
-        } else {
-          setMsg($("sheet-msg"), problem(res, "حذف نشد. کمی بعد دوباره امتحان کن."), true);
-        }
-      }).catch(function () {
-        saving = false;
-        setMsg($("sheet-msg"), "اتصال برقرار نشد.", true);
+  function renderTab(name) {
+    stopHero();
+    if (name === "home") renderHome();
+    else if (name === "discover") renderDiscover();
+    else if (name === "library") renderLibrary();
+    else renderProfile();
+  }
+
+  function goTab(name) {
+    currentTab = name;
+    TABS.forEach(function (n) { $("view-" + n).classList.toggle("hidden", n !== name); });
+    renderNav();
+    renderTab(name);
+    window.scrollTo(0, 0);
+  }
+
+  function topBar(titleText) {
+    var bar = el("header", "topbar");
+    bar.appendChild(el("h1", "page-title", titleText));
+    return bar;
+  }
+
+  // ---------- home ----------
+  function stopHero() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
+
+  function avatarNode() {
+    if (me && me.photo_url) {
+      var img = el("img", "avatar");
+      img.src = me.photo_url;
+      img.alt = "";
+      return img;
+    }
+    return el("div", "avatar", ((me && me.display_name) || "F").charAt(0).toUpperCase());
+  }
+
+  function heroSlide(item) {
+    var slide = el("div", "hero-slide");
+    var img = el("img", "hero-img");
+    img.src = item.backdrop;
+    img.alt = "";
+    slide.appendChild(img);
+    slide.appendChild(el("div", "hero-shade"));
+    var body = el("div", "hero-body");
+    var top = el("div", "hero-tags");
+    top.appendChild(el("span", "tag", typeLabel(item)));
+    if (item.rating) top.appendChild(ratingBadge(item.rating));
+    body.appendChild(top);
+    body.appendChild(el("h2", "hero-title", displayTitle(item)));
+    if (item.year) body.appendChild(el("p", "hero-meta", String(item.year)));
+    var actions = el("div", "hero-actions");
+    var add = button("btn primary", "");
+    function label() {
+      var m = getMine(item);
+      clear(add);
+      if (m.status) { add.appendChild(icon("check", 16)); add.appendChild(document.createTextNode(" " + t("status_" + m.status))); }
+      else { add.appendChild(icon("plus", 16)); add.appendChild(document.createTextNode(" " + t("btn_add_watchlist"))); }
+    }
+    label();
+    add.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (getMine(item).status) { openDetail(item); return; }
+      add.disabled = true;
+      setStatus(item, "want").then(function () { add.disabled = false; label(); });
+    });
+    actions.appendChild(add);
+    actions.appendChild(button("btn glass", t("btn_details"), function (e) { e.stopPropagation(); openDetail(item); }));
+    body.appendChild(actions);
+    slide.appendChild(body);
+    slide.addEventListener("click", function () { openDetail(item); });
+    return slide;
+  }
+
+  function buildHero(box, items) {
+    var picks = items.filter(function (i) { return i.backdrop; }).slice(0, 5);
+    if (!picks.length) { box.remove(); return; }
+    box.className = "hero";
+    clear(box);
+    var slides = picks.map(heroSlide);
+    var dots = el("div", "dots");
+    var dotNodes = picks.map(function () { var d = el("span", "dot"); dots.appendChild(d); return d; });
+    slides.forEach(function (s) { box.appendChild(s); });
+    box.appendChild(dots);
+    var index = 0;
+    function show(i) {
+      slides.forEach(function (s, n) { s.classList.toggle("on", n === i); });
+      dotNodes.forEach(function (d, n) { d.classList.toggle("on", n === i); });
+    }
+    show(0);
+    if (picks.length > 1) {
+      heroTimer = setInterval(function () { index = (index + 1) % picks.length; show(index); }, 6000);
+    }
+  }
+
+  function renderHome() {
+    var v = $("view-home");
+    clear(v);
+
+    var head = el("header", "topbar home-bar");
+    var who = button("who", null, function () { goTab("profile"); });
+    who.appendChild(avatarNode());
+    var greet = el("div", "greet");
+    greet.appendChild(el("span", "", t("hello")));
+    greet.appendChild(el("b", "", (me && me.display_name) || ""));
+    who.appendChild(greet);
+    head.appendChild(who);
+    head.appendChild(el("div", "brand", "Flicksy"));
+    v.appendChild(head);
+
+    var heroBox = el("div", "hero skel");
+    v.appendChild(heroBox);
+
+    var cont = el("section", "section hidden");
+    cont.appendChild(sectionHeader(t("sec_continue")));
+    var contHolder = el("div");
+    cont.appendChild(contHolder);
+    v.appendChild(cont);
+
+    fetchRow("trending").then(function (items) {
+      if (!items) { heroBox.remove(); return; }
+      if (currentTab === "home") buildHero(heroBox, items);
+    });
+
+    ensureLibrary(false).then(function () {
+      var watching = library.items.filter(function (i) { return getMine(i).status === "watching"; });
+      if (!watching.length) return;
+      clear(contHolder);
+      contHolder.appendChild(cardsRow(watching));
+      cont.classList.remove("hidden");
+    });
+
+    v.appendChild(lazyRow("sec_trending", "trending"));
+    v.appendChild(lazyRow("sec_popular_movies", "popular_movies"));
+    v.appendChild(lazyRow("sec_popular_tv", "popular_tv"));
+    v.appendChild(lazyRow("sec_top_movies", "top_movies"));
+    v.appendChild(lazyRow("sec_top_tv", "top_tv"));
+  }
+
+  // ---------- discover ----------
+  function filterChips(current, onPick) {
+    var row = el("div", "chips");
+    [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
+      row.appendChild(button("chip" + (current === pair[0] ? " active" : ""), t(pair[1]), function () { onPick(pair[0]); }));
+    });
+    return row;
+  }
+
+  function renderDiscover() {
+    var v = $("view-discover");
+    clear(v);
+    v.appendChild(topBar(t("nav_discover")));
+
+    var box = el("div", "searchbox");
+    box.appendChild(icon("search", 18));
+    var input = el("input", "searchinput");
+    input.type = "search";
+    input.setAttribute("inputmode", "search");
+    input.setAttribute("autocomplete", "off");
+    input.placeholder = t("search_placeholder");
+    input.value = disc.q;
+    box.appendChild(input);
+    v.appendChild(box);
+
+    var chipsHolder = el("div");
+    v.appendChild(chipsHolder);
+    var body = el("div", "disc-body");
+    v.appendChild(body);
+
+    function drawChips() {
+      clear(chipsHolder);
+      chipsHolder.appendChild(filterChips(disc.filter, function (f) { disc.filter = f; drawChips(); drawBody(); }));
+    }
+
+    function drawBody() {
+      clear(body);
+      var q = disc.q.trim();
+      if (q.length < 2) {
+        if (q.length === 1) body.appendChild(msg(t("search_hint")));
+        var f = disc.filter;
+        if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies")); body.appendChild(lazyRow("sec_popular_movies", "popular_movies")); }
+        if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv")); body.appendChild(lazyRow("sec_popular_tv", "popular_tv")); }
+        return;
+      }
+      if (disc.status === "loading") { body.appendChild(msg(t("searching"))); return; }
+      if (disc.status === "error") { body.appendChild(msg(disc.error, true)); return; }
+      var list = disc.results.filter(function (r) { return disc.filter === "all" || r.media_type === disc.filter; });
+      if (!list.length) { body.appendChild(msg(t("no_results"))); return; }
+      var grid = el("div", "grid");
+      list.forEach(function (it) { grid.appendChild(posterCard(it)); });
+      body.appendChild(grid);
+    }
+
+    function runSearch(q) {
+      if (disc.controller) disc.controller.abort();
+      disc.controller = new AbortController();
+      disc.status = "loading";
+      drawBody();
+      api(L("/api/search?q=" + encodeURIComponent(q)), { signal: disc.controller.signal }).then(function (res) {
+        if (res.status !== 200) { disc.status = "error"; disc.error = problem(res, "err_search"); }
+        else { disc.status = "ok"; disc.results = res.data.results || []; ingest(disc.results); }
+        drawBody();
+      }).catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        disc.status = "error";
+        disc.error = t("err_network");
+        drawBody();
       });
-  });
+    }
 
-  $("close").addEventListener("click", closeSheet);
-  $("overlay").addEventListener("click", function (e) {
-    if (e.target === $("overlay")) closeSheet();
-  });
+    input.addEventListener("input", function () {
+      clearTimeout(disc.timer);
+      disc.q = input.value;
+      var q = disc.q.trim();
+      if (q.length < 2) {
+        if (disc.controller) disc.controller.abort();
+        disc.status = "idle";
+        drawBody();
+        return;
+      }
+      disc.timer = setTimeout(function () { runSearch(q); }, 400);
+    });
 
-  // ---------- episodes (series only) ----------
-  var epsEl = $("eps");
-  var ep = null; // state for the series currently open in the sheet
+    drawChips();
+    if (disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
+    drawBody();
+  }
 
-  function epActive(state) { return ep === state && sheetItem === state.item; }
+  // ---------- library ----------
+  function renderLibrary() {
+    var v = $("view-library");
+    clear(v);
+    v.appendChild(topBar(t("nav_library")));
 
+    var seg = el("div", "segment");
+    var chipsHolder = el("div");
+    var body = el("div");
+    v.appendChild(seg);
+    v.appendChild(chipsHolder);
+    v.appendChild(body);
+
+    function visibleItems() {
+      return library.items.filter(function (i) {
+        var m = getMine(i);
+        if (!m.status) return false;
+        return libView.type === "all" || i.media_type === libView.type;
+      });
+    }
+
+    function drawSeg() {
+      clear(seg);
+      [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
+        seg.appendChild(button("seg-btn" + (libView.type === pair[0] ? " active" : ""), t(pair[1]), function () {
+          libView.type = pair[0];
+          drawSeg(); drawChips(); drawGrid();
+        }));
+      });
+    }
+
+    function drawChips() {
+      clear(chipsHolder);
+      var base = visibleItems();
+      var counts = {};
+      base.forEach(function (i) { var s = getMine(i).status; counts[s] = (counts[s] || 0) + 1; });
+      var row = el("div", "chips");
+      row.appendChild(button("chip" + (libView.status === null ? " active" : ""), t("library_all") + " (" + base.length + ")", function () {
+        libView.status = null; drawChips(); drawGrid();
+      }));
+      STATUS_ORDER.forEach(function (s) {
+        row.appendChild(button("chip" + (libView.status === s ? " active" : ""), t("status_" + s) + " (" + (counts[s] || 0) + ")", function () {
+          libView.status = s; drawChips(); drawGrid();
+        }));
+      });
+      chipsHolder.appendChild(row);
+    }
+
+    function drawGrid() {
+      clear(body);
+      var list = visibleItems().filter(function (i) { return !libView.status || getMine(i).status === libView.status; });
+      if (!list.length) {
+        var empty = el("div", "empty");
+        empty.appendChild(icon("film", 40));
+        empty.appendChild(el("p", "", t("library_empty")));
+        body.appendChild(empty);
+        return;
+      }
+      var grid = el("div", "grid");
+      list.forEach(function (it) { grid.appendChild(posterCard(it)); });
+      body.appendChild(grid);
+    }
+
+    drawSeg();
+    if (library.loaded) { drawChips(); drawGrid(); } else { body.appendChild(msg(t("loading"))); }
+    ensureLibrary(false).then(function (ok) {
+      if (currentTab !== "library") return;
+      if (!ok && !library.loaded) { clear(body); body.appendChild(msg(t("err_load"), true)); return; }
+      drawChips();
+      drawGrid();
+    });
+  }
+
+  // ---------- profile and settings ----------
+  function languageName() {
+    var langs = I18N.languages;
+    for (var i = 0; i < langs.length; i++) if (langs[i].code === I18N.lang) return langs[i].name;
+    return "English";
+  }
+
+  function setLanguage(code) {
+    I18N.set(code);
+    try { localStorage.setItem(LS_LANG, code); } catch (e) {}
+    closeSheet();
+    renderNav();
+    renderTab(currentTab);
+  }
+
+  function openLanguageSheet() {
+    openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", t("language")));
+      var list = el("div", "lang-list");
+      I18N.languages.forEach(function (l) {
+        var row = button("lang-row" + (l.code === I18N.lang ? " active" : ""), null, function () { setLanguage(l.code); });
+        row.appendChild(el("span", "", l.name));
+        if (l.code === I18N.lang) row.appendChild(icon("check", 18));
+        list.appendChild(row);
+      });
+      sh.appendChild(list);
+      sh.appendChild(el("p", "note", t("lang_note")));
+    });
+  }
+
+  function openAboutSheet() {
+    openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", "Flicksy"));
+      sh.appendChild(el("p", "about-text", t("about_text")));
+      var credit = el("div", "credit");
+      var logo = el("img", "tmdb-logo");
+      logo.src = "/tmdb-logo.svg";
+      logo.alt = "TMDB";
+      logo.addEventListener("error", function () { logo.classList.add("hidden"); });
+      credit.appendChild(logo);
+      credit.appendChild(el("p", "", "This product uses the TMDB API but is not endorsed or certified by TMDB."));
+      sh.appendChild(credit);
+      sh.appendChild(button("btn glass block", t("btn_close"), closeSheet));
+    });
+  }
+
+  function settingRow(iconName, label, value, handler) {
+    var row = button("setting", null, handler);
+    var left = el("span", "setting-left");
+    left.appendChild(icon(iconName, 20));
+    left.appendChild(el("span", "", label));
+    row.appendChild(left);
+    var right = el("span", "setting-right");
+    if (value) right.appendChild(el("span", "", value));
+    var chev = icon("chevron", 18);
+    chev.classList.add("flip");
+    right.appendChild(chev);
+    row.appendChild(right);
+    return row;
+  }
+
+  function renderProfile() {
+    var v = $("view-profile");
+    clear(v);
+    v.appendChild(topBar(t("nav_profile")));
+
+    var card = el("div", "profile-card");
+    var av = avatarNode();
+    av.classList.add("avatar-lg");
+    card.appendChild(av);
+    card.appendChild(el("div", "profile-name", (me && me.display_name) || ""));
+    var stats = el("div", "stats");
+    function stat(value, label) {
+      var s = el("div", "stat");
+      s.appendChild(el("b", "", String(value)));
+      s.appendChild(el("span", "", label));
+      return s;
+    }
+    var statsNodes = { watched: stat("–", t("status_watched")), watching: stat("–", t("status_watching")), want: stat("–", t("status_want")) };
+    stats.appendChild(statsNodes.watched);
+    stats.appendChild(statsNodes.watching);
+    stats.appendChild(statsNodes.want);
+    card.appendChild(stats);
+    v.appendChild(card);
+
+    function fillStats() {
+      var c = { watched: 0, watching: 0, want: 0 };
+      library.items.forEach(function (i) { var s = getMine(i).status; if (c[s] !== undefined) c[s]++; });
+      Object.keys(statsNodes).forEach(function (k) { statsNodes[k].firstChild.textContent = String(c[k]); });
+    }
+    if (library.loaded) fillStats();
+    ensureLibrary(false).then(function () { if (currentTab === "profile") fillStats(); });
+
+    var list = el("div", "settings");
+    list.appendChild(el("h2", "sec-title", t("settings")));
+    list.appendChild(settingRow("globe", t("language"), languageName(), openLanguageSheet));
+    list.appendChild(settingRow("info", t("about"), "", openAboutSheet));
+    v.appendChild(list);
+  }
+
+  // ---------- title page ----------
+  function topDetail() { return detailStack.length ? detailStack[detailStack.length - 1] : null; }
+
+  function tgBack() {
+    try {
+      if (tg && tg.BackButton) {
+        if (detailStack.length || $("sheet-root").children.length) tg.BackButton.show();
+        else tg.BackButton.hide();
+      }
+    } catch (e) {}
+  }
+
+  function openDetail(item) {
+    var d = { item: item, data: null, tab: "overview", ep: null, error: "", els: {} };
+    detailStack.push(d);
+    $("detail").classList.remove("hidden");
+    syncLock();
+    tgBack();
+    renderDetail(d);
+    loadDetail(d);
+  }
+
+  function backDetail() {
+    detailStack.pop();
+    var d = topDetail();
+    if (d) {
+      renderDetail(d);
+    } else {
+      $("detail").classList.add("hidden");
+      clear($("detail"));
+      renderTab(currentTab);
+    }
+    syncLock();
+    tgBack();
+  }
+
+  function loadDetail(d) {
+    var item = d.item;
+    api(L("/api/title?tmdb_id=" + item.tmdb_id + "&media_type=" + item.media_type)).then(function (res) {
+      if (res.status !== 200) { d.error = problem(res, "err_load"); }
+      else {
+        d.data = res.data;
+        mine[key(item)] = { status: res.data.status || null, rating: res.data.my_rating || null };
+        ingest(res.data.similar);
+      }
+      if (topDetail() === d) renderDetail(d);
+    }).catch(function () {
+      d.error = t("err_network");
+      if (topDetail() === d) renderDetail(d);
+    });
+  }
+
+  function infoOf(d) { return d.data || d.item; }
+
+  function renderDetail(d) {
+    var page = $("detail");
+    clear(page);
+    var info = infoOf(d);
+    var scroller = el("div", "page-scroll");
+    page.appendChild(scroller);
+
+    var hero = el("div", "d-hero");
+    var pic = info.backdrop || d.item.backdrop || info.poster || d.item.poster;
+    if (pic) {
+      var img = el("img", "d-hero-img");
+      img.src = pic;
+      img.alt = "";
+      hero.appendChild(img);
+    }
+    hero.appendChild(el("div", "d-hero-shade"));
+    var back = iconButton("round-btn d-back", "back", t("btn_close"), backDetail);
+    back.firstChild.classList.add("flip");
+    hero.appendChild(back);
+    scroller.appendChild(hero);
+
+    var body = el("div", "d-body");
+    var top = el("div", "d-top");
+    top.appendChild(posterNode(d.data || d.item, "d-poster"));
+    var box = el("div", "d-info");
+    box.appendChild(el("h1", "d-title", d.data ? d.data.title : displayTitle(d.item)));
+    var orig = info.original_title;
+    var shown = d.data ? d.data.title : displayTitle(d.item);
+    if (orig && orig !== shown) box.appendChild(el("p", "d-orig", orig));
+    var meta = el("div", "d-meta");
+    meta.appendChild(el("span", "tag", typeLabel(d.item)));
+    if (info.year) meta.appendChild(el("span", "", String(info.year)));
+    if (d.data && d.data.runtime) meta.appendChild(el("span", "", formatRuntime(d.data.runtime)));
+    if (info.rating) meta.appendChild(ratingBadge(info.rating));
+    box.appendChild(meta);
+    top.appendChild(box);
+    body.appendChild(top);
+
+    if (d.data && d.data.genres && d.data.genres.length) {
+      var genres = el("div", "genres");
+      d.data.genres.forEach(function (g) { genres.appendChild(el("span", "genre", g)); });
+      body.appendChild(genres);
+    }
+
+    d.els.actions = el("div", "d-actions");
+    body.appendChild(d.els.actions);
+    renderActions(d);
+
+    d.els.tabs = el("div", "d-tabs");
+    body.appendChild(d.els.tabs);
+    d.els.pane = el("div", "d-pane");
+    body.appendChild(d.els.pane);
+    renderTabs(d);
+    renderPane(d);
+
+    scroller.appendChild(body);
+  }
+
+  function renderActions(d) {
+    var box = d.els.actions;
+    clear(box);
+    var item = d.item;
+    var m = getMine(item);
+
+    var watch = button("abtn" + (m.status === "want" ? " on" : ""), null, function () {
+      var cur = getMine(item).status;
+      if (cur && cur !== "want") { openEditSheet(d); return; }
+      var p = cur === "want" ? removeFromLibrary(item) : setStatus(item, "want", getMine(item).rating);
+      p.then(function () { if (topDetail() === d) renderActions(d); });
+    });
+    watch.appendChild(icon(m.status === "want" ? "check" : "bookmark", 18));
+    watch.appendChild(el("span", "", m.status === "want" ? t("btn_in_watchlist") : t("btn_watchlist")));
+    box.appendChild(watch);
+
+    var seen = button("abtn" + (m.status === "watched" ? " on seen" : ""), null, function () {
+      var cur = getMine(item).status;
+      var p = cur === "watched" ? removeFromLibrary(item) : setStatus(item, "watched", getMine(item).rating);
+      p.then(function () { if (topDetail() === d) renderActions(d); });
+    });
+    seen.appendChild(icon("check", 18));
+    seen.appendChild(el("span", "", t("btn_seen")));
+    box.appendChild(seen);
+
+    box.appendChild(iconButton("abtn icon-only", "sliders", t("btn_edit"), function () { openEditSheet(d); }));
+
+    if (m.status) {
+      var line = el("div", "mine-line");
+      line.appendChild(statusBadge(m.status));
+      if (m.status === "watched") line.lastChild.appendChild(document.createTextNode(" " + t("status_watched")));
+      if (m.rating) line.appendChild(ratingBadge(m.rating));
+      box.appendChild(line);
+    }
+  }
+
+  function renderTabs(d) {
+    var box = d.els.tabs;
+    clear(box);
+    var tabs = [["overview", "tab_overview"]];
+    if (d.item.media_type === "tv") tabs.push(["episodes", "tab_episodes"]);
+    tabs.push(["cast", "tab_cast"]);
+    tabs.forEach(function (pair) {
+      box.appendChild(button("dtab" + (d.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
+        d.tab = pair[0];
+        renderTabs(d);
+        renderPane(d);
+      }));
+    });
+  }
+
+  function renderPane(d) {
+    var pane = d.els.pane;
+    clear(pane);
+    if (d.error && !d.data) { pane.appendChild(msg(d.error, true)); return; }
+    if (!d.data) { pane.appendChild(msg(t("loading"))); return; }
+    var data = d.data;
+
+    if (d.tab === "overview") {
+      if (data.tagline) pane.appendChild(el("p", "tagline", data.tagline));
+      if (data.overview) pane.appendChild(el("p", "overview", data.overview));
+      var facts = el("div", "facts");
+      if (data.directors && data.directors.length) {
+        var f = el("div", "fact");
+        f.appendChild(el("span", "fact-label", t(d.item.media_type === "tv" ? "created_by" : "director")));
+        f.appendChild(el("span", "fact-value", data.directors.join(", ")));
+        facts.appendChild(f);
+      }
+      if (data.seasons) {
+        var s = el("div", "fact");
+        s.appendChild(el("span", "fact-value", t("seasons_n", { n: data.seasons })));
+        facts.appendChild(s);
+      }
+      if (facts.firstChild) pane.appendChild(facts);
+      if (data.similar && data.similar.length) {
+        var sec = el("section", "section flush");
+        sec.appendChild(sectionHeader(t("sec_similar")));
+        sec.appendChild(cardsRow(data.similar));
+        pane.appendChild(sec);
+      }
+    } else if (d.tab === "episodes") {
+      if (!d.ep) d.ep = newEpState(d);
+      renderEps(d.ep);
+      if (d.ep.status === "idle") loadEps(d.ep);
+    } else {
+      if (!data.cast || !data.cast.length) { pane.appendChild(msg("—")); return; }
+      var row = el("div", "hscroll cast-row");
+      data.cast.forEach(function (c) {
+        var card = el("div", "cast");
+        var av;
+        if (c.photo) { av = el("img", "cast-photo"); av.src = c.photo; av.alt = ""; av.loading = "lazy"; }
+        else { av = el("div", "cast-photo ph", (c.name || "?").charAt(0)); }
+        card.appendChild(av);
+        card.appendChild(el("div", "cast-name", c.name));
+        if (c.character) card.appendChild(el("div", "cast-role", c.character));
+        row.appendChild(card);
+      });
+      pane.appendChild(row);
+    }
+  }
+
+  // ---------- edit sheet (status + rating) ----------
+  function openEditSheet(d) {
+    var item = d.item;
+    var m = getMine(item);
+    var selStatus = m.status, selRating = m.rating, saving = false;
+
+    openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", d.data ? d.data.title : displayTitle(item)));
+      sh.appendChild(el("div", "label", t("status_label")));
+      var st = el("div", "pills");
+      sh.appendChild(st);
+      sh.appendChild(el("div", "label", t("my_rating")));
+      var rt = el("div", "pills nums");
+      sh.appendChild(rt);
+      var actions = el("div", "sheet-actions");
+      var save = button("btn primary", t("btn_save"));
+      var remove = button("btn danger" + (m.status ? "" : " hidden"), t("btn_remove"));
+      actions.appendChild(save);
+      actions.appendChild(remove);
+      actions.appendChild(button("btn glass", t("btn_close"), closeSheet));
+      sh.appendChild(actions);
+
+      function draw() {
+        clear(st);
+        STATUS_ORDER.forEach(function (s) {
+          st.appendChild(button("pill" + (selStatus === s ? " sel" : ""), t("status_" + s), function () { selStatus = s; draw(); }));
+        });
+        clear(rt);
+        for (var n = 1; n <= 10; n++) {
+          (function (num) {
+            rt.appendChild(button("pill" + (selRating === num ? " sel" : ""), String(num), function () {
+              selRating = selRating === num ? null : num;
+              draw();
+            }));
+          })(n);
+        }
+        save.disabled = !selStatus || saving;
+      }
+      draw();
+
+      save.addEventListener("click", function () {
+        if (!selStatus || saving) return;
+        saving = true;
+        draw();
+        save.textContent = t("btn_saving");
+        setStatus(item, selStatus, selRating).then(function (ok) {
+          saving = false;
+          if (ok) { closeSheet(); if (topDetail() === d) renderActions(d); }
+          else { save.textContent = t("btn_save"); draw(); }
+        });
+      });
+      remove.addEventListener("click", function () {
+        if (saving) return;
+        saving = true;
+        removeFromLibrary(item).then(function (ok) {
+          saving = false;
+          if (ok) { closeSheet(); if (topDetail() === d) renderActions(d); }
+        });
+      });
+    });
+  }
+
+  // ---------- episodes (series) ----------
+  function newEpState(d) {
+    return { d: d, item: d.item, seasons: [], total: 0, watched: 0, open: null, cache: {}, busy: false, status: "idle", note: "" };
+  }
+
+  function epActive(state) { return topDetail() === state.d && state.d.tab === "episodes"; }
   function epRecalc(state) {
     var sum = 0;
     state.seasons.forEach(function (s) { sum += s.watched; });
     state.watched = sum;
   }
 
-  function loadEps(item) {
-    var state = {
-      item: item, seasons: [], total: 0, watched: 0, open: null,
-      cache: {}, busy: false, status: "loading", note: ""
-    };
-    ep = state;
-    renderEps();
-    api("/api/tv?tmdb_id=" + item.tmdb_id).then(function (res) {
-      if (!epActive(state)) return;
-      if (res.status !== 200) {
-        state.status = "error";
-        state.note = problem(res, "قسمت‌ها بارگذاری نشد.");
-      } else {
+  function loadEps(state) {
+    state.status = "loading";
+    renderEps(state);
+    api(L("/api/tv?tmdb_id=" + state.item.tmdb_id)).then(function (res) {
+      if (res.status !== 200) { state.status = "error"; state.note = problem(res, "err_load"); }
+      else {
         state.status = "ready";
         state.seasons = res.data.seasons || [];
         state.total = res.data.total || 0;
         state.watched = res.data.watched || 0;
       }
-      renderEps();
+      if (epActive(state)) renderEps(state);
     }).catch(function () {
-      if (!epActive(state)) return;
       state.status = "error";
-      state.note = "اتصال برقرار نشد.";
-      renderEps();
+      state.note = t("err_network");
+      if (epActive(state)) renderEps(state);
     });
   }
 
   function loadSeason(state, num) {
     if (state.cache[num]) return;
     state.cache[num] = { loading: true };
-    api("/api/episodes?tmdb_id=" + state.item.tmdb_id + "&season=" + num).then(function (res) {
-      if (res.status === 200) {
-        state.cache[num] = { episodes: res.data.episodes || [] };
-      } else {
-        state.cache[num] = { error: problem(res, "قسمت‌های این فصل بارگذاری نشد.") };
-      }
-      if (epActive(state)) renderEps();
+    api(L("/api/episodes?tmdb_id=" + state.item.tmdb_id + "&season=" + num)).then(function (res) {
+      state.cache[num] = res.status === 200 ? { episodes: res.data.episodes || [] } : { error: problem(res, "err_load") };
+      if (epActive(state)) renderEps(state);
     }).catch(function () {
-      state.cache[num] = { error: "اتصال برقرار نشد." };
-      if (epActive(state)) renderEps();
+      state.cache[num] = { error: t("err_network") };
+      if (epActive(state)) renderEps(state);
     });
   }
 
-  // Applies the numbers the server sent back after a change.
-  function applyServer(state, d, seasonNum) {
-    state.watched = d.watched;
-    if (d.total !== null && d.total !== undefined) state.total = d.total;
-    if (seasonNum && d.season_watched !== null && d.season_watched !== undefined) {
+  function applyServer(state, data, seasonNum) {
+    state.watched = data.watched;
+    if (data.total !== null && data.total !== undefined) state.total = data.total;
+    if (seasonNum && data.season_watched !== null && data.season_watched !== undefined) {
       state.seasons.forEach(function (s) {
-        if (s.season_number === seasonNum) s.watched = Math.min(d.season_watched, s.episode_count);
+        if (s.season_number === seasonNum) s.watched = Math.min(data.season_watched, s.episode_count);
       });
     }
     var item = state.item;
-    if (d.library_status && d.library_status !== item.status) {
-      item.status = d.library_status;
-      if (sheetItem === item) {
-        selStatus = item.status;
-        buildSheetButtons();
-        $("remove").classList.remove("hidden");
-        fillMeta($("sheet-meta"), item);
-      }
-      syncItem(item.tmdb_id, item.media_type, item.status, item.my_rating);
+    if (data.library_status && data.library_status !== getMine(item).status) {
+      mine[key(item)] = { status: data.library_status, rating: getMine(item).rating };
+      library.stale = true;
+      if (topDetail() === state.d) renderActions(state.d);
     }
   }
 
-  // Changes the screen at once, then asks the server; goes back if the server refuses.
   function mutateEps(state, body, optimistic) {
     if (state.busy) return;
     state.busy = true;
     var snapshot = JSON.parse(JSON.stringify({ seasons: state.seasons, watched: state.watched, cache: state.cache }));
     optimistic();
     state.note = "";
-    renderEps();
+    renderEps(state);
     function undo(message) {
       state.seasons = snapshot.seasons;
       state.watched = snapshot.watched;
@@ -431,32 +1081,24 @@
     }
     api("/api/episodes", { method: "PUT", body: body }).then(function (res) {
       state.busy = false;
-      if (res.status === 200) {
-        applyServer(state, res.data, body.season || null);
-      } else {
-        undo(problem(res, "ذخیره نشد. کمی بعد دوباره امتحان کن."));
-      }
-      if (epActive(state)) renderEps();
+      if (res.status === 200) { applyServer(state, res.data, body.season || null); haptic(); }
+      else undo(problem(res, "err_save"));
+      if (epActive(state)) renderEps(state);
     }).catch(function () {
       state.busy = false;
-      undo("اتصال برقرار نشد.");
-      if (epActive(state)) renderEps();
+      undo(t("err_network"));
+      if (epActive(state)) renderEps(state);
     });
   }
 
   function findSeason(state, num) {
-    for (var i = 0; i < state.seasons.length; i++) {
-      if (state.seasons[i].season_number === num) return state.seasons[i];
-    }
+    for (var i = 0; i < state.seasons.length; i++) if (state.seasons[i].season_number === num) return state.seasons[i];
     return null;
   }
 
   function toggleEpisode(state, seasonNum, episode) {
     var value = !episode.watched;
-    mutateEps(state, {
-      tmdb_id: state.item.tmdb_id, scope: "episode", season: seasonNum,
-      episode: episode.episode_number, watched: value
-    }, function () {
+    mutateEps(state, { tmdb_id: state.item.tmdb_id, scope: "episode", season: seasonNum, episode: episode.episode_number, watched: value }, function () {
       episode.watched = value;
       var s = findSeason(state, seasonNum);
       if (s) s.watched = Math.max(0, Math.min(s.episode_count, s.watched + (value ? 1 : -1)));
@@ -465,9 +1107,7 @@
   }
 
   function setSeason(state, seasonNum, value) {
-    mutateEps(state, {
-      tmdb_id: state.item.tmdb_id, scope: "season", season: seasonNum, watched: value
-    }, function () {
+    mutateEps(state, { tmdb_id: state.item.tmdb_id, scope: "season", season: seasonNum, watched: value }, function () {
       var c = state.cache[seasonNum];
       if (c && c.episodes) c.episodes.forEach(function (e) { e.watched = value; });
       var s = findSeason(state, seasonNum);
@@ -490,77 +1130,44 @@
   function markSeriesWatched(state) {
     if (state.busy) return;
     state.busy = true;
-    var item = state.item;
-    api("/api/library", {
-      method: "PUT",
-      body: { tmdb_id: item.tmdb_id, media_type: item.media_type, status: "watched", rating: item.my_rating || null }
-    }).then(function (res) {
+    setStatus(state.item, "watched", getMine(state.item).rating).then(function () {
       state.busy = false;
-      if (res.status === 200) {
-        item.status = res.data.status;
-        if (sheetItem === item) {
-          selStatus = item.status;
-          buildSheetButtons();
-          fillMeta($("sheet-meta"), item);
-        }
-        syncItem(item.tmdb_id, item.media_type, item.status, item.my_rating);
-        state.note = "";
-      } else {
-        state.note = problem(res, "ذخیره نشد. کمی بعد دوباره امتحان کن.");
-      }
-      if (epActive(state)) renderEps();
-    }).catch(function () {
-      state.busy = false;
-      state.note = "اتصال برقرار نشد.";
-      if (epActive(state)) renderEps();
+      if (epActive(state)) { renderEps(state); renderActions(state.d); }
     });
-  }
-
-  function smallBtn(text, handler, className) {
-    var b = el("button", "minibtn" + (className ? " " + className : ""), text);
-    b.type = "button";
-    b.addEventListener("click", handler);
-    return b;
   }
 
   function renderSeason(state, s) {
     var isOpen = state.open === s.season_number;
     var box = el("div", "season" + (isOpen ? " open" : ""));
-    var head = el("button", "season-head");
-    head.type = "button";
-    head.appendChild(el("span", "season-name", "فصل " + s.season_number));
-    head.appendChild(el("span", "season-count", s.watched + " از " + s.episode_count));
-    head.addEventListener("click", function () {
+    var head = button("season-head", null, function () {
       state.open = isOpen ? null : s.season_number;
       if (!isOpen) loadSeason(state, s.season_number);
-      renderEps();
+      renderEps(state);
     });
+    head.appendChild(el("span", "season-name", t("season_n", { n: s.season_number })));
+    var right = el("span", "season-count", s.watched + " / " + s.episode_count);
+    if (s.watched >= s.episode_count) right.classList.add("full");
+    head.appendChild(right);
     box.appendChild(head);
 
     if (isOpen) {
       var c = state.cache[s.season_number];
       var body = el("div", "season-body");
-      if (!c || c.loading) {
-        body.appendChild(el("div", "msg", "در حال بارگذاری…"));
-      } else if (c.error) {
-        body.appendChild(el("div", "msg error", c.error));
-      } else {
+      if (!c || c.loading) body.appendChild(msg(t("loading")));
+      else if (c.error) body.appendChild(msg(c.error, true));
+      else {
         var allDone = s.watched >= s.episode_count;
-        var row = el("div", "season-actions");
-        row.appendChild(smallBtn(allDone ? "برداشتن علامت کل فصل" : "علامت‌زدن کل فصل", function () {
-          setSeason(state, s.season_number, !allDone);
-        }));
-        body.appendChild(row);
+        body.appendChild(button("minibtn", t(allDone ? "unmark_season" : "mark_season"), function () { setSeason(state, s.season_number, !allDone); }));
         c.episodes.forEach(function (e) {
-          var r = el("button", "ep" + (e.watched ? " done" : ""));
-          r.type = "button";
-          r.appendChild(el("span", "check", e.watched ? "✓" : ""));
+          var row = button("ep" + (e.watched ? " done" : ""), null, function () { toggleEpisode(state, s.season_number, e); });
+          var check = el("span", "check");
+          if (e.watched) check.appendChild(icon("check", 14));
+          row.appendChild(check);
           var txt = el("span", "ep-text");
-          txt.appendChild(el("span", "ep-name", e.episode_number + ". " + (e.name || "قسمت " + e.episode_number)));
+          txt.appendChild(el("span", "ep-name", e.episode_number + ". " + (e.name || t("episode_n", { n: e.episode_number }))));
           if (e.air_date) txt.appendChild(el("span", "ep-date", e.air_date));
-          r.appendChild(txt);
-          r.addEventListener("click", function () { toggleEpisode(state, s.season_number, e); });
-          body.appendChild(r);
+          row.appendChild(txt);
+          body.appendChild(row);
         });
       }
       box.appendChild(body);
@@ -568,112 +1175,88 @@
     return box;
   }
 
-  function renderEps() {
-    epsEl.textContent = "";
-    var state = ep;
-    if (!state || state.item !== sheetItem || state.item.media_type !== "tv") {
-      epsEl.classList.add("hidden");
-      return;
-    }
-    if (state.status === "ready" && !state.seasons.length) {
-      epsEl.classList.add("hidden");
-      return;
-    }
-    epsEl.classList.remove("hidden");
-    epsEl.appendChild(el("div", "label", "قسمت‌ها"));
-
-    if (state.status === "loading") {
-      epsEl.appendChild(el("div", "msg", "در حال بارگذاری…"));
-      return;
-    }
-    if (state.status === "error") {
-      epsEl.appendChild(el("div", "msg error", state.note));
-      return;
-    }
+  function renderEps(state) {
+    if (!epActive(state)) return;
+    var pane = state.d.els.pane;
+    clear(pane);
+    if (state.status === "idle" || state.status === "loading") { pane.appendChild(msg(t("loading"))); return; }
+    if (state.status === "error") { pane.appendChild(msg(state.note, true)); return; }
+    if (!state.seasons.length) { pane.appendChild(msg("—")); return; }
 
     var percent = state.total ? Math.round((state.watched / state.total) * 100) : 0;
     var top = el("div", "prog-row");
-    top.appendChild(el("span", "", state.watched + " از " + state.total + " قسمت"));
-    top.appendChild(el("span", "", percent + "٪"));
-    epsEl.appendChild(top);
+    top.appendChild(el("span", "", t("episodes_of", { w: state.watched, t: state.total })));
+    top.appendChild(el("span", "", percent + "%"));
+    pane.appendChild(top);
     var bar = el("div", "bar");
     var fill = el("i");
     fill.style.width = percent + "%";
     bar.appendChild(fill);
-    epsEl.appendChild(bar);
+    pane.appendChild(bar);
 
     var complete = state.total > 0 && state.watched >= state.total;
-    var actions = el("div", "season-actions");
-    actions.appendChild(smallBtn(complete ? "برداشتن همهٔ علامت‌ها" : "علامت‌زدن همهٔ قسمت‌ها", function () {
-      setAllEpisodes(state, !complete);
-    }));
-    epsEl.appendChild(actions);
+    pane.appendChild(button("minibtn", t(complete ? "unmark_all" : "mark_all"), function () { setAllEpisodes(state, !complete); }));
 
-    if (complete && state.item.status !== "watched") {
+    if (complete && getMine(state.item).status !== "watched") {
       var banner = el("div", "banner");
-      banner.appendChild(el("p", "", "همهٔ قسمت‌ها را دیده‌ای. وضعیت سریال را «دیده‌ام» کنم؟"));
-      banner.appendChild(smallBtn("بله، «دیده‌ام»", function () { markSeriesWatched(state); }, "primary"));
-      epsEl.appendChild(banner);
+      banner.appendChild(el("p", "", t("all_done_q")));
+      banner.appendChild(button("btn primary", t("yes_watched"), function () { markSeriesWatched(state); }));
+      pane.appendChild(banner);
     }
-
-    if (state.note) epsEl.appendChild(el("div", "msg error", state.note));
-    state.seasons.forEach(function (s) { epsEl.appendChild(renderSeason(state, s)); });
+    if (state.note) pane.appendChild(msg(state.note, true));
+    state.seasons.forEach(function (s) { pane.appendChild(renderSeason(state, s)); });
   }
-
-  // ---------- about sheet ----------
-  function openAbout() {
-    $("about-overlay").classList.remove("hidden");
-    document.body.classList.add("locked");
-  }
-  function closeAbout() {
-    $("about-overlay").classList.add("hidden");
-    document.body.classList.remove("locked");
-  }
-  $("open-about").addEventListener("click", openAbout);
-  $("about-close").addEventListener("click", closeAbout);
-  $("about-overlay").addEventListener("click", function (e) {
-    if (e.target === $("about-overlay")) closeAbout();
-  });
-  // If the TMDB logo file has not been uploaded yet, simply hide the broken image.
-  $("tmdb-logo").addEventListener("error", function () { $("tmdb-logo").classList.add("hidden"); });
 
   // ---------- start ----------
+  function showFatal(text) {
+    var v = $("view-home");
+    clear(v);
+    var box = el("div", "empty");
+    box.appendChild(icon("film", 44));
+    box.appendChild(el("p", "", text));
+    v.appendChild(box);
+  }
+
   function start(attempt) {
     initData = readInitData();
     if (!initData) {
       if (attempt < 6) { setTimeout(function () { start(attempt + 1); }, 300); return; }
-      setMsg(msgEl, "Flicksy را از داخل تلگرام و از طریق ربات باز کن.", true);
+      showFatal(t("err_open_tg"));
       return;
     }
     api("/api/me").then(function (res) {
-      if (res.status !== 200) { setMsg(msgEl, problem(res, "ورود ناموفق بود."), true); return; }
-      var u = res.data.user;
-      nameEl.textContent = u.display_name;
-      if (u.photo_url) {
-        var img = el("img", "avatar");
-        img.id = "avatar";
-        img.alt = "";
-        img.src = u.photo_url;
-        avatarEl.replaceWith(img);
-        avatarEl = img;
-      } else {
-        avatarEl.textContent = (u.display_name || "F").charAt(0).toUpperCase();
-      }
-      qEl.disabled = false;
-      setMsg(msgEl, "چیزی را جست‌وجو کن، مثلاً نام یک فیلم.");
-    }).catch(function () {
-      setMsg(msgEl, "اتصال به سرور برقرار نشد.", true);
-    });
+      if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
+      me = res.data.user;
+      goTab("home");
+    }).catch(function () { showFatal(t("err_network")); });
   }
 
-  window.addEventListener("load", function () {
+  function init() {
+    var saved = "en";
+    try { saved = localStorage.getItem(LS_LANG) || "en"; } catch (e) {}
+    I18N.set(saved);
+
     try {
       if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
+        tg = Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        try { tg.setHeaderColor("#07071a"); tg.setBackgroundColor("#07071a"); } catch (e) {}
+        tg.BackButton.onClick(function () {
+          if ($("sheet-root").children.length) closeSheet();
+          else if (detailStack.length) backDetail();
+        });
       }
     } catch (e) {}
-  });
 
-  start(0);
+    renderNav();
+    var splash = $("view-home");
+    clear(splash);
+    splash.appendChild(msg(t("logging_in")));
+    start(0);
+  }
+
+  // The Telegram script loads asynchronously: wait for the page, then start.
+  if (document.readyState === "complete") init();
+  else window.addEventListener("load", init);
 })();
