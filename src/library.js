@@ -1,14 +1,14 @@
 // The user's library: list, set status/rating, remove.
 
 import { json, STATUSES, parseTitleRef } from "./util.js";
-import { TMDB_IMG, ensureTitle } from "./tmdb.js";
+import { TMDB_IMG, TMDB_BACKDROP, ensureTitle } from "./tmdb.js";
 
 export async function handleLibraryList(url, env, user) {
   const status = url.searchParams.get("status");
   if (status && !STATUSES.includes(status)) return json({ error: "bad_status" }, 400);
 
   let sql =
-    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, " +
+    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, t.backdrop_path, " +
     "ut.status, ut.rating, ut.updated_at " +
     "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
     "WHERE ut.user_id = ?1";
@@ -35,8 +35,11 @@ export async function handleLibraryList(url, env, user) {
     media_type: r.media_type,
     title: r.title_fa || r.title,
     original_title: r.title,
+    title_en: r.title,
+    title_fa: r.title_fa || null,
     year: r.year,
     poster: r.poster_path ? TMDB_IMG + r.poster_path : null,
+    backdrop: r.backdrop_path ? TMDB_BACKDROP + r.backdrop_path : null,
     status: r.status,
     my_rating: r.rating,
   }));
