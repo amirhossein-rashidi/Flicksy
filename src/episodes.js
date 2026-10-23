@@ -1,6 +1,6 @@
 // Episode tracking for TV series: seasons, episodes, and which ones the user has watched.
 
-import { json, parseTitleRef } from "./util.js";
+import { json, parseTitleRef, tmdbLang } from "./util.js";
 import { tmdbGet, ensureTitle } from "./tmdb.js";
 
 const CACHE_SECONDS = 6 * 60 * 60; // TMDB season/episode data is cached for 6 hours
@@ -14,8 +14,8 @@ function parseIntParam(value, min, max) {
 }
 
 // Series info from TMDB: list of seasons (specials excluded) and the total episode count.
-async function getSeasons(env, tmdbId) {
-  const res = await tmdbGet(env, "/tv/" + tmdbId + "?language=fa-IR", CACHE_SECONDS);
+async function getSeasons(env, tmdbId, language) {
+  const res = await tmdbGet(env, "/tv/" + tmdbId + "?language=" + (language || "en-US"), CACHE_SECONDS);
   if (res.status === 404 || !res.data) return null;
   const seasons = (Array.isArray(res.data.seasons) ? res.data.seasons : [])
     .filter((s) => Number.isInteger(s.season_number) && s.season_number >= 1 && s.episode_count > 0)
@@ -44,7 +44,7 @@ export async function handleTvInfo(url, env, user) {
 
   let info;
   try {
-    info = await getSeasons(env, ref.tmdbId);
+    info = await getSeasons(env, ref.tmdbId, tmdbLang(url));
   } catch (e) {
     return json({ error: "title_unavailable" }, 502);
   }
@@ -80,7 +80,7 @@ export async function handleSeasonEpisodes(url, env, user) {
 
   let res;
   try {
-    res = await tmdbGet(env, "/tv/" + ref.tmdbId + "/season/" + season + "?language=fa-IR", CACHE_SECONDS);
+    res = await tmdbGet(env, "/tv/" + ref.tmdbId + "/season/" + season + "?language=" + tmdbLang(url), CACHE_SECONDS);
   } catch (e) {
     return json({ error: "title_unavailable" }, 502);
   }
@@ -145,14 +145,14 @@ export async function handleEpisodesSet(request, env, user) {
     if (scope === "episode") {
       plan.push({ season: season, numbers: [episode] });
     } else if (scope === "season") {
-      const res = await tmdbGet(env, "/tv/" + ref.tmdbId + "/season/" + season + "?language=fa-IR", CACHE_SECONDS);
+      const res = await tmdbGet(env, "/tv/" + ref.tmdbId + "/season/" + season + "?language=en-US", CACHE_SECONDS);
       if (res.status === 404 || !res.data) return json({ error: "season_not_found" }, 404);
       const numbers = (Array.isArray(res.data.episodes) ? res.data.episodes : [])
         .map((e) => e.episode_number)
         .filter((n) => Number.isInteger(n) && n >= 1 && n <= MAX_EPISODE);
       plan.push({ season: season, numbers: numbers });
     } else {
-      info = await getSeasons(env, ref.tmdbId);
+      info = await getSeasons(env, ref.tmdbId, "en-US");
       if (!info) return json({ error: "title_not_found" }, 404);
       for (const s of info.seasons) {
         plan.push({ season: s.season_number, numbers: range(1, Math.min(s.episode_count, MAX_EPISODE)) });
@@ -223,7 +223,7 @@ export async function handleEpisodesSet(request, env, user) {
   // Fresh numbers for the screen.
   if (!info) {
     try {
-      info = await getSeasons(env, ref.tmdbId);
+      info = await getSeasons(env, ref.tmdbId, "en-US");
     } catch (e) {
       info = null;
     }
