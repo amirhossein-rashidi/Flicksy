@@ -1,7 +1,40 @@
 // Everything that talks to TMDB (the movie database).
 
 export const TMDB_BASE = "https://api.themoviedb.org/3";
-export const TMDB_IMG = "https://image.tmdb.org/t/p/w185";
+export const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
+export const TMDB_BACKDROP = "https://image.tmdb.org/t/p/w780";
+export const TMDB_PROFILE = "https://image.tmdb.org/t/p/w185";
+
+// Turns a TMDB image path into a full URL (or null).
+export function imgUrl(base, path) {
+  return path ? base + path : null;
+}
+
+// Maps a TMDB list (trending, popular, ...) to our card shape.
+// If forcedType is given ("movie" or "tv") it is used when the item has no media_type.
+export function mapList(data, forcedType) {
+  const list = Array.isArray(data && data.results) ? data.results : [];
+  return list
+    .map((r) => Object.assign({}, r, { media_type: r.media_type || forcedType }))
+    .filter((r) => r.media_type === "movie" || r.media_type === "tv")
+    .slice(0, 20)
+    .map((r) => {
+      const date = r.release_date || r.first_air_date || "";
+      return {
+        tmdb_id: r.id,
+        media_type: r.media_type,
+        title: r.title || r.name || "",
+        original_title: r.original_title || r.original_name || "",
+        year: date ? parseInt(date.slice(0, 4), 10) || null : null,
+        poster: imgUrl(TMDB_IMG, r.poster_path),
+        backdrop: imgUrl(TMDB_BACKDROP, r.backdrop_path),
+        overview: (r.overview || "").slice(0, 240),
+        rating: typeof r.vote_average === "number" ? Math.round(r.vote_average * 10) / 10 : null,
+        status: null,
+        my_rating: null,
+      };
+    });
+}
 
 export async function tmdbGet(env, pathAndQuery, cacheSeconds) {
   const options = {
