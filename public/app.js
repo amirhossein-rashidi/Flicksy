@@ -4,6 +4,9 @@
   var t = function (key, params) { return I18N.t(key, params); };
   var $ = function (id) { return document.getElementById(id); };
 
+  // Small bridge so extra feature files (like lists.js) can plug into the app.
+  var FX = window.FX = { hooks: {}, backStack: [] };
+
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
   var TABS = ["home", "discover", "library", "profile"];
@@ -39,7 +42,10 @@
     sliders: ["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"],
     film: ["M4 4h16v16H4z", "M8 4v16M16 4v16M4 8h4M4 16h4M16 8h4M16 16h4"],
     search: ["M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16z", "M21 21l-4.3-4.3"],
-    play: ["M7 4l13 8-13 8z"]
+    play: ["M7 4l13 8-13 8z"],
+    listplus: ["M4 6h12M4 12h12M4 18h8M18 15v6M15 18h6"],
+    pencil: ["M4 20h4L19 9l-4-4L4 16z"],
+    trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"]
   };
   var FILLED = { star: true, play: true };
 
@@ -297,7 +303,7 @@
 
   // ---------- bottom sheets ----------
   function syncLock() {
-    var open = detailStack.length > 0 || $("sheet-root").children.length > 0;
+    var open = detailStack.length > 0 || $("sheet-root").children.length > 0 || FX.backStack.length > 0;
     document.body.classList.toggle("locked", open);
   }
 
@@ -565,6 +571,10 @@
     clear(v);
     v.appendChild(topBar(t("nav_library")));
 
+    var listsHolder = el("div");
+    v.appendChild(listsHolder);
+    if (FX.hooks.library) FX.hooks.library(listsHolder);
+
     var seg = el("div", "segment");
     var chipsHolder = el("div");
     var body = el("div");
@@ -738,7 +748,7 @@
   function tgBack() {
     try {
       if (tg && tg.BackButton) {
-        if (detailStack.length || $("sheet-root").children.length) tg.BackButton.show();
+        if (detailStack.length || $("sheet-root").children.length || FX.backStack.length) tg.BackButton.show();
         else tg.BackButton.hide();
       }
     } catch (e) {}
@@ -870,6 +880,7 @@
     box.appendChild(seen);
 
     box.appendChild(iconButton("abtn icon-only", "sliders", t("btn_edit"), function () { openEditSheet(d); }));
+    if (FX.hooks.detailAction) FX.hooks.detailAction(d, box);
 
     if (m.status) {
       var line = el("div", "mine-line");
@@ -1207,6 +1218,33 @@
     state.seasons.forEach(function (s) { pane.appendChild(renderSeason(state, s)); });
   }
 
+  // ---------- bridge for extra feature files ----------
+  FX.api = api;
+  FX.L = L;
+  FX.el = el;
+  FX.clear = clear;
+  FX.button = button;
+  FX.iconButton = iconButton;
+  FX.icon = icon;
+  FX.msg = msg;
+  FX.toast = toast;
+  FX.haptic = haptic;
+  FX.problem = problem;
+  FX.ingest = ingest;
+  FX.openSheet = openSheet;
+  FX.closeSheet = closeSheet;
+  FX.openDetail = openDetail;
+  FX.posterCard = posterCard;
+  FX.sectionHeader = sectionHeader;
+  FX.rerender = function () { renderTab(currentTab); };
+  FX.refreshLock = function () { syncLock(); tgBack(); };
+  FX.pushBack = function (fn) { FX.backStack.push(fn); FX.refreshLock(); };
+  FX.popBack = function (fn) {
+    var i = FX.backStack.lastIndexOf(fn);
+    if (i >= 0) FX.backStack.splice(i, 1);
+    FX.refreshLock();
+  };
+
   // ---------- start ----------
   function showFatal(text) {
     var v = $("view-home");
@@ -1245,6 +1283,7 @@
         tg.BackButton.onClick(function () {
           if ($("sheet-root").children.length) closeSheet();
           else if (detailStack.length) backDetail();
+          else if (FX.backStack.length) FX.backStack[FX.backStack.length - 1]();
         });
       }
     } catch (e) {}
