@@ -13,7 +13,9 @@
       list_name: "List name", list_name_ph: "e.g. Best of the year", list_desc: "Description (optional)",
       list_vis: "Who can see it", vis_private: "Only me", vis_unlisted: "Anyone with the link", vis_public: "Public",
       list_create: "Create list", list_edit: "Edit list", list_delete: "Delete list", list_delete_confirm: "Tap again to confirm",
-      list_empty: "This list is empty. Open a movie or series and tap the list button to add it.",
+      list_empty: "This list is empty. Tap “Add titles” to fill it.",
+      list_add_titles: "Add titles", pick_search: "Search", pick_mine: "My titles",
+      pick_hint: "Tap a title to add it or remove it.",
       list_none: "No lists yet. Create one to group your favorites.",
       list_count: "Titles: {n}", list_by: "by {name}", list_remove_mode: "Remove titles", list_done: "Done",
       list_added: "Added to “{name}”", list_removed: "Removed from “{name}”",
@@ -26,7 +28,9 @@
       list_name: "نام لیست", list_name_ph: "مثلاً بهترین‌های امسال", list_desc: "توضیح (اختیاری)",
       list_vis: "چه کسی می‌تواند ببیند", vis_private: "فقط خودم", vis_unlisted: "هر کسی که لینک را دارد", vis_public: "عمومی",
       list_create: "ساخت لیست", list_edit: "ویرایش لیست", list_delete: "حذف لیست", list_delete_confirm: "برای تأیید دوباره بزن",
-      list_empty: "این لیست خالی است. یک فیلم یا سریال را باز کن و دکمهٔ لیست را بزن.",
+      list_empty: "این لیست خالی است. روی «افزودن عنوان» بزن.",
+      list_add_titles: "افزودن عنوان", pick_search: "جست‌وجو", pick_mine: "عنوان‌های من",
+      pick_hint: "روی عنوان بزن تا اضافه یا حذف شود.",
       list_none: "هنوز لیستی نساخته‌ای. یکی بساز و مورد علاقه‌هایت را دسته‌بندی کن.",
       list_count: "{n} عنوان", list_by: "از {name}", list_remove_mode: "حذف عنوان‌ها", list_done: "تمام",
       list_added: "به «{name}» اضافه شد", list_removed: "از «{name}» حذف شد",
@@ -39,7 +43,9 @@
       list_name: "اسم القائمة", list_name_ph: "مثلاً: أفضل أفلام العام", list_desc: "الوصف (اختياري)",
       list_vis: "من يمكنه الاطلاع", vis_private: "أنا فقط", vis_unlisted: "كل من لديه الرابط", vis_public: "عامة",
       list_create: "إنشاء القائمة", list_edit: "تعديل القائمة", list_delete: "حذف القائمة", list_delete_confirm: "اضغط مرة أخرى للتأكيد",
-      list_empty: "هذه القائمة فارغة. افتح فيلماً أو مسلسلاً واضغط زر القائمة لإضافته.",
+      list_empty: "هذه القائمة فارغة. اضغط «إضافة عناوين» لملئها.",
+      list_add_titles: "إضافة عناوين", pick_search: "بحث", pick_mine: "عناويني",
+      pick_hint: "اضغط على عنوان لإضافته أو إزالته.",
       list_none: "لم تنشئ أي قائمة بعد. أنشئ واحدة لتجمع فيها مفضلاتك.",
       list_count: "{n} عنوان", list_by: "بواسطة {name}", list_remove_mode: "إزالة عناوين", list_done: "تم",
       list_added: "تمت الإضافة إلى «{name}»", list_removed: "تمت الإزالة من «{name}»",
@@ -52,7 +58,9 @@
       list_name: "Liste adı", list_name_ph: "örn. Yılın en iyileri", list_desc: "Açıklama (isteğe bağlı)",
       list_vis: "Kimler görebilir", vis_private: "Sadece ben", vis_unlisted: "Bağlantıya sahip herkes", vis_public: "Herkese açık",
       list_create: "Listeyi oluştur", list_edit: "Listeyi düzenle", list_delete: "Listeyi sil", list_delete_confirm: "Onaylamak için tekrar dokun",
-      list_empty: "Bu liste boş. Bir film veya dizi açıp liste düğmesine dokun.",
+      list_empty: "Bu liste boş. Doldurmak için “Yapım ekle”ye dokun.",
+      list_add_titles: "Yapım ekle", pick_search: "Ara", pick_mine: "Yapımlarım",
+      pick_hint: "Eklemek veya çıkarmak için bir yapıma dokun.",
       list_none: "Henüz liste oluşturmadın. Favorilerini gruplamak için bir tane oluştur.",
       list_count: "{n} yapım", list_by: "{name} tarafından", list_remove_mode: "Yapım çıkar", list_done: "Bitti",
       list_added: "“{name}” listesine eklendi", list_removed: "“{name}” listesinden çıkarıldı",
@@ -65,7 +73,9 @@
       list_name: "Название списка", list_name_ph: "например, Лучшее за год", list_desc: "Описание (необязательно)",
       list_vis: "Кто может видеть", vis_private: "Только я", vis_unlisted: "Все, у кого есть ссылка", vis_public: "Публичный",
       list_create: "Создать список", list_edit: "Изменить список", list_delete: "Удалить список", list_delete_confirm: "Нажмите ещё раз для подтверждения",
-      list_empty: "Список пуст. Откройте фильм или сериал и нажмите кнопку списка.",
+      list_empty: "Список пуст. Нажмите «Добавить тайтлы».",
+      list_add_titles: "Добавить тайтлы", pick_search: "Поиск", pick_mine: "Мои тайтлы",
+      pick_hint: "Нажмите на тайтл, чтобы добавить или убрать.",
       list_none: "Списков пока нет. Создайте первый, чтобы собрать любимое.",
       list_count: "Тайтлов: {n}", list_by: "автор: {name}", list_remove_mode: "Убрать тайтлы", list_done: "Готово",
       list_added: "Добавлено в «{name}»", list_removed: "Убрано из «{name}»",
@@ -78,7 +88,9 @@
       list_name: "Nombre de la lista", list_name_ph: "p. ej. Lo mejor del año", list_desc: "Descripción (opcional)",
       list_vis: "Quién puede verla", vis_private: "Solo yo", vis_unlisted: "Cualquiera con el enlace", vis_public: "Pública",
       list_create: "Crear lista", list_edit: "Editar lista", list_delete: "Eliminar lista", list_delete_confirm: "Toca otra vez para confirmar",
-      list_empty: "Esta lista está vacía. Abre una película o serie y toca el botón de listas.",
+      list_empty: "Esta lista está vacía. Toca «Añadir títulos» para llenarla.",
+      list_add_titles: "Añadir títulos", pick_search: "Buscar", pick_mine: "Mis títulos",
+      pick_hint: "Toca un título para añadirlo o quitarlo.",
       list_none: "Aún no tienes listas. Crea una para agrupar tus favoritas.",
       list_count: "{n} títulos", list_by: "por {name}", list_remove_mode: "Quitar títulos", list_done: "Listo",
       list_added: "Añadido a «{name}»", list_removed: "Quitado de «{name}»",
@@ -91,7 +103,9 @@
       list_name: "Nom de la liste", list_name_ph: "p. ex. Le meilleur de l'année", list_desc: "Description (facultatif)",
       list_vis: "Qui peut la voir", vis_private: "Moi seul", vis_unlisted: "Toute personne avec le lien", vis_public: "Publique",
       list_create: "Créer la liste", list_edit: "Modifier la liste", list_delete: "Supprimer la liste", list_delete_confirm: "Touche encore pour confirmer",
-      list_empty: "Cette liste est vide. Ouvre un film ou une série et touche le bouton des listes.",
+      list_empty: "Cette liste est vide. Touche « Ajouter des titres » pour la remplir.",
+      list_add_titles: "Ajouter des titres", pick_search: "Recherche", pick_mine: "Mes titres",
+      pick_hint: "Touche un titre pour l'ajouter ou le retirer.",
       list_none: "Tu n'as pas encore de liste. Crées-en une pour regrouper tes favoris.",
       list_count: "{n} titres", list_by: "par {name}", list_remove_mode: "Retirer des titres", list_done: "Terminé",
       list_added: "Ajouté à « {name} »", list_removed: "Retiré de « {name} »",
@@ -104,7 +118,9 @@
       list_name: "Name der Liste", list_name_ph: "z. B. Beste des Jahres", list_desc: "Beschreibung (optional)",
       list_vis: "Wer darf sie sehen", vis_private: "Nur ich", vis_unlisted: "Jeder mit dem Link", vis_public: "Öffentlich",
       list_create: "Liste erstellen", list_edit: "Liste bearbeiten", list_delete: "Liste löschen", list_delete_confirm: "Zum Bestätigen nochmal tippen",
-      list_empty: "Diese Liste ist leer. Öffne einen Film oder eine Serie und tippe auf den Listen-Button.",
+      list_empty: "Diese Liste ist leer. Tippe auf „Titel hinzufügen“, um sie zu füllen.",
+      list_add_titles: "Titel hinzufügen", pick_search: "Suche", pick_mine: "Meine Titel",
+      pick_hint: "Tippe auf einen Titel, um ihn hinzuzufügen oder zu entfernen.",
       list_none: "Du hast noch keine Listen. Erstelle eine, um deine Favoriten zu sammeln.",
       list_count: "{n} Titel", list_by: "von {name}", list_remove_mode: "Titel entfernen", list_done: "Fertig",
       list_added: "Zu „{name}“ hinzugefügt", list_removed: "Aus „{name}“ entfernt",
@@ -341,6 +357,159 @@
     });
   }
 
+  // ---------- title picker: add titles from inside a list ----------
+  function itemKey(it) { return it.media_type + ":" + it.tmdb_id; }
+
+  function openPicker(p) {
+    var inList = {};
+    p.list.items.forEach(function (it) { inList[itemKey(it)] = true; });
+    var mode = "search";          // "search" or "mine"
+    var query = "";
+    var searchTimer = null;
+    var searchCtl = null;
+    var libItems = null;          // null = not loaded yet, false = failed
+    var libFilter = "watched";    // "watched" or "all"
+    var busy = false;
+
+    FX.openSheet(function (sh) {
+      sh.classList.add("tall");
+      sh.appendChild(el("h3", "sheet-title", lt("list_add_titles")));
+
+      var seg = el("div", "segment");
+      sh.appendChild(seg);
+      var controls = el("div");
+      sh.appendChild(controls);
+      sh.appendChild(el("p", "pick-hint", lt("pick_hint")));
+      var results = el("div");
+      sh.appendChild(results);
+
+      function pickCard(it) {
+        var card = button("pcard" + (inList[itemKey(it)] ? " inlist" : ""), null, function () {
+          if (busy) return;
+          busy = true;
+          var has = !!inList[itemKey(it)];
+          putItem(p.list.id, it, !has).then(function (res) {
+            busy = false;
+            if (res.status !== 200) { fail(res); return; }
+            if (has) {
+              delete inList[itemKey(it)];
+              p.list.items = p.list.items.filter(function (x) { return itemKey(x) !== itemKey(it); });
+            } else {
+              inList[itemKey(it)] = true;
+              p.list.items.push(it);
+            }
+            card.classList.toggle("inlist", !has);
+            FX.haptic();
+            cache.lists = null;
+            if (page === p) draw(p);
+          }).catch(function () { busy = false; offline(); });
+        });
+        var box = el("div", "pimg");
+        box.appendChild(FX.posterNode(it));
+        var chk = el("span", "lchk");
+        chk.appendChild(icon("check", 28));
+        box.appendChild(chk);
+        card.appendChild(box);
+        card.appendChild(el("div", "ptitle", FX.displayTitle(it)));
+        var sub = [];
+        if (it.year) sub.push(String(it.year));
+        sub.push(FX.typeLabel(it));
+        card.appendChild(el("div", "psub", sub.join(" · ")));
+        return card;
+      }
+
+      function showCards(list) {
+        clear(results);
+        if (!list.length) { results.appendChild(FX.msg(I18N.t("no_results"))); return; }
+        var grid = el("div", "pick-grid");
+        list.forEach(function (it) { grid.appendChild(pickCard(it)); });
+        results.appendChild(grid);
+      }
+
+      function runSearch(q) {
+        if (searchCtl) searchCtl.abort();
+        searchCtl = new AbortController();
+        clear(results);
+        results.appendChild(FX.msg(I18N.t("searching")));
+        FX.api(FX.L("/api/search?q=" + encodeURIComponent(q)), { signal: searchCtl.signal }).then(function (res) {
+          if (mode !== "search" || query.trim() !== q) return;
+          if (res.status !== 200) { clear(results); results.appendChild(FX.msg(FX.problem(res, "err_search"), true)); return; }
+          showCards(res.data.results || []);
+        }).catch(function (e) {
+          if (e && e.name === "AbortError") return;
+          clear(results);
+          results.appendChild(FX.msg(I18N.t("err_network"), true));
+        });
+      }
+
+      function drawMine() {
+        clear(results);
+        if (libItems === null) { results.appendChild(FX.msg(I18N.t("loading"))); return; }
+        if (libItems === false) { results.appendChild(FX.msg(I18N.t("err_load"), true)); return; }
+        showCards(libItems.filter(function (i) { return libFilter === "all" || i.status === "watched"; }));
+      }
+
+      function drawControls() {
+        clear(controls);
+        if (mode === "search") {
+          var input = el("input", "field pick-search");
+          input.type = "search";
+          input.setAttribute("autocomplete", "off");
+          input.placeholder = I18N.t("search_placeholder");
+          input.value = query;
+          input.addEventListener("input", function () {
+            query = input.value;
+            clearTimeout(searchTimer);
+            if (searchCtl) searchCtl.abort();
+            var q = query.trim();
+            if (q.length < 2) { clear(results); return; }
+            searchTimer = setTimeout(function () { runSearch(q); }, 400);
+          });
+          controls.appendChild(input);
+        } else {
+          var chips = el("div", "chips");
+          [["watched", I18N.t("status_watched")], ["all", I18N.t("library_all")]].forEach(function (pair) {
+            chips.appendChild(button("chip" + (libFilter === pair[0] ? " active" : ""), pair[1], function () {
+              libFilter = pair[0];
+              drawControls();
+              drawMine();
+            }));
+          });
+          controls.appendChild(chips);
+        }
+      }
+
+      function drawSeg() {
+        clear(seg);
+        [["search", "pick_search"], ["mine", "pick_mine"]].forEach(function (pair) {
+          seg.appendChild(button("seg-btn" + (mode === pair[0] ? " active" : ""), lt(pair[1]), function () {
+            if (mode === pair[0]) return;
+            mode = pair[0];
+            drawSeg();
+            drawControls();
+            if (mode === "mine") {
+              drawMine();
+              if (libItems === null || libItems === false) {
+                libItems = null;
+                drawMine();
+                FX.api("/api/library").then(function (res) {
+                  libItems = res.status === 200 ? (res.data.items || []) : false;
+                  if (mode === "mine") drawMine();
+                }).catch(function () { libItems = false; if (mode === "mine") drawMine(); });
+              }
+            } else {
+              clear(results);
+              if (query.trim().length >= 2) runSearch(query.trim());
+            }
+          }));
+        });
+      }
+
+      drawSeg();
+      drawControls();
+    });
+  }
+
   // ---------- list page ----------
   function closeListPage() {
     if (!page) return;
@@ -409,6 +578,7 @@
 
     if (l.is_owner) {
       var acts = el("div", "l-actions");
+      acts.appendChild(button("btn primary", "+ " + lt("list_add_titles"), function () { openPicker(p); }));
       acts.appendChild(button("btn glass", lt("list_edit"), function () {
         openForm({
           list: l,
