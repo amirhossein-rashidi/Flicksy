@@ -1,0 +1,21 @@
+/* Lists feature: list cards, list page, form fields. */
+.lists-sec { margin-top: 6px; }
+.lcard { flex: none; width: 132px; display: block; text-align: start; scroll-snap-align: start; transition: transform .15s; }
+.lcard:active { transform: scale(.97); }
+.lmosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: var(--line); border: 1px solid var(--line); box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .8); }
+.lcell { position: relative; min-width: 0; min-height: 0; background: #15152f; }
+.lcell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.lnew-box { aspect-ratio: 1 / 1; border-radius: 14px; border: 1.5px dashed rgba(168, 85, 247, .55); display: flex; align-items: center; justify-content: center; color: #c9b6ff; background: rgba(139, 92, 246, .08); }
+
+.field { display: block; width: 100%; padding: 13px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 16px; font-family: inherit; outline: none; resize: none; }
+.field:focus { border-color: rgba(139, 92, 246, .7); box-shadow: 0 0 0 4px rgba(139, 92, 246, .15); }
+.field::placeholder { color: var(--dim); }
+
+.lpage { z-index: 29; }
+.lbody { max-width: 560px; margin: 0 auto; padding: calc(70px + env(safe-area-inset-top)) 16px 0; }
+.l-title { font-size: 26px; font-weight: 800; letter-spacing: -.3px; line-height: 1.25; }
+.l-desc { margin-top: 8px; font-size: 14.5px; line-height: 1.8; color: #cfcfe6; }
+.l-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.l-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.lpage .grid { margin-top: 20px; }
+.lx { position: absolute; top: 6px; inset-inline-end: 6px; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 90, 90, .92); color: #fff; cursor: pointer; }
