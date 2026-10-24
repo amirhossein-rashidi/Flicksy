@@ -10,6 +10,14 @@ import { handleLibraryList, handleLibrarySet, handleLibraryDelete } from "./libr
 import { handleDiscover } from "./discover.js";
 import { handleTitle } from "./title.js";
 import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet } from "./episodes.js";
+import {
+  handleListsGet,
+  handleListCreate,
+  handleListUpdate,
+  handleListDelete,
+  handleListView,
+  handleListItemSet,
+} from "./lists.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -64,6 +72,19 @@ export default {
           if (method === "GET") return await handleSeasonEpisodes(url, env, user);
           if (method === "PUT") return await handleEpisodesSet(request, env, user);
           return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/lists") {
+          if (method === "GET") return await handleListsGet(url, env, user);
+          if (method === "POST") return await handleListCreate(request, env, user);
+          if (method === "PUT") return await handleListUpdate(request, env, user);
+          if (method === "DELETE") return await handleListDelete(url, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/list" && method === "GET") {
+          return await handleListView(url, env, user);
+        }
+        if (path === "/api/list-items" && method === "PUT") {
+          return await handleListItemSet(request, env, user);
         }
         return json({ error: "not_found" }, 404);
       }
