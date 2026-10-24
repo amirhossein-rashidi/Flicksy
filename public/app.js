@@ -165,11 +165,12 @@
     return t(fallbackKey || "err_generic");
   }
 
-  function setStatus(item, status, rating) {
-    return api("/api/library", {
-      method: "PUT",
-      body: { tmdb_id: item.tmdb_id, media_type: item.media_type, status: status, rating: rating || null }
-    }).then(function (res) {
+  // extra (optional): { mood: [emoji], actor: { id, name, photo } | null }. Left out = keep what is saved.
+  function setStatus(item, status, rating, extra) {
+    var body = { tmdb_id: item.tmdb_id, media_type: item.media_type, status: status, rating: rating || null };
+    if (extra && extra.mood !== undefined) body.mood = extra.mood;
+    if (extra && extra.actor !== undefined) body.actor = extra.actor;
+    return api("/api/library", { method: "PUT", body: body }).then(function (res) {
       if (res.status !== 200) { toast(problem(res, "err_save"), true); return false; }
       mine[key(item)] = { status: res.data.status, rating: res.data.my_rating || null };
       library.stale = true;
@@ -859,6 +860,7 @@
     clear(box);
     var item = d.item;
     var m = getMine(item);
+    if (d.data && m.status !== "watched") { d.data.mood = []; d.data.fav_actor = null; }
 
     var watch = button("abtn" + (m.status === "want" ? " on" : ""), null, function () {
       var cur = getMine(item).status;
@@ -871,9 +873,15 @@
     box.appendChild(watch);
 
     var seen = button("abtn" + (m.status === "watched" ? " on seen" : ""), null, function () {
-      var cur = getMine(item).status;
-      var p = cur === "watched" ? removeFromLibrary(item) : setStatus(item, "watched", getMine(item).rating);
-      p.then(function () { if (topDetail() === d) renderActions(d); });
+      if (getMine(item).status === "watched") {
+        removeFromLibrary(item).then(function () { if (topDetail() === d) renderActions(d); });
+        return;
+      }
+      setStatus(item, "watched", getMine(item).rating).then(function (ok) {
+        if (topDetail() !== d) return;
+        renderActions(d);
+        if (ok) openEditSheet(d, { rate: true });
+      });
     });
     seen.appendChild(icon("check", 18));
     seen.appendChild(el("span", "", t("btn_seen")));
@@ -887,6 +895,20 @@
       line.appendChild(statusBadge(m.status));
       if (m.status === "watched") line.lastChild.appendChild(document.createTextNode(" " + t("status_watched")));
       if (m.rating) line.appendChild(ratingBadge(m.rating));
+      if (m.status === "watched" && d.data && d.data.mood && d.data.mood.length) {
+        line.appendChild(el("span", "mine-moods", d.data.mood.join(" ")));
+      }
+      if (m.status === "watched" && d.data && d.data.fav_actor) {
+        var fa = el("span", "mine-actor");
+        if (d.data.fav_actor.photo) {
+          var faImg = el("img");
+          faImg.src = d.data.fav_actor.photo;
+          faImg.alt = "";
+          fa.appendChild(faImg);
+        }
+        fa.appendChild(document.createTextNode("♥ " + d.data.fav_actor.name));
+        line.appendChild(fa);
+      }
       box.appendChild(line);
     }
   }
@@ -956,55 +978,159 @@
     }
   }
 
-  // ---------- edit sheet (status + rating) ----------
-  function openEditSheet(d) {
+  // ---------- edit sheet (status, rating, feelings, favorite actor) ----------
+  var MOODS = ["😍", "😂", "😢", "😱", "🤯", "😴", "😡", "🤔"];
+
+  // opts.rate = true: opened right after "Seen", so it is titled "How was it?" and has no status choice.
+  function openEditSheet(d, opts) {
+    opts = opts || {};
+    var rateMode = !!opts.rate;
     var item = d.item;
     var m = getMine(item);
+    var hasData = !!d.data;
     var selStatus = m.status, selRating = m.rating, saving = false;
+    var selMood = d.data && d.data.mood ? d.data.mood.slice() : [];
+    var selActor = d.data && d.data.fav_actor ? d.data.fav_actor : null;
+    var cast = d.data && d.data.cast ? d.data.cast.filter(function (c) { return c.id; }) : [];
 
     openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", d.data ? d.data.title : displayTitle(item)));
-      sh.appendChild(el("div", "label", t("status_label")));
+      var heading = d.data ? d.data.title : displayTitle(item);
+      sh.appendChild(el("h3", "sheet-title", rateMode ? t("rate_title") : heading));
+      if (rateMode) sh.appendChild(el("p", "rate-sub", heading));
+
       var st = el("div", "pills");
-      sh.appendChild(st);
-      sh.appendChild(el("div", "label", t("my_rating")));
-      var rt = el("div", "pills nums");
-      sh.appendChild(rt);
+      if (!rateMode) {
+        sh.appendChild(el("div", "label", t("status_label")));
+        sh.appendChild(st);
+      }
+      var extra = el("div");
+      sh.appendChild(extra);
+
       var actions = el("div", "sheet-actions");
       var save = button("btn primary", t("btn_save"));
-      var remove = button("btn danger" + (m.status ? "" : " hidden"), t("btn_remove"));
+      var remove = button("btn danger" + (m.status && !rateMode ? "" : " hidden"), t("btn_remove"));
       actions.appendChild(save);
       actions.appendChild(remove);
       actions.appendChild(button("btn glass", t("btn_close"), closeSheet));
       sh.appendChild(actions);
 
-      function draw() {
-        clear(st);
-        STATUS_ORDER.forEach(function (s) {
-          st.appendChild(button("pill" + (selStatus === s ? " sel" : ""), t("status_" + s), function () { selStatus = s; draw(); }));
-        });
-        clear(rt);
+      function drawRating(box) {
+        clear(box);
         for (var n = 1; n <= 10; n++) {
           (function (num) {
-            rt.appendChild(button("pill" + (selRating === num ? " sel" : ""), String(num), function () {
+            box.appendChild(button("pill" + (selRating === num ? " sel" : ""), String(num), function () {
               selRating = selRating === num ? null : num;
-              draw();
+              drawRating(box);
             }));
           })(n);
         }
-        save.disabled = !selStatus || saving;
       }
-      draw();
+
+      function drawMood(box) {
+        clear(box);
+        MOODS.forEach(function (e) {
+          var on = selMood.indexOf(e) >= 0;
+          box.appendChild(button("emo" + (on ? " sel" : ""), e, function () {
+            if (on) selMood = selMood.filter(function (x) { return x !== e; });
+            else { selMood.push(e); if (selMood.length > 3) selMood.shift(); }
+            drawMood(box);
+          }));
+        });
+      }
+
+      function drawActors(box) {
+        var nodes = [];
+        function paint() {
+          nodes.forEach(function (n) { n.node.classList.toggle("sel", !!selActor && selActor.id === n.c.id); });
+        }
+        cast.forEach(function (c) {
+          var a = button("actor", null, function () {
+            selActor = selActor && selActor.id === c.id ? null : { id: c.id, name: c.name, photo: c.photo || null };
+            paint();
+          });
+          var wrap = el("span", "actor-wrap");
+          if (c.photo) {
+            var img = el("img", "actor-img");
+            img.src = c.photo;
+            img.alt = "";
+            img.loading = "lazy";
+            wrap.appendChild(img);
+          } else {
+            wrap.appendChild(el("span", "actor-img", (c.name || "?").charAt(0)));
+          }
+          var heart = el("span", "actor-heart");
+          heart.appendChild(icon("check", 12));
+          wrap.appendChild(heart);
+          a.appendChild(wrap);
+          a.appendChild(el("span", "actor-name", c.name));
+          box.appendChild(a);
+          nodes.push({ node: a, c: c });
+        });
+        paint();
+      }
+
+      // Rating, feelings and favorite actor are only shown for titles marked as watched.
+      function drawExtra() {
+        clear(extra);
+        if (selStatus !== "watched") {
+          extra.appendChild(el("div", "rate-locked", t("rate_locked")));
+          return;
+        }
+        extra.appendChild(el("div", "label", t("my_rating")));
+        var rb = el("div", "pills nums");
+        extra.appendChild(rb);
+        drawRating(rb);
+        if (hasData) {
+          extra.appendChild(el("div", "label", t("rate_feel")));
+          var mb = el("div", "emos");
+          extra.appendChild(mb);
+          drawMood(mb);
+          if (cast.length) {
+            extra.appendChild(el("div", "label", t("rate_actor")));
+            extra.appendChild(el("p", "rate-hint", t("rate_actor_hint")));
+            var ab = el("div", "actors");
+            extra.appendChild(ab);
+            drawActors(ab);
+          }
+        }
+      }
+
+      function drawStatus() {
+        clear(st);
+        STATUS_ORDER.forEach(function (s) {
+          st.appendChild(button("pill" + (selStatus === s ? " sel" : ""), t("status_" + s), function () {
+            selStatus = s;
+            drawStatus();
+            drawExtra();
+            save.disabled = !selStatus || saving;
+          }));
+        });
+      }
+
+      if (!rateMode) drawStatus();
+      drawExtra();
+      save.disabled = !selStatus;
 
       save.addEventListener("click", function () {
         if (!selStatus || saving) return;
         saving = true;
-        draw();
+        save.disabled = true;
         save.textContent = t("btn_saving");
-        setStatus(item, selStatus, selRating).then(function (ok) {
+        var isWatched = selStatus === "watched";
+        var extras = hasData ? { mood: isWatched ? selMood : [], actor: isWatched ? selActor : null } : {};
+        setStatus(item, selStatus, isWatched ? selRating : null, extras).then(function (ok) {
           saving = false;
-          if (ok) { closeSheet(); if (topDetail() === d) renderActions(d); }
-          else { save.textContent = t("btn_save"); draw(); }
+          if (ok) {
+            if (d.data) {
+              d.data.mood = isWatched ? selMood : [];
+              d.data.fav_actor = isWatched ? selActor : null;
+            }
+            closeSheet();
+            if (topDetail() === d) renderActions(d);
+          } else {
+            save.textContent = t("btn_save");
+            save.disabled = false;
+          }
         });
       });
       remove.addEventListener("click", function () {
@@ -1141,9 +1267,13 @@
   function markSeriesWatched(state) {
     if (state.busy) return;
     state.busy = true;
-    setStatus(state.item, "watched", getMine(state.item).rating).then(function () {
+    setStatus(state.item, "watched", getMine(state.item).rating).then(function (ok) {
       state.busy = false;
-      if (epActive(state)) { renderEps(state); renderActions(state.d); }
+      if (epActive(state)) {
+        renderEps(state);
+        renderActions(state.d);
+        if (ok) openEditSheet(state.d, { rate: true });
+      }
     });
   }
 
@@ -1235,6 +1365,9 @@
   FX.closeSheet = closeSheet;
   FX.openDetail = openDetail;
   FX.posterCard = posterCard;
+  FX.posterNode = posterNode;
+  FX.typeLabel = typeLabel;
+  FX.displayTitle = displayTitle;
   FX.sectionHeader = sectionHeader;
   FX.rerender = function () { renderTab(currentTab); };
   FX.refreshLock = function () { syncLock(); tgBack(); };
