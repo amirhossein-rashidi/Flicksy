@@ -37,7 +37,8 @@ export async function handleTitle(url, env, user) {
   const isTv = ref.mediaType === "tv";
   const date = d.release_date || d.first_air_date || "";
   const credits = d.credits || {};
-  const cast = (Array.isArray(credits.cast) ? credits.cast : []).slice(0, 14).map((c) => ({
+  const cast = (Array.isArray(credits.cast) ? credits.cast : []).slice(0, 16).map((c) => ({
+    id: c.id,
     name: c.name || "",
     character: c.character || "",
     photo: imgUrl(TMDB_PROFILE, c.profile_path),
@@ -57,7 +58,8 @@ export async function handleTitle(url, env, user) {
   await attachLibraryState(env, user.id, similar);
 
   const mine = await env.DB.prepare(
-    "SELECT ut.status, ut.rating FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+    "SELECT ut.status, ut.rating, ut.mood, ut.fav_actor_id, ut.fav_actor_name, ut.fav_actor_photo " +
+      "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
       "WHERE ut.user_id = ?1 AND t.tmdb_id = ?2 AND t.media_type = ?3"
   )
     .bind(user.id, ref.tmdbId, ref.mediaType)
@@ -89,5 +91,10 @@ export async function handleTitle(url, env, user) {
     similar: similar,
     status: mine ? mine.status : null,
     my_rating: mine ? mine.rating : null,
+    mood: mine && mine.mood ? mine.mood.split(",") : [],
+    fav_actor:
+      mine && mine.fav_actor_id
+        ? { id: mine.fav_actor_id, name: mine.fav_actor_name, photo: mine.fav_actor_photo }
+        : null,
   });
 }
