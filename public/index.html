@@ -1,85 +1,32 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#070714">
+  <meta name="theme-color" content="#07071a">
   <title>Flicksy</title>
-  <link rel="stylesheet" href="/app.css?v=12">
+  <link rel="stylesheet" href="/app.css?v=13">
   <script async src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="avatar" id="avatar">F</div>
-      <div class="hello"><span>سلام</span><b id="hello-name">...</b></div>
-      <div class="brand">Flicksy</div>
-    </header>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
 
-    <div class="tabs">
-      <button class="tab active" id="tab-search" type="button">جست‌وجو</button>
-      <button class="tab" id="tab-library" type="button">کتابخانه من</button>
-    </div>
+  <main class="app">
+    <div id="view-home" class="view"></div>
+    <div id="view-discover" class="view hidden"></div>
+    <div id="view-library" class="view hidden"></div>
+    <div id="view-profile" class="view hidden"></div>
+  </main>
 
-    <section id="view-search">
-      <input id="q" class="search" type="search" inputmode="search" autocomplete="off"
-             placeholder="جست‌وجوی فیلم یا سریال…" disabled>
-      <div id="msg" class="msg">در حال ورود…</div>
-      <ul id="results"></ul>
-    </section>
+  <nav id="nav" class="nav"></nav>
 
-    <section id="view-library" class="hidden">
-      <div id="chips" class="chips"></div>
-      <div id="lib-msg" class="msg hidden"></div>
-      <ul id="lib-results"></ul>
-    </section>
+  <div id="detail" class="page hidden"></div>
+  <div id="sheet-root"></div>
+  <div id="toast" class="toast"></div>
 
-    <footer>
-      <button class="linkbtn" id="open-about" type="button">درباره Flicksy</button>
-    </footer>
-  </div>
-
-  <!-- title sheet: status + rating -->
-  <div id="overlay" class="overlay hidden">
-    <div class="sheet" role="dialog" aria-modal="true">
-      <div class="sheet-head">
-        <div id="sheet-poster" class="poster"></div>
-        <div class="info">
-          <p class="title" id="sheet-title"></p>
-          <p class="orig" id="sheet-orig"></p>
-          <div class="meta" id="sheet-meta"></div>
-        </div>
-      </div>
-      <div class="label">وضعیت</div>
-      <div class="pills" id="statuses"></div>
-      <div class="label">امتیاز من</div>
-      <div class="pills nums" id="ratings"></div>
-      <div id="eps" class="eps hidden"></div>
-      <div id="sheet-msg" class="msg error hidden"></div>
-      <div class="actions">
-        <button class="btn" id="save" type="button" disabled>ذخیره</button>
-        <button class="btn danger hidden" id="remove" type="button">حذف</button>
-        <button class="btn ghost" id="close" type="button">بستن</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- about sheet -->
-  <div id="about-overlay" class="overlay hidden">
-    <div class="sheet about" role="dialog" aria-modal="true">
-      <h2>Flicksy</h2>
-      <p>یک پروژه رایگان و کامیونیتی برای ثبت فیلم و سریال، امتیازدادن و اشتراک‌گذاری آن‌ها با دوستان در تلگرام.</p>
-      <div class="credit">
-        <img id="tmdb-logo" src="/tmdb-logo.svg" alt="TMDB">
-        <p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
-      </div>
-      <div class="actions">
-        <button class="btn ghost" id="about-close" type="button">بستن</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="/app.js?v=12"></script>
+  <script src="/i18n.js?v=13"></script>
+  <script src="/app.js?v=13"></script>
 </body>
 </html>
