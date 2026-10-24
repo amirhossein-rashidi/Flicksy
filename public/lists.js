@@ -101,4 +101,397 @@
     },
     de: {
       lists_title: "Meine Listen", list_new: "Neue Liste", list_add: "Zu Liste hinzufügen",
-      list_name: "Name der Liste", list_name_ph:
+      list_name: "Name der Liste", list_name_ph: "z. B. Beste des Jahres", list_desc: "Beschreibung (optional)",
+      list_vis: "Wer darf sie sehen", vis_private: "Nur ich", vis_unlisted: "Jeder mit dem Link", vis_public: "Öffentlich",
+      list_create: "Liste erstellen", list_edit: "Liste bearbeiten", list_delete: "Liste löschen", list_delete_confirm: "Zum Bestätigen nochmal tippen",
+      list_empty: "Diese Liste ist leer. Öffne einen Film oder eine Serie und tippe auf den Listen-Button.",
+      list_none: "Du hast noch keine Listen. Erstelle eine, um deine Favoriten zu sammeln.",
+      list_count: "{n} Titel", list_by: "von {name}", list_remove_mode: "Titel entfernen", list_done: "Fertig",
+      list_added: "Zu „{name}“ hinzugefügt", list_removed: "Aus „{name}“ entfernt",
+      list_created: "Liste erstellt", list_saved: "Gespeichert", list_deleted: "Liste gelöscht",
+      list_full: "Diese Liste ist voll (200 Titel).", list_too_many: "Du hast das Limit von 50 Listen erreicht.",
+      list_name_required: "Gib deiner Liste einen Namen.", list_not_found: "Diese Liste gibt es nicht oder sie ist privat."
+    }
+  };
+
+  function lt(key, params) {
+    var table = STR[I18N.lang] || STR.en;
+    var text = table[key];
+    if (text === undefined) text = STR.en[key];
+    if (text === undefined) return I18N.t(key, params);
+    if (params) {
+      Object.keys(params).forEach(function (k) {
+        text = text.split("{" + k + "}").join(String(params[k]));
+      });
+    }
+    return text;
+  }
+
+  // ---------- helpers ----------
+  var cache = { lists: null };
+  var page = null;     // the list page that is open right now (or null)
+
+  function visLabel(v) { return lt("vis_" + v); }
+
+  function offline() { FX.toast(I18N.t("err_network"), true); }
+
+  function fail(res) {
+    var e = res && res.data && res.data.error;
+    if (e === "list_full") FX.toast(lt("list_full"), true);
+    else if (e === "too_many_lists") FX.toast(lt("list_too_many"), true);
+    else if (e === "bad_title") FX.toast(lt("list_name_required"), true);
+    else FX.toast(FX.problem(res, "err_save"), true);
+  }
+
+  // Loads the user's lists. With an item, each list also says whether it has that title.
+  function fetchLists(item) {
+    var path = "/api/lists";
+    if (item) path += "?tmdb_id=" + item.tmdb_id + "&media_type=" + item.media_type;
+    return FX.api(path).then(function (res) {
+      if (res.status !== 200) return null;
+      var lists = res.data.lists || [];
+      if (!item) cache.lists = lists;
+      return lists;
+    }).catch(function () { return null; });
+  }
+
+  function mosaic(posters) {
+    var box = el("div", "lmosaic");
+    for (var i = 0; i < 4; i++) {
+      var cell = el("div", "lcell");
+      if (posters[i]) {
+        var img = el("img");
+        img.src = posters[i];
+        img.alt = "";
+        img.loading = "lazy";
+        cell.appendChild(img);
+      }
+      box.appendChild(cell);
+    }
+    return box;
+  }
+
+  function listCard(l) {
+    var card = button("lcard", null, function () { openListPage({ id: l.id }); });
+    card.appendChild(mosaic(l.posters || []));
+    card.appendChild(el("div", "ptitle", l.title));
+    card.appendChild(el("div", "psub", lt("list_count", { n: l.count })));
+    return card;
+  }
+
+  function newCard(handler) {
+    var card = button("lcard", null, handler);
+    var box = el("div", "lnew-box");
+    box.appendChild(icon("plus", 26));
+    card.appendChild(box);
+    card.appendChild(el("div", "ptitle", lt("list_new")));
+    return card;
+  }
+
+  // ---------- create / edit form ----------
+  function openForm(opts) {
+    var list = opts.list || null;
+    var vis = list ? list.visibility : "unlisted";
+    var busy = false;
+    var confirming = false;
+
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", lt(list ? "list_edit" : "list_new")));
+
+      sh.appendChild(el("div", "label", lt("list_name")));
+      var name = el("input", "field");
+      name.type = "text";
+      name.maxLength = 60;
+      name.placeholder = lt("list_name_ph");
+      name.value = list ? list.title : "";
+      sh.appendChild(name);
+
+      sh.appendChild(el("div", "label", lt("list_desc")));
+      var desc = el("textarea", "field");
+      desc.rows = 3;
+      desc.maxLength = 300;
+      desc.value = list ? (list.description || "") : "";
+      sh.appendChild(desc);
+
+      sh.appendChild(el("div", "label", lt("list_vis")));
+      var pills = el("div", "pills");
+      sh.appendChild(pills);
+      function drawPills() {
+        clear(pills);
+        ["private", "unlisted", "public"].forEach(function (v) {
+          pills.appendChild(button("pill" + (vis === v ? " sel" : ""), visLabel(v), function () { vis = v; drawPills(); }));
+        });
+      }
+      drawPills();
+
+      var actions = el("div", "sheet-actions");
+      var save = button("btn primary", list ? I18N.t("btn_save") : lt("list_create"));
+      actions.appendChild(save);
+      var del = null;
+      if (list) {
+        del = button("btn danger", lt("list_delete"));
+        actions.appendChild(del);
+      }
+      actions.appendChild(button("btn glass", I18N.t("btn_close"), FX.closeSheet));
+      sh.appendChild(actions);
+
+      save.addEventListener("click", function () {
+        if (busy) return;
+        var title = name.value.trim();
+        if (!title) { FX.toast(lt("list_name_required"), true); return; }
+        busy = true;
+        save.disabled = true;
+        var body = { title: title, description: desc.value.trim(), visibility: vis };
+        if (list) body.id = list.id;
+        FX.api("/api/lists", { method: list ? "PUT" : "POST", body: body }).then(function (res) {
+          busy = false;
+          save.disabled = false;
+          if (res.status !== 200) { fail(res); return; }
+          cache.lists = null;
+          FX.haptic();
+          FX.closeSheet();
+          FX.toast(lt(list ? "list_saved" : "list_created"));
+          if (opts.onSaved) opts.onSaved(res.data.list);
+        }).catch(function () { busy = false; save.disabled = false; offline(); });
+      });
+
+      if (del) {
+        del.addEventListener("click", function () {
+          if (busy) return;
+          if (!confirming) { confirming = true; del.textContent = lt("list_delete_confirm"); return; }
+          busy = true;
+          FX.api("/api/lists?id=" + list.id, { method: "DELETE" }).then(function (res) {
+            busy = false;
+            if (res.status !== 200) { fail(res); return; }
+            cache.lists = null;
+            FX.haptic();
+            FX.closeSheet();
+            FX.toast(lt("list_deleted"));
+            if (opts.onDeleted) opts.onDeleted();
+          }).catch(function () { busy = false; offline(); });
+        });
+      }
+    });
+  }
+
+  // ---------- "add to list" sheet (opened from a title page) ----------
+  function putItem(listId, item, add) {
+    return FX.api("/api/list-items", {
+      method: "PUT",
+      body: { list_id: listId, tmdb_id: item.tmdb_id, media_type: item.media_type, add: add }
+    });
+  }
+
+  function openAddSheet(item) {
+    var lists = null;   // null = loading, false = failed, array = ready
+    var busy = false;
+
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", lt("list_add")));
+      var body = el("div");
+      sh.appendChild(body);
+
+      function toggle(l) {
+        if (busy) return;
+        busy = true;
+        putItem(l.id, item, !l.has).then(function (res) {
+          busy = false;
+          if (res.status !== 200) { fail(res); return; }
+          l.has = res.data.has;
+          cache.lists = null;
+          FX.haptic();
+          FX.toast(lt(l.has ? "list_added" : "list_removed", { name: l.title }));
+          draw();
+        }).catch(function () { busy = false; offline(); });
+      }
+
+      function draw() {
+        clear(body);
+        if (lists === null) { body.appendChild(FX.msg(I18N.t("loading"))); return; }
+        if (lists === false) { body.appendChild(FX.msg(I18N.t("err_load"), true)); return; }
+        if (!lists.length) {
+          body.appendChild(FX.msg(lt("list_none")));
+        } else {
+          var wrap = el("div", "lang-list");
+          lists.forEach(function (l) {
+            var row = button("lang-row" + (l.has ? " active" : ""), null, function () { toggle(l); });
+            row.appendChild(el("span", "", l.title));
+            if (l.has) row.appendChild(icon("check", 18));
+            wrap.appendChild(row);
+          });
+          body.appendChild(wrap);
+        }
+        body.appendChild(button("btn primary block", "+ " + lt("list_new"), function () {
+          openForm({
+            onSaved: function (created) {
+              putItem(created.id, item, true).then(function (res) {
+                if (res.status !== 200) { fail(res); return; }
+                FX.toast(lt("list_added", { name: created.title }));
+              }).catch(offline);
+            }
+          });
+        }));
+      }
+
+      draw();
+      fetchLists(item).then(function (result) {
+        lists = result === null ? false : result;
+        draw();
+      });
+    });
+  }
+
+  // ---------- list page ----------
+  function closeListPage() {
+    if (!page) return;
+    var p = page;
+    page = null;
+    p.root.remove();
+    FX.popBack(p.back);
+    cache.lists = null;
+    FX.rerender();
+  }
+
+  function removeItem(p, it) {
+    putItem(p.list.id, it, false).then(function (res) {
+      if (res.status !== 200) { fail(res); return; }
+      p.list.items = p.list.items.filter(function (x) {
+        return !(x.tmdb_id === it.tmdb_id && x.media_type === it.media_type);
+      });
+      if (!p.list.items.length) p.editing = false;
+      FX.haptic();
+      if (page === p) draw(p);
+    }).catch(offline);
+  }
+
+  function itemCard(p, it) {
+    var card = FX.posterCard(it);
+    if (p.editing) {
+      var x = el("span", "lx");
+      x.setAttribute("role", "button");
+      x.appendChild(icon("x", 14));
+      x.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        removeItem(p, it);
+      });
+      var box = card.querySelector(".pimg");
+      if (box) box.appendChild(x);
+    }
+    return card;
+  }
+
+  function draw(p) {
+    var root = p.root;
+    clear(root);
+
+    var back = FX.iconButton("round-btn", "back", I18N.t("btn_close"), closeListPage);
+    back.firstChild.classList.add("flip");
+    root.appendChild(back);
+
+    var scroller = el("div", "page-scroll");
+    root.appendChild(scroller);
+    var body = el("div", "lbody");
+    scroller.appendChild(body);
+
+    if (p.error) { body.appendChild(FX.msg(p.error, true)); return; }
+    if (!p.list) { body.appendChild(FX.msg(I18N.t("loading"))); return; }
+
+    var l = p.list;
+    body.appendChild(el("h1", "l-title", l.title));
+    if (l.description) body.appendChild(el("p", "l-desc", l.description));
+
+    var meta = el("div", "l-meta");
+    meta.appendChild(el("span", "tag", visLabel(l.visibility)));
+    meta.appendChild(el("span", "", lt("list_count", { n: l.items.length })));
+    if (!l.is_owner && l.owner_name) meta.appendChild(el("span", "", lt("list_by", { name: l.owner_name })));
+    body.appendChild(meta);
+
+    if (l.is_owner) {
+      var acts = el("div", "l-actions");
+      acts.appendChild(button("btn glass", lt("list_edit"), function () {
+        openForm({
+          list: l,
+          onSaved: function (nl) {
+            l.title = nl.title;
+            l.description = nl.description;
+            l.visibility = nl.visibility;
+            if (page === p) draw(p);
+          },
+          onDeleted: closeListPage
+        });
+      }));
+      if (l.items.length) {
+        acts.appendChild(button("btn glass", lt(p.editing ? "list_done" : "list_remove_mode"), function () {
+          p.editing = !p.editing;
+          draw(p);
+        }));
+      }
+      body.appendChild(acts);
+    }
+
+    if (!l.items.length) {
+      body.appendChild(FX.msg(lt("list_empty")));
+      return;
+    }
+    var grid = el("div", "grid");
+    l.items.forEach(function (it) { grid.appendChild(itemCard(p, it)); });
+    body.appendChild(grid);
+  }
+
+  // ref is { id: 12 } for your own list, or { code: "abcd2345" } for a shared one.
+  function openListPage(ref) {
+    if (page) {
+      page.root.remove();
+      FX.popBack(page.back);
+      page = null;
+    }
+    var p = { ref: ref, list: null, editing: false, error: "", root: el("div", "page lpage"), back: closeListPage };
+    page = p;
+    document.body.appendChild(p.root);
+    FX.pushBack(p.back);
+    draw(p);
+
+    var path = ref.code ? "/api/list?code=" + encodeURIComponent(ref.code) : "/api/list?id=" + ref.id;
+    FX.api(path).then(function (res) {
+      if (page !== p) return;
+      if (res.status !== 200) p.error = res.status === 404 ? lt("list_not_found") : FX.problem(res, "err_load");
+      else { p.list = res.data.list; FX.ingest(p.list.items); }
+      draw(p);
+    }).catch(function () {
+      if (page !== p) return;
+      p.error = I18N.t("err_network");
+      draw(p);
+    });
+  }
+
+  // ---------- plug into the app ----------
+  FX.hooks.library = function (holder) {
+    var sec = el("section", "section lists-sec");
+    sec.appendChild(el("h2", "sec-title", lt("lists_title")));
+    var body = el("div");
+    sec.appendChild(body);
+    holder.appendChild(sec);
+
+    function drawRow(lists) {
+      clear(body);
+      var row = el("div", "hscroll");
+      row.appendChild(newCard(function () {
+        openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
+      }));
+      (lists || []).forEach(function (l) { row.appendChild(listCard(l)); });
+      body.appendChild(row);
+    }
+
+    drawRow(cache.lists);
+    fetchLists().then(function (lists) {
+      if (lists && sec.isConnected) drawRow(lists);
+    });
+  };
+
+  FX.hooks.detailAction = function (d, box) {
+    box.appendChild(FX.iconButton("abtn icon-only", "listplus", lt("list_add"), function () { openAddSheet(d.item); }));
+  };
+
+  FX.openListByCode = function (code) { openListPage({ code: code }); };
+})();
