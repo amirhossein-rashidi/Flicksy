@@ -44,7 +44,12 @@ export async function handleListShare(request, env, user) {
   const body = await readBody(request);
   if (!body) return json({ error: "bad_request" }, 400);
 
-  const words = WORDS[body.lang] || WORDS.en;
+  const lang = WORDS[body.lang] ? body.lang : "en";
+  const words = WORDS[lang];
+  // Same rule as the app: Persian shows the Persian title (when there is one), every other language shows the English title.
+  const useFa = lang === "fa";
+  // Right-to-left languages: this invisible mark makes every line start on the right.
+  const rtlMark = lang === "fa" || lang === "ar" ? "\u200F" : "";
 
   let list = null;
   if (Number.isInteger(body.list_id) && body.list_id > 0) {
@@ -90,12 +95,17 @@ export async function handleListShare(request, env, user) {
   if (items.length) {
     lines.push("");
     items.slice(0, SHOWN_TITLES).forEach(function (it, i) {
-      const name = it.title_fa || it.title;
+      const name = useFa ? it.title_fa || it.title : it.title;
       lines.push(i + 1 + ". " + esc(cut(name, 60)) + (it.year ? " (" + it.year + ")" : ""));
     });
     if (total > SHOWN_TITLES) lines.push(words.more.replace("{n}", String(total - SHOWN_TITLES)));
   }
-  const caption = cut(lines.join("\n"), 1000);
+  const caption = cut(
+    lines
+      .map(function (line) { return line ? rtlMark + line : line; })
+      .join("\n"),
+    1000
+  );
 
   const link = "https://t.me/" + BOT_USERNAME + "?startapp=l_" + list.share_code;
   const markup = { inline_keyboard: [[{ text: words.open, url: link }]] };
