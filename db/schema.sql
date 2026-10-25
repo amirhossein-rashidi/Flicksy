@@ -124,3 +124,13 @@ ALTER TABLE user_titles ADD COLUMN fav_actor_name TEXT;
 ALTER TABLE user_titles ADD COLUMN fav_actor_photo TEXT;
 
 INSERT INTO schema_version (version) SELECT 3 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 3);
+
+-- ===== Migration 4: share-card pictures =====
+-- تصویر کارت اشتراک هر لیست (JPEG به‌صورت base64)؛ با حذف لیست، خودکار پاک می‌شود.
+CREATE TABLE IF NOT EXISTS share_images (
+  list_id INTEGER PRIMARY KEY REFERENCES lists(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT INTO schema_version (version) SELECT 4 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 4);
