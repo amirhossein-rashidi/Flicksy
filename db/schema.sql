@@ -114,3 +114,13 @@ CREATE TABLE IF NOT EXISTS episode_progress (
 CREATE INDEX IF NOT EXISTS idx_episode_progress_user_title ON episode_progress (user_id, title_id);
 
 INSERT INTO schema_version (version) SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 2);
+
+-- ===== Migration 3: mood, favorite actor (rate-after-seen) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است. فقط یک بار اجرا شود
+-- (ALTER TABLE دوباره‌اجرا خطا می‌دهد).
+ALTER TABLE user_titles ADD COLUMN mood TEXT;
+ALTER TABLE user_titles ADD COLUMN fav_actor_id INTEGER;
+ALTER TABLE user_titles ADD COLUMN fav_actor_name TEXT;
+ALTER TABLE user_titles ADD COLUMN fav_actor_photo TEXT;
+
+INSERT INTO schema_version (version) SELECT 3 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 3);
