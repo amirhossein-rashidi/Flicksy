@@ -18,6 +18,7 @@ import {
   handleListView,
   handleListItemSet,
 } from "./lists.js";
+import { handleListShare } from "./share.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -85,6 +86,9 @@ export default {
         }
         if (path === "/api/list-items" && method === "PUT") {
           return await handleListItemSet(request, env, user);
+        }
+        if (path === "/api/list-share" && method === "POST") {
+          return await handleListShare(request, env, user);
         }
         return json({ error: "not_found" }, 404);
       }
