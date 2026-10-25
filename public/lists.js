@@ -23,7 +23,8 @@
       list_full: "This list is full (200 titles).", list_too_many: "You've reached the limit of 50 lists.",
       list_name_required: "Give your list a name.", list_not_found: "This list doesn't exist or it is private.",
       list_share: "Share", share_text: "“{name}” — a list on Flicksy",
-      share_private: "This list is private. Edit it and choose “{vis}” to share it.", link_copied: "Link copied"
+      share_private: "This list is private. Edit it and choose “{vis}” to share it.", link_copied: "Link copied",
+      share_tagline: "Track movies & series with friends in Telegram", share_preparing: "Preparing the card…"
     },
     fa: {
       lists_title: "لیست‌های من", list_new: "لیست جدید", list_add: "افزودن به لیست",
@@ -40,7 +41,8 @@
       list_full: "این لیست پر است (۲۰۰ عنوان).", list_too_many: "به سقف ۵۰ لیست رسیده‌ای.",
       list_name_required: "برای لیست یک نام بنویس.", list_not_found: "این لیست وجود ندارد یا خصوصی است.",
       list_share: "اشتراک‌گذاری", share_text: "«{name}» — یک لیست در Flicksy",
-      share_private: "این لیست خصوصی است. ویرایشش کن و «{vis}» را انتخاب کن.", link_copied: "لینک کپی شد"
+      share_private: "این لیست خصوصی است. ویرایشش کن و «{vis}» را انتخاب کن.", link_copied: "لینک کپی شد",
+      share_tagline: "ردیابی فیلم و سریال با دوستان در تلگرام", share_preparing: "در حال ساخت کارت…"
     },
     ar: {
       lists_title: "قوائمي", list_new: "قائمة جديدة", list_add: "أضف إلى قائمة",
@@ -57,7 +59,8 @@
       list_full: "القائمة ممتلئة (200 عنوان).", list_too_many: "وصلت إلى الحد الأقصى: 50 قائمة.",
       list_name_required: "اكتب اسماً للقائمة.", list_not_found: "هذه القائمة غير موجودة أو خاصة.",
       list_share: "مشاركة", share_text: "«{name}» — قائمة على Flicksy",
-      share_private: "هذه القائمة خاصة. عدّلها واختر «{vis}» لمشاركتها.", link_copied: "تم نسخ الرابط"
+      share_private: "هذه القائمة خاصة. عدّلها واختر «{vis}» لمشاركتها.", link_copied: "تم نسخ الرابط",
+      share_tagline: "تابع الأفلام والمسلسلات مع أصدقائك في تيليجرام", share_preparing: "جارٍ إعداد البطاقة…"
     },
     tr: {
       lists_title: "Listelerim", list_new: "Yeni liste", list_add: "Listeye ekle",
@@ -74,7 +77,8 @@
       list_full: "Bu liste dolu (200 yapım).", list_too_many: "50 liste sınırına ulaştın.",
       list_name_required: "Listene bir ad ver.", list_not_found: "Bu liste yok ya da gizli.",
       list_share: "Paylaş", share_text: "“{name}” — Flicksy’de bir liste",
-      share_private: "Bu liste özel. Düzenleyip “{vis}” seçeneğini seç.", link_copied: "Bağlantı kopyalandı"
+      share_private: "Bu liste özel. Düzenleyip “{vis}” seçeneğini seç.", link_copied: "Bağlantı kopyalandı",
+      share_tagline: "Telegram’da arkadaşlarınla film ve dizi takibi yap", share_preparing: "Kart hazırlanıyor…"
     },
     ru: {
       lists_title: "Мои списки", list_new: "Новый список", list_add: "Добавить в список",
@@ -91,7 +95,8 @@
       list_full: "Список заполнен (200 тайтлов).", list_too_many: "Достигнут лимит в 50 списков.",
       list_name_required: "Укажите название списка.", list_not_found: "Такого списка нет, или он приватный.",
       list_share: "Поделиться", share_text: "«{name}» — список во Flicksy",
-      share_private: "Этот список приватный. Измени его и выбери «{vis}».", link_copied: "Ссылка скопирована"
+      share_private: "Этот список приватный. Измени его и выбери «{vis}».", link_copied: "Ссылка скопирована",
+      share_tagline: "Следи за фильмами и сериалами вместе с друзьями в Telegram", share_preparing: "Готовлю карточку…"
     },
     es: {
       lists_title: "Mis listas", list_new: "Nueva lista", list_add: "Añadir a una lista",
@@ -108,7 +113,8 @@
       list_full: "Esta lista está llena (200 títulos).", list_too_many: "Has llegado al límite de 50 listas.",
       list_name_required: "Ponle un nombre a tu lista.", list_not_found: "Esta lista no existe o es privada.",
       list_share: "Compartir", share_text: "«{name}» — una lista en Flicksy",
-      share_private: "Esta lista es privada. Edítala y elige «{vis}» para compartirla.", link_copied: "Enlace copiado"
+      share_private: "Esta lista es privada. Edítala y elige «{vis}» para compartirla.", link_copied: "Enlace copiado",
+      share_tagline: "Sigue películas y series con tus amigos en Telegram", share_preparing: "Preparando la tarjeta…"
     },
     fr: {
       lists_title: "Mes listes", list_new: "Nouvelle liste", list_add: "Ajouter à une liste",
@@ -125,7 +131,8 @@
       list_full: "Cette liste est pleine (200 titres).", list_too_many: "Tu as atteint la limite de 50 listes.",
       list_name_required: "Donne un nom à ta liste.", list_not_found: "Cette liste n'existe pas ou elle est privée.",
       list_share: "Partager", share_text: "« {name} » — une liste sur Flicksy",
-      share_private: "Cette liste est privée. Modifie-la et choisis « {vis} » pour la partager.", link_copied: "Lien copié"
+      share_private: "Cette liste est privée. Modifie-la et choisis « {vis} » pour la partager.", link_copied: "Lien copié",
+      share_tagline: "Suis tes films et séries avec tes amis sur Telegram", share_preparing: "Préparation de la carte…"
     },
     de: {
       lists_title: "Meine Listen", list_new: "Neue Liste", list_add: "Zu Liste hinzufügen",
@@ -142,7 +149,8 @@
       list_full: "Diese Liste ist voll (200 Titel).", list_too_many: "Du hast das Limit von 50 Listen erreicht.",
       list_name_required: "Gib deiner Liste einen Namen.", list_not_found: "Diese Liste gibt es nicht oder sie ist privat.",
       list_share: "Teilen", share_text: "„{name}“ — eine Liste auf Flicksy",
-      share_private: "Diese Liste ist privat. Bearbeite sie und wähle „{vis}“ zum Teilen.", link_copied: "Link kopiert"
+      share_private: "Diese Liste ist privat. Bearbeite sie und wähle „{vis}“ zum Teilen.", link_copied: "Link kopiert",
+      share_tagline: "Verfolge Filme und Serien mit Freunden in Telegram", share_preparing: "Karte wird erstellt…"
     }
   };
 
@@ -616,7 +624,30 @@
 
   var sharing = false;
 
-  // Rich card (cover photo + titles + Open button) when Telegram supports it; otherwise the plain link.
+  function sharePosters(l) {
+    var out = [];
+    for (var i = 0; i < l.items.length && out.length < 5; i++) {
+      if (l.items[i].poster) out.push(l.items[i].poster);
+    }
+    return out;
+  }
+
+  // Owner only: draws the promo picture (posters + title + Flicksy) and uploads it.
+  // It never blocks sharing: if anything fails, the server falls back to a TMDB picture.
+  function uploadCard(l) {
+    if (!l.is_owner || !FX.makeShareImage || !sharePosters(l).length) return Promise.resolve();
+    var line = lt("list_count", { n: l.items.length }) + " · " + lt("list_by", { name: l.owner_name || "" });
+    return FX.makeShareImage({
+      title: l.title,
+      line: line,
+      tagline: lt("share_tagline"),
+      posters: sharePosters(l)
+    }).then(function (dataUrl) {
+      return FX.api("/api/list-share-image", { method: "POST", body: { code: l.share_code, image: dataUrl } });
+    }).catch(function () {});
+  }
+
+  // Rich card (promo picture + titles + Open button) when Telegram supports it; otherwise the plain link.
   function shareList(l) {
     if (l.visibility === "private") {
       FX.toast(lt("share_private", { vis: lt("vis_unlisted") }), true);
@@ -628,7 +659,10 @@
     if (!canCard) { shareByLink(l); return; }
     if (sharing) return;
     sharing = true;
-    FX.api("/api/list-share", { method: "POST", body: { code: l.share_code, lang: I18N.lang } }).then(function (res) {
+    FX.toast(lt("share_preparing"));
+    uploadCard(l).then(function () {
+      return FX.api("/api/list-share", { method: "POST", body: { code: l.share_code, lang: I18N.lang } });
+    }).then(function (res) {
       sharing = false;
       if (res.status === 200 && res.data && res.data.id) {
         try { tg.shareMessage(res.data.id); return; } catch (e) {}
