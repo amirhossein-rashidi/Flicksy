@@ -100,10 +100,20 @@ export async function handleListShare(request, env, user) {
   const link = "https://t.me/" + BOT_USERNAME + "?startapp=l_" + list.share_code;
   const markup = { inline_keyboard: [[{ text: words.open, url: link }]] };
 
-  // Cover: first backdrop (wide), otherwise first poster, otherwise a plain text card.
+  // Cover: the promo picture the app drew (if any), otherwise the first backdrop (wide),
+  // otherwise the first poster, otherwise a plain text card.
   let cover = null;
-  for (const it of items) {
-    if (it.backdrop_path) { cover = IMG_BASE + it.backdrop_path; break; }
+  const img = await env.DB.prepare("SELECT updated_at FROM share_images WHERE list_id = ?1")
+    .bind(list.id)
+    .first();
+  if (img && img.updated_at) {
+    const stamp = String(img.updated_at).replace(/[^0-9]/g, "");
+    cover = new URL(request.url).origin + "/share/" + list.share_code + ".jpg?v=" + stamp;
+  }
+  if (!cover) {
+    for (const it of items) {
+      if (it.backdrop_path) { cover = IMG_BASE + it.backdrop_path; break; }
+    }
   }
   if (!cover) {
     for (const it of items) {
