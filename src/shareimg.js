@@ -81,3 +81,32 @@ export async function handleShareImageGet(url, env) {
     },
   });
 }
+
+// GET /tmdb-img/<size>/<file>.jpg  (public)
+// Gives the app TMDB posters from our own address. The browser only lets the app draw a picture
+// onto the share card when the picture comes from the same address as the app itself.
+const POSTER_SIZES = ["w185", "w342", "w500", "w780"];
+
+export async function handleImageProxy(url) {
+  const m = /^\/tmdb-img\/(w\d{3})\/([A-Za-z0-9_-]{5,80}\.jpg)$/.exec(url.pathname);
+  if (!m || POSTER_SIZES.indexOf(m[1]) < 0) return json({ error: "not_found" }, 404);
+
+  let res;
+  try {
+    res = await fetch("https://image.tmdb.org/t/p/" + m[1] + "/" + m[2], {
+      cf: { cacheEverything: true, cacheTtl: 86400 },
+    });
+  } catch (e) {
+    return json({ error: "not_found" }, 404);
+  }
+  if (!res.ok) return json({ error: "not_found" }, 404);
+
+  return new Response(res.body, {
+    status: 200,
+    headers: {
+      "content-type": "image/jpeg",
+      "cache-control": "public, max-age=86400",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
