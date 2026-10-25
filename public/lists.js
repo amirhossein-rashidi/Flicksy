@@ -595,11 +595,8 @@
     });
   }
 
-  function shareList(l) {
-    if (l.visibility === "private") {
-      FX.toast(lt("share_private", { vis: lt("vis_unlisted") }), true);
-      return;
-    }
+  // Plain link share: Telegram's chat picker with the link, or copy the link.
+  function shareByLink(l) {
     var link = BOT_LINK + "l_" + l.share_code;
     var text = lt("share_text", { name: l.title });
     try {
@@ -614,6 +611,32 @@
       FX.toast(lt("link_copied"));
     }, function () {
       FX.toast(link);
+    });
+  }
+
+  var sharing = false;
+
+  // Rich card (cover photo + titles + Open button) when Telegram supports it; otherwise the plain link.
+  function shareList(l) {
+    if (l.visibility === "private") {
+      FX.toast(lt("share_private", { vis: lt("vis_unlisted") }), true);
+      return;
+    }
+    var tg = window.Telegram && Telegram.WebApp;
+    var canCard = false;
+    try { canCard = !!(tg && tg.shareMessage && tg.isVersionAtLeast && tg.isVersionAtLeast("8.0")); } catch (e) {}
+    if (!canCard) { shareByLink(l); return; }
+    if (sharing) return;
+    sharing = true;
+    FX.api("/api/list-share", { method: "POST", body: { code: l.share_code, lang: I18N.lang } }).then(function (res) {
+      sharing = false;
+      if (res.status === 200 && res.data && res.data.id) {
+        try { tg.shareMessage(res.data.id); return; } catch (e) {}
+      }
+      shareByLink(l);
+    }).catch(function () {
+      sharing = false;
+      shareByLink(l);
     });
   }
 
