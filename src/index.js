@@ -19,6 +19,7 @@ import {
   handleListItemSet,
 } from "./lists.js";
 import { handleListShare } from "./share.js";
+import { handleShareImageSet, handleShareImageGet } from "./shareimg.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -35,6 +36,10 @@ export default {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         if (!(await allow(env, "health", ip))) return tooMany();
         return await handleHealth(env);
+      }
+
+      if (path.startsWith("/share/") && method === "GET") {
+        return await handleShareImageGet(url, env);
       }
 
       if (path.startsWith("/api/")) {
@@ -86,6 +91,9 @@ export default {
         }
         if (path === "/api/list-items" && method === "PUT") {
           return await handleListItemSet(request, env, user);
+        }
+        if (path === "/api/list-share-image" && method === "POST") {
+          return await handleShareImageSet(request, env, user);
         }
         if (path === "/api/list-share" && method === "POST") {
           return await handleListShare(request, env, user);
