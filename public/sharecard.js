@@ -7,8 +7,15 @@
   var W = 1280, H = 720;
   var FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Sans', Arial, sans-serif";
 
+  // TMDB pictures are loaded through our own server (/tmdb-img/...) so the browser lets us draw them.
+  function viaOurServer(url) {
+    var m = /^https:\/\/image\.tmdb\.org\/t\/p\/(w\d{3})\/([A-Za-z0-9_-]+\.jpg)$/.exec(String(url));
+    return m ? "/tmdb-img/" + m[1] + "/" + m[2] : url;
+  }
+
   // Loads a picture; gives null if it fails or takes too long (so one bad poster never breaks the card).
   function loadImage(url) {
+    url = viaOurServer(url);
     return new Promise(function (resolve) {
       var done = false;
       function finish(v) { if (!done) { done = true; resolve(v); } }
