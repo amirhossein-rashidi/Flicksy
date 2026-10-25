@@ -19,7 +19,7 @@ import {
   handleListItemSet,
 } from "./lists.js";
 import { handleListShare } from "./share.js";
-import { handleShareImageSet, handleShareImageGet } from "./shareimg.js";
+import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -36,6 +36,10 @@ export default {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         if (!(await allow(env, "health", ip))) return tooMany();
         return await handleHealth(env);
+      }
+
+      if (path.startsWith("/tmdb-img/") && method === "GET") {
+        return await handleImageProxy(url);
       }
 
       if (path.startsWith("/share/") && method === "GET") {
