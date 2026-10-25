@@ -3,7 +3,7 @@
 const MAX_INITDATA_AGE_SECONDS = 24 * 60 * 60; // reject login data older than 24 hours
 
 const USER_SELECT =
-  "SELECT id, telegram_id, username, display_name, photo_url, is_private, created_at " +
+  "SELECT id, telegram_id, username, display_name, photo_url, is_private, public_id, inline_hidden, created_at " +
   "FROM users WHERE telegram_id = ?1";
 
 function hexToBytes(hex) {
@@ -80,11 +80,31 @@ export async function authenticate(request, env) {
 }
 
 export async function getOrCreateUser(env, tgUser, refresh) {
-  if (!refresh) {
-    const existing = await env.DB.prepare(USER_SELECT).bind(tgUser.id).first();
-    if (existing) return existing;
+  let user = null;
+  if (!refresh) user = await env.DB.prepare(USER_SELECT).bind(tgUser.id).first();
+  if (!user) user = await upsertUser(env, tgUser);
+  if (user && !user.public_id) user = await assignPublicId(env, user, tgUser.id);
+  return user;
+}
+
+// Gives the user a random 8-digit Flicksy ID (used for @flicksyrobot <id> in any chat).
+// It has nothing to do with the Telegram ID, so it can be shared freely.
+async function assignPublicId(env, user, telegramId) {
+  for (let i = 0; i < 6; i++) {
+    const bytes = new Uint32Array(1);
+    crypto.getRandomValues(bytes);
+    const id = String(10000000 + (bytes[0] % 90000000));
+    try {
+      await env.DB.prepare("UPDATE users SET public_id = ?1 WHERE id = ?2 AND public_id IS NULL")
+        .bind(id, user.id)
+        .run();
+      break;
+    } catch (e) {
+      // that number is already taken: try another one
+    }
   }
-  return await upsertUser(env, tgUser);
+  const fresh = await env.DB.prepare(USER_SELECT).bind(telegramId).first();
+  return fresh || user;
 }
 
 async function upsertUser(env, tgUser) {
