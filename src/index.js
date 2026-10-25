@@ -19,6 +19,7 @@ import {
   handleListItemSet,
 } from "./lists.js";
 import { handleListShare } from "./share.js";
+import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
 
 function tooMany() {
@@ -36,6 +37,13 @@ export default {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         if (!(await allow(env, "health", ip))) return tooMany();
         return await handleHealth(env);
+      }
+
+      if (path === "/bot/setup" && method === "GET") {
+        return await handleBotSetup(request, env);
+      }
+      if (path === "/bot/webhook" && method === "POST") {
+        return await handleBotWebhook(request, env);
       }
 
       if (path.startsWith("/tmdb-img/") && method === "GET") {
@@ -95,6 +103,9 @@ export default {
         }
         if (path === "/api/list-items" && method === "PUT") {
           return await handleListItemSet(request, env, user);
+        }
+        if (path === "/api/inline-settings" && method === "PUT") {
+          return await handleInlineSettings(request, env, user);
         }
         if (path === "/api/list-share-image" && method === "POST") {
           return await handleShareImageSet(request, env, user);
