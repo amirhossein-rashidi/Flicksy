@@ -21,7 +21,9 @@
       list_added: "Added to “{name}”", list_removed: "Removed from “{name}”",
       list_created: "List created", list_saved: "Saved", list_deleted: "List deleted",
       list_full: "This list is full (200 titles).", list_too_many: "You've reached the limit of 50 lists.",
-      list_name_required: "Give your list a name.", list_not_found: "This list doesn't exist or it is private."
+      list_name_required: "Give your list a name.", list_not_found: "This list doesn't exist or it is private.",
+      list_share: "Share", share_text: "“{name}” — a list on Flicksy",
+      share_private: "This list is private. Edit it and choose “{vis}” to share it.", link_copied: "Link copied"
     },
     fa: {
       lists_title: "لیست‌های من", list_new: "لیست جدید", list_add: "افزودن به لیست",
@@ -36,7 +38,9 @@
       list_added: "به «{name}» اضافه شد", list_removed: "از «{name}» حذف شد",
       list_created: "لیست ساخته شد", list_saved: "ذخیره شد", list_deleted: "لیست حذف شد",
       list_full: "این لیست پر است (۲۰۰ عنوان).", list_too_many: "به سقف ۵۰ لیست رسیده‌ای.",
-      list_name_required: "برای لیست یک نام بنویس.", list_not_found: "این لیست وجود ندارد یا خصوصی است."
+      list_name_required: "برای لیست یک نام بنویس.", list_not_found: "این لیست وجود ندارد یا خصوصی است.",
+      list_share: "اشتراک‌گذاری", share_text: "«{name}» — یک لیست در Flicksy",
+      share_private: "این لیست خصوصی است. ویرایشش کن و «{vis}» را انتخاب کن.", link_copied: "لینک کپی شد"
     },
     ar: {
       lists_title: "قوائمي", list_new: "قائمة جديدة", list_add: "أضف إلى قائمة",
@@ -51,7 +55,9 @@
       list_added: "تمت الإضافة إلى «{name}»", list_removed: "تمت الإزالة من «{name}»",
       list_created: "تم إنشاء القائمة", list_saved: "تم الحفظ", list_deleted: "تم حذف القائمة",
       list_full: "القائمة ممتلئة (200 عنوان).", list_too_many: "وصلت إلى الحد الأقصى: 50 قائمة.",
-      list_name_required: "اكتب اسماً للقائمة.", list_not_found: "هذه القائمة غير موجودة أو خاصة."
+      list_name_required: "اكتب اسماً للقائمة.", list_not_found: "هذه القائمة غير موجودة أو خاصة.",
+      list_share: "مشاركة", share_text: "«{name}» — قائمة على Flicksy",
+      share_private: "هذه القائمة خاصة. عدّلها واختر «{vis}» لمشاركتها.", link_copied: "تم نسخ الرابط"
     },
     tr: {
       lists_title: "Listelerim", list_new: "Yeni liste", list_add: "Listeye ekle",
@@ -66,7 +72,9 @@
       list_added: "“{name}” listesine eklendi", list_removed: "“{name}” listesinden çıkarıldı",
       list_created: "Liste oluşturuldu", list_saved: "Kaydedildi", list_deleted: "Liste silindi",
       list_full: "Bu liste dolu (200 yapım).", list_too_many: "50 liste sınırına ulaştın.",
-      list_name_required: "Listene bir ad ver.", list_not_found: "Bu liste yok ya da gizli."
+      list_name_required: "Listene bir ad ver.", list_not_found: "Bu liste yok ya da gizli.",
+      list_share: "Paylaş", share_text: "“{name}” — Flicksy’de bir liste",
+      share_private: "Bu liste özel. Düzenleyip “{vis}” seçeneğini seç.", link_copied: "Bağlantı kopyalandı"
     },
     ru: {
       lists_title: "Мои списки", list_new: "Новый список", list_add: "Добавить в список",
@@ -81,7 +89,9 @@
       list_added: "Добавлено в «{name}»", list_removed: "Убрано из «{name}»",
       list_created: "Список создан", list_saved: "Сохранено", list_deleted: "Список удалён",
       list_full: "Список заполнен (200 тайтлов).", list_too_many: "Достигнут лимит в 50 списков.",
-      list_name_required: "Укажите название списка.", list_not_found: "Такого списка нет, или он приватный."
+      list_name_required: "Укажите название списка.", list_not_found: "Такого списка нет, или он приватный.",
+      list_share: "Поделиться", share_text: "«{name}» — список во Flicksy",
+      share_private: "Этот список приватный. Измени его и выбери «{vis}».", link_copied: "Ссылка скопирована"
     },
     es: {
       lists_title: "Mis listas", list_new: "Nueva lista", list_add: "Añadir a una lista",
@@ -96,7 +106,9 @@
       list_added: "Añadido a «{name}»", list_removed: "Quitado de «{name}»",
       list_created: "Lista creada", list_saved: "Guardado", list_deleted: "Lista eliminada",
       list_full: "Esta lista está llena (200 títulos).", list_too_many: "Has llegado al límite de 50 listas.",
-      list_name_required: "Ponle un nombre a tu lista.", list_not_found: "Esta lista no existe o es privada."
+      list_name_required: "Ponle un nombre a tu lista.", list_not_found: "Esta lista no existe o es privada.",
+      list_share: "Compartir", share_text: "«{name}» — una lista en Flicksy",
+      share_private: "Esta lista es privada. Edítala y elige «{vis}» para compartirla.", link_copied: "Enlace copiado"
     },
     fr: {
       lists_title: "Mes listes", list_new: "Nouvelle liste", list_add: "Ajouter à une liste",
@@ -111,7 +123,9 @@
       list_added: "Ajouté à « {name} »", list_removed: "Retiré de « {name} »",
       list_created: "Liste créée", list_saved: "Enregistré", list_deleted: "Liste supprimée",
       list_full: "Cette liste est pleine (200 titres).", list_too_many: "Tu as atteint la limite de 50 listes.",
-      list_name_required: "Donne un nom à ta liste.", list_not_found: "Cette liste n'existe pas ou elle est privée."
+      list_name_required: "Donne un nom à ta liste.", list_not_found: "Cette liste n'existe pas ou elle est privée.",
+      list_share: "Partager", share_text: "« {name} » — une liste sur Flicksy",
+      share_private: "Cette liste est privée. Modifie-la et choisis « {vis} » pour la partager.", link_copied: "Lien copié"
     },
     de: {
       lists_title: "Meine Listen", list_new: "Neue Liste", list_add: "Zu Liste hinzufügen",
@@ -126,7 +140,9 @@
       list_added: "Zu „{name}“ hinzugefügt", list_removed: "Aus „{name}“ entfernt",
       list_created: "Liste erstellt", list_saved: "Gespeichert", list_deleted: "Liste gelöscht",
       list_full: "Diese Liste ist voll (200 Titel).", list_too_many: "Du hast das Limit von 50 Listen erreicht.",
-      list_name_required: "Gib deiner Liste einen Namen.", list_not_found: "Diese Liste gibt es nicht oder sie ist privat."
+      list_name_required: "Gib deiner Liste einen Namen.", list_not_found: "Diese Liste gibt es nicht oder sie ist privat.",
+      list_share: "Teilen", share_text: "„{name}“ — eine Liste auf Flicksy",
+      share_private: "Diese Liste ist privat. Bearbeite sie und wähle „{vis}“ zum Teilen.", link_copied: "Link kopiert"
     }
   };
 
@@ -550,6 +566,57 @@
     return card;
   }
 
+  // ---------- sharing ----------
+  var BOT_LINK = "https://t.me/flicksyrobot?startapp=";
+
+  function copyText(text) {
+    return new Promise(function (resolve, reject) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(resolve, function () { fallback(); });
+          return;
+        }
+      } catch (e) {}
+      fallback();
+      function fallback() {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = document.execCommand("copy");
+          ta.remove();
+          if (ok) resolve(); else reject();
+        } catch (e) { reject(e); }
+      }
+    });
+  }
+
+  function shareList(l) {
+    if (l.visibility === "private") {
+      FX.toast(lt("share_private", { vis: lt("vis_unlisted") }), true);
+      return;
+    }
+    var link = BOT_LINK + "l_" + l.share_code;
+    var text = lt("share_text", { name: l.title });
+    try {
+      var tg = window.Telegram && Telegram.WebApp;
+      if (tg && tg.openTelegramLink) {
+        tg.openTelegramLink("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text));
+        return;
+      }
+    } catch (e) {}
+    copyText(link).then(function () {
+      FX.haptic();
+      FX.toast(lt("link_copied"));
+    }, function () {
+      FX.toast(link);
+    });
+  }
+
   function draw(p) {
     var root = p.root;
     clear(root);
@@ -579,6 +646,7 @@
     if (l.is_owner) {
       var acts = el("div", "l-actions");
       acts.appendChild(button("btn primary", "+ " + lt("list_add_titles"), function () { openPicker(p); }));
+      acts.appendChild(button("btn glass", lt("list_share"), function () { shareList(l); }));
       acts.appendChild(button("btn glass", lt("list_edit"), function () {
         openForm({
           list: l,
@@ -598,6 +666,10 @@
         }));
       }
       body.appendChild(acts);
+    } else {
+      var sacts = el("div", "l-actions");
+      sacts.appendChild(button("btn primary", lt("list_share"), function () { shareList(l); }));
+      body.appendChild(sacts);
     }
 
     if (!l.items.length) {
