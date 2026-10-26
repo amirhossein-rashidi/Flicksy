@@ -143,3 +143,23 @@ ALTER TABLE users ADD COLUMN inline_hidden INTEGER NOT NULL DEFAULT 0;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id);
 
 INSERT INTO schema_version (version) SELECT 5 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 5);
+
+-- ===== Migration 6: social (header, activity visibility, notifications) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است. فقط یک بار اجرا شود.
+-- header = هدر پروفایل (مثلاً مسیر تصویر پس‌زمینهٔ یک فیلم/سریال یا شناسهٔ هدر پیش‌فرض)؛
+-- activity_visible = نمایش فعالیت‌ها به دنبال‌کننده‌ها (پیش‌فرض روشن).
+ALTER TABLE users ADD COLUMN header TEXT;
+ALTER TABLE users ADD COLUMN activity_visible INTEGER NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('follow', 'follow_request', 'request_accepted')),
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read, id DESC);
+
+INSERT INTO schema_version (version) SELECT 6 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 6);
