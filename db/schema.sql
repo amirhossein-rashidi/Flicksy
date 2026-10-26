@@ -105,4 +105,41 @@ CREATE TABLE IF NOT EXISTS episode_progress (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title_id INTEGER NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
-  season_number INTEGER
+  season_number INTEGER NOT NULL,
+  episode_number INTEGER NOT NULL,
+  watched_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_id, title_id, season_number, episode_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_episode_progress_user_title ON episode_progress (user_id, title_id);
+
+INSERT INTO schema_version (version) SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 2);
+
+-- ===== Migration 3: mood, favorite actor (rate-after-seen) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است. فقط یک بار اجرا شود
+-- (ALTER TABLE دوباره‌اجرا خطا می‌دهد).
+ALTER TABLE user_titles ADD COLUMN mood TEXT;
+ALTER TABLE user_titles ADD COLUMN fav_actor_id INTEGER;
+ALTER TABLE user_titles ADD COLUMN fav_actor_name TEXT;
+ALTER TABLE user_titles ADD COLUMN fav_actor_photo TEXT;
+
+INSERT INTO schema_version (version) SELECT 3 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 3);
+
+-- ===== Migration 4: share-card pictures =====
+-- تصویر کارت اشتراک هر لیست (JPEG به‌صورت base64)؛ با حذف لیست، خودکار پاک می‌شود.
+CREATE TABLE IF NOT EXISTS share_images (
+  list_id INTEGER PRIMARY KEY REFERENCES lists(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT INTO schema_version (version) SELECT 4 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 4);
+
+-- ===== Migration 5: Flicksy ID + inline mode =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است. فقط یک بار اجرا شود.
+-- public_id = آیدی تصادفی ۸ رقمی کاربر (جدا از آیدی تلگرام)؛ inline_hidden = پنهان بودن از جست‌وجوی اینلاین.
+ALTER TABLE users ADD COLUMN public_id TEXT;
+ALTER TABLE users ADD COLUMN inline_hidden INTEGER NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id);
+
+INSERT INTO schema_version (version) SELECT 5 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 5);
