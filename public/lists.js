@@ -605,7 +605,7 @@
 
   // Plain link share: Telegram's chat picker with the link, or copy the link.
   function shareByLink(l) {
-    var link = BOT_LINK + "l_" + l.share_code;
+    var link = BOT_LINK + "list-" + l.share_code;
     var text = lt("share_text", { name: l.title });
     try {
       var tg = window.Telegram && Telegram.WebApp;
@@ -635,7 +635,7 @@
   // Owner only: draws the promo picture (posters + title + Flicksy) and uploads it.
   // It never blocks sharing: if anything fails, the server falls back to a TMDB picture.
   function uploadCard(l) {
-    if (!l.is_owner || !FX.makeShareImage || !sharePosters(l).length) return Promise.resolve();
+    if (!l.is_owner || !FX.makeShareImage || !sharePosters(l).length) return Promise.resolve(false);
     var line = lt("list_count", { n: l.items.length }) + " · " + lt("list_by", { name: l.owner_name || "" });
     return FX.makeShareImage({
       title: l.title,
@@ -644,7 +644,28 @@
       posters: sharePosters(l)
     }).then(function (dataUrl) {
       return FX.api("/api/list-share-image", { method: "POST", body: { code: l.share_code, image: dataUrl } });
-    }).catch(function () {});
+    }).then(function (res) {
+      return !!res && res.status === 200;
+    }).catch(function () { return false; });
+  }
+
+  // Keeps the list's promo picture up to date by itself (so @flicksyrobot cards and shared links
+  // always show the posters). Runs in the background, only for the owner, and only when something changed.
+  function scheduleCard(p) {
+    var l = p.list;
+    if (!l || !l.is_owner || l.visibility === "private" || !sharePosters(l).length) return;
+    var ids = l.items.slice(0, 5).map(function (it) { return it.tmdb_id; });
+    var sig = [I18N.lang, l.title, l.items.length].concat(ids).join("|");
+    if (p.cardSig === sig) return;
+    p.cardSig = sig;
+    var key = "flicksy_card_" + l.share_code;
+    try { if (localStorage.getItem(key) === sig) return; } catch (e) {}
+    clearTimeout(p.cardTimer);
+    p.cardTimer = setTimeout(function () {
+      uploadCard(l).then(function (ok) {
+        if (ok) { try { localStorage.setItem(key, sig); } catch (e) {} }
+      });
+    }, 1500);
   }
 
   // Rich card (promo picture + titles + Open button) when Telegram supports it; otherwise the plain link.
@@ -691,6 +712,7 @@
     if (!p.list) { body.appendChild(FX.msg(I18N.t("loading"))); return; }
 
     var l = p.list;
+    scheduleCard(p);
     body.appendChild(el("h1", "l-title", l.title));
     if (l.description) body.appendChild(el("p", "l-desc", l.description));
 
