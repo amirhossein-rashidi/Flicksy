@@ -1389,7 +1389,7 @@
     v.appendChild(box);
   }
 
-  // A shared link looks like https://t.me/flicksyrobot?startapp=l_CODE ; Telegram hands us "l_CODE".
+  // A shared link looks like https://t.me/flicksyrobot?startapp=list-CODE ; Telegram hands us "list-CODE" (older links: "l_CODE").
   function readStartParam() {
     try {
       if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.start_param) {
@@ -1414,7 +1414,7 @@
     if (startHandled) return;
     startHandled = true;
     var param = readStartParam();
-    var m = /^l_([a-z0-9]{4,16})$/.exec(param);
+    var m = /^(?:list-|list_|l_)([a-z0-9]{4,16})$/.exec(param);
     if (m && FX.openListByCode) FX.openListByCode(m[1]);
   }
 
