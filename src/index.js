@@ -21,6 +21,19 @@ import {
 import { handleListShare } from "./share.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
+import {
+  handlePeopleSearch,
+  handleProfile,
+  handleFollow,
+  handleUnfollow,
+  handleFollowRequest,
+  handleNotifications,
+  handleNotificationsRead,
+  handlePrivacyGet,
+  handlePrivacySet,
+  handleHeaderSet,
+  handleHeaderOptions,
+} from "./social.js";
 
 function tooMany() {
   return json({ error: "rate_limited" }, 429, { "retry-after": "30" });
@@ -113,6 +126,37 @@ export default {
         if (path === "/api/list-share" && method === "POST") {
           return await handleListShare(request, env, user);
         }
+        if (path === "/api/people-search" && method === "GET") {
+          return await handlePeopleSearch(url, env, user);
+        }
+        if (path === "/api/profile" && method === "GET") {
+          return await handleProfile(url, env, user);
+        }
+        if (path === "/api/follow") {
+          if (method === "POST") return await handleFollow(request, env, user);
+          if (method === "DELETE") return await handleUnfollow(url, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/follow-requests" && method === "POST") {
+          return await handleFollowRequest(request, env, user);
+        }
+        if (path === "/api/notifications" && method === "GET") {
+          return await handleNotifications(url, env, user);
+        }
+        if (path === "/api/notifications-read" && method === "POST") {
+          return await handleNotificationsRead(request, env, user);
+        }
+        if (path === "/api/privacy") {
+          if (method === "GET") return await handlePrivacyGet(url, env, user);
+          if (method === "PUT") return await handlePrivacySet(request, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/profile-header" && method === "PUT") {
+          return await handleHeaderSet(request, env, user);
+        }
+        if (path === "/api/header-options" && method === "GET") {
+          return await handleHeaderOptions(url, env, user);
+        }
         return json({ error: "not_found" }, 404);
       }
 
@@ -122,4 +166,3 @@ export default {
     }
   },
 };
- 
