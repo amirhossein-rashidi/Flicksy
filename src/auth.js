@@ -3,7 +3,7 @@
 const MAX_INITDATA_AGE_SECONDS = 24 * 60 * 60; // reject login data older than 24 hours
 
 const USER_SELECT =
-  "SELECT id, telegram_id, username, display_name, photo_url, is_private, public_id, inline_hidden, created_at " +
+  "SELECT id, telegram_id, username, display_name, photo_url, is_private, public_id, inline_hidden, header, activity_visible, created_at " +
   "FROM users WHERE telegram_id = ?1";
 
 function hexToBytes(hex) {
@@ -113,16 +113,32 @@ async function upsertUser(env, tgUser) {
     tgUser.username ||
     "User";
 
+  // Telegram usernames are not case-sensitive and can pass from one person to another.
+  // If someone else in our table still holds this username, they lose it (they get it
+  // back, with the right owner, the next time they open the app).
+  const username =
+    typeof tgUser.username === "string" && /^[A-Za-z0-9_]{3,32}$/.test(tgUser.username)
+      ? tgUser.username
+      : null;
+  if (username) {
+    await env.DB.prepare(
+      "UPDATE users SET username = NULL WHERE lower(username) = lower(?1) AND telegram_id != ?2"
+    )
+      .bind(username, tgUser.id)
+      .run();
+  }
+
   await env.DB.prepare(
-    "INSERT INTO users (telegram_id, display_name, photo_url, language_code, last_seen_at) " +
-      "VALUES (?1, ?2, ?3, ?4, datetime('now')) " +
+    "INSERT INTO users (telegram_id, username, display_name, photo_url, language_code, last_seen_at) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, datetime('now')) " +
       "ON CONFLICT(telegram_id) DO UPDATE SET " +
+      "username = excluded.username, " +
       "display_name = excluded.display_name, " +
       "photo_url = excluded.photo_url, " +
       "language_code = excluded.language_code, " +
       "last_seen_at = datetime('now')"
   )
-    .bind(tgUser.id, displayName, tgUser.photo_url || null, tgUser.language_code || null)
+    .bind(tgUser.id, username, displayName, tgUser.photo_url || null, tgUser.language_code || null)
     .run();
 
   return await env.DB.prepare(USER_SELECT).bind(tgUser.id).first();
