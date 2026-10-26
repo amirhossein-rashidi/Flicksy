@@ -132,11 +132,11 @@
     var card = el("div", "idcard");
     card.appendChild(el("span", "idnum", String(me.public_id)));
     card.appendChild(button("btn glass", lt("id_copy"), function () {
-      copyText("@flicksyrobot " + me.public_id).then(function () {
+      copyText(String(me.public_id)).then(function () {
         FX.haptic();
         FX.toast(lt("id_copied"));
       }, function () {
-        FX.toast("@flicksyrobot " + me.public_id);
+        FX.toast(String(me.public_id));
       });
     }));
     sec.appendChild(card);
