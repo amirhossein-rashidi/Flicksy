@@ -77,7 +77,7 @@ export function buildCard(o) {
     1000
   );
 
-  const link = "https://t.me/" + BOT_USERNAME + "?startapp=l_" + list.share_code;
+  const link = "https://t.me/" + BOT_USERNAME + "?startapp=list-" + list.share_code;
   const markup = { inline_keyboard: [[{ text: words.open, url: link }]] };
 
   // Cover: the promo picture the app drew (if any), otherwise the first backdrop (wide),
