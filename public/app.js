@@ -1389,6 +1389,35 @@
     v.appendChild(box);
   }
 
+  // A shared link looks like https://t.me/flicksyrobot?startapp=l_CODE ; Telegram hands us "l_CODE".
+  function readStartParam() {
+    try {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.start_param) {
+        return String(Telegram.WebApp.initDataUnsafe.start_param);
+      }
+    } catch (e) {}
+    try {
+      var h = new URLSearchParams(location.hash.replace(/^#/, ""));
+      var fromHash = h.get("tgWebAppStartParam");
+      if (fromHash) return fromHash;
+    } catch (e) {}
+    try {
+      var d = new URLSearchParams(initData);
+      var fromData = d.get("start_param");
+      if (fromData) return fromData;
+    } catch (e) {}
+    return "";
+  }
+
+  var startHandled = false;
+  function openStartParam() {
+    if (startHandled) return;
+    startHandled = true;
+    var param = readStartParam();
+    var m = /^l_([a-z0-9]{4,16})$/.exec(param);
+    if (m && FX.openListByCode) FX.openListByCode(m[1]);
+  }
+
   function start(attempt) {
     initData = readInitData();
     if (!initData) {
@@ -1400,6 +1429,7 @@
       if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
       me = res.data.user;
       goTab("home");
+      openStartParam();
     }).catch(function () { showFatal(t("err_network")); });
   }
 
