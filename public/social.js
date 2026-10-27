@@ -363,8 +363,27 @@
       ".sp-act .btn { width: 100%; padding: 13px 16px; font-size: 15px; }" +
       ".sp-stats .stat b { font-size: 20px; }" +
       ".sp-stats-card { display: flex; margin-top: 18px; padding: 16px 4px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }" +
-      ".sp-own-stats { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }" +
+      ".sp-own-stats { margin-top: 0; padding-top: 0; border-top: none; }" +
       ".sp-locked { margin-top: 12px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px dashed var(--line); font-size: 13px; line-height: 1.8; color: var(--muted); }" +
+      /* modern profile tab */
+      "#view-profile .sp-banner { height: 168px; margin-bottom: 0; border: none; border-radius: 30px; box-shadow: 0 26px 50px -26px rgba(99,60,220,.8); }" +
+      "#view-profile .sp-banner::after { background: linear-gradient(180deg, rgba(7,7,26,.25) 0%, rgba(7,7,26,0) 35%, rgba(7,7,26,.55) 100%); }" +
+      "#view-profile .sp-edit { top: 12px; bottom: auto; inset-inline-end: 12px; padding: 8px 13px; border-radius: 999px; }" +
+      "#view-profile .profile-card { position: relative; margin-top: -58px; padding: 0 2px; background: none; border: none; border-radius: 0; }" +
+      "#view-profile .avatar-lg { width: 96px; height: 96px; font-size: 34px; border: 4px solid var(--bg); box-shadow: 0 0 0 3px rgba(168,85,247,.65), 0 14px 40px rgba(139,92,246,.55); }" +
+      "#view-profile .profile-name { margin-top: 12px; font-size: 23px; letter-spacing: -.3px; }" +
+      ".sp-idline { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; color: #cfc2ff; background: rgba(139,92,246,.16); border: 1px solid rgba(168,85,247,.28); direction: ltr; }" +
+      "#view-profile .stats { gap: 10px; margin-top: 20px; padding-top: 0; border-top: none; }" +
+      "#view-profile .stat { padding: 14px 4px 12px; border-radius: 20px; background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border: 1px solid var(--line); }" +
+      "#view-profile .stat b { font-size: 24px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }" +
+      "#view-profile .sp-own-stats { margin-top: 10px; }" +
+      "#view-profile .sp-own-stats .stat b { font-size: 21px; }" +
+      "#view-profile .settings { margin-top: 30px; gap: 10px; }" +
+      "#view-profile .settings .sec-title { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 0 4px 2px; }" +
+      "#view-profile .setting { padding: 12px 14px; border-radius: 20px; background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); }" +
+      "#view-profile .setting-left { gap: 14px; }" +
+      "#view-profile .setting-left .ic { box-sizing: content-box; padding: 8px; border-radius: 13px; background: rgba(139,92,246,.2); color: #d4c6ff; }" +
+      "#view-profile .topbar .sp-bell { width: 44px; height: 44px; background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04)); box-shadow: 0 8px 22px -10px rgba(0,0,0,.8); }" +
       /* header picker */
       ".sp-presets { display: flex; gap: 10px; flex-wrap: wrap; }" +
       ".sp-preset { width: 54px; height: 38px; border-radius: 12px; border: 2px solid transparent; }" +
@@ -973,6 +992,13 @@
   // Inside the profile card: the same numbers other people see.
   FX.hooks.profileCard = function (card, me) {
     if (!me || !me.public_id) return;
+    var nameNode = card.querySelector(".profile-name");
+    if (nameNode) {
+      var idParts = [];
+      if (me.username) idParts.push("@" + me.username);
+      idParts.push(me.public_id);
+      nameNode.insertAdjacentElement("afterend", el("div", "sp-idline", idParts.join(" · ")));
+    }
     FX.api("/api/profile?id=" + encodeURIComponent(me.public_id)).then(function (res) {
       if (res.status !== 200 || !card.isConnected) return;
       var row = statsRow(res.data.stats, "stats sp-own-stats");
