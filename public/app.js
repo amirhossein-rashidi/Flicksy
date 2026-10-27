@@ -509,6 +509,12 @@
     var body = el("div", "disc-body");
     v.appendChild(body);
 
+    // The Titles / People tabs show only while the search box is in use (keyboard open) or has text.
+    var searching = false;
+    function syncTabs() {
+      tabsHolder.classList.toggle("hidden", !(searching || disc.q.trim().length > 0));
+    }
+
     function drawTabs() {
       clear(tabsHolder);
       [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
@@ -569,9 +575,24 @@
       });
     }
 
+    // Tapping a tab must not take the focus away from the search box (that would hide the tabs first).
+    tabsHolder.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    input.addEventListener("focus", function () { searching = true; syncTabs(); });
+    input.addEventListener("blur", function () {
+      setTimeout(function () {
+        searching = document.activeElement === input;
+        if (!searching && disc.q.trim().length === 0 && disc.tab !== "titles") {
+          disc.tab = "titles";
+          drawTabs(); drawChips(); drawBody();
+        }
+        syncTabs();
+      }, 150);
+    });
+
     input.addEventListener("input", function () {
       clearTimeout(disc.timer);
       disc.q = input.value;
+      syncTabs();
       if (disc.tab === "people") {
         disc.timer = setTimeout(drawBody, 400);
         return;
@@ -587,6 +608,7 @@
     });
 
     drawTabs();
+    syncTabs();
     drawChips();
     if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
     drawBody();
