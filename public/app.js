@@ -21,7 +21,7 @@
   var library = { items: [], loaded: false, stale: true, loading: null };
   var detailStack = [];
   var heroTimer = null;
-  var disc = { q: "", filter: "all", results: [], status: "idle", timer: null, controller: null };
+  var disc = { q: "", filter: "all", tab: "titles", results: [], status: "idle", timer: null, controller: null };
   var libView = { type: "all", status: null };
   var tg = null;
 
@@ -497,23 +497,42 @@
     input.type = "search";
     input.setAttribute("inputmode", "search");
     input.setAttribute("autocomplete", "off");
-    input.placeholder = t("search_placeholder");
+    input.placeholder = t("sx_search_ph");
     input.value = disc.q;
     box.appendChild(input);
     v.appendChild(box);
 
+    var tabsHolder = el("div", "segment sp-tabs");
+    v.appendChild(tabsHolder);
     var chipsHolder = el("div");
     v.appendChild(chipsHolder);
     var body = el("div", "disc-body");
     v.appendChild(body);
 
+    function drawTabs() {
+      clear(tabsHolder);
+      [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
+        tabsHolder.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
+          if (disc.tab === pair[0]) return;
+          disc.tab = pair[0];
+          drawTabs(); drawChips(); drawBody();
+          if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
+        }));
+      });
+    }
+
     function drawChips() {
       clear(chipsHolder);
+      if (disc.tab !== "titles") return;
       chipsHolder.appendChild(filterChips(disc.filter, function (f) { disc.filter = f; drawChips(); drawBody(); }));
     }
 
     function drawBody() {
       clear(body);
+      if (disc.tab === "people") {
+        if (FX.hooks.people) FX.hooks.people(body, disc.q);
+        return;
+      }
       var q = disc.q.trim();
       if (q.length < 2) {
         if (q.length === 1) body.appendChild(msg(t("search_hint")));
@@ -531,26 +550,32 @@
       body.appendChild(grid);
     }
 
+    function redrawTitles() { if (disc.tab === "titles") drawBody(); }
+
     function runSearch(q) {
       if (disc.controller) disc.controller.abort();
       disc.controller = new AbortController();
       disc.status = "loading";
-      drawBody();
+      redrawTitles();
       api(L("/api/search?q=" + encodeURIComponent(q)), { signal: disc.controller.signal }).then(function (res) {
         if (res.status !== 200) { disc.status = "error"; disc.error = problem(res, "err_search"); }
         else { disc.status = "ok"; disc.results = res.data.results || []; ingest(disc.results); }
-        drawBody();
+        redrawTitles();
       }).catch(function (e) {
         if (e && e.name === "AbortError") return;
         disc.status = "error";
         disc.error = t("err_network");
-        drawBody();
+        redrawTitles();
       });
     }
 
     input.addEventListener("input", function () {
       clearTimeout(disc.timer);
       disc.q = input.value;
+      if (disc.tab === "people") {
+        disc.timer = setTimeout(drawBody, 400);
+        return;
+      }
       var q = disc.q.trim();
       if (q.length < 2) {
         if (disc.controller) disc.controller.abort();
@@ -561,8 +586,9 @@
       disc.timer = setTimeout(function () { runSearch(q); }, 400);
     });
 
+    drawTabs();
     drawChips();
-    if (disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
+    if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
     drawBody();
   }
 
@@ -708,6 +734,7 @@
     var v = $("view-profile");
     clear(v);
     v.appendChild(topBar(t("nav_profile")));
+    if (FX.hooks.profileTop) FX.hooks.profileTop(v, me);
 
     var card = el("div", "profile-card");
     var av = avatarNode();
@@ -726,6 +753,7 @@
     stats.appendChild(statsNodes.watching);
     stats.appendChild(statsNodes.want);
     card.appendChild(stats);
+    if (FX.hooks.profileCard) FX.hooks.profileCard(card, me);
     v.appendChild(card);
 
     function fillStats() {
@@ -740,6 +768,7 @@
     list.appendChild(el("h2", "sec-title", t("settings")));
     list.appendChild(settingRow("globe", t("language"), languageName(), openLanguageSheet));
     list.appendChild(settingRow("info", t("about"), "", openAboutSheet));
+    if (FX.hooks.settings) FX.hooks.settings(list, me);
     v.appendChild(list);
     if (FX.hooks.profile) FX.hooks.profile(v, me);
   }
