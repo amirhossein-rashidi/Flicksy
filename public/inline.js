@@ -142,37 +142,6 @@
     sec.appendChild(card);
     sec.appendChild(el("p", "idhint", lt("id_hint", { id: me.public_id })));
 
-    var rowHolder = el("div", "idrow");
-    sec.appendChild(rowHolder);
-    var saving = false;
-
-    function drawRow() {
-      clear(rowHolder);
-      var visible = !(me.inline_hidden === 1 || me.inline_hidden === true);
-      var row = button("setting", null, function () {
-        if (saving) return;
-        saving = true;
-        var hide = visible;
-        FX.api("/api/inline-settings", { method: "PUT", body: { hidden: hide } }).then(function (res) {
-          saving = false;
-          if (res.status !== 200) { FX.toast(FX.problem(res, "err_save"), true); return; }
-          me.inline_hidden = hide ? 1 : 0;
-          FX.haptic();
-          drawRow();
-        }).catch(function () {
-          saving = false;
-          FX.toast(I18N.t("err_network"), true);
-        });
-      });
-      var left = el("span", "setting-left");
-      left.appendChild(el("span", "", lt("id_visible")));
-      row.appendChild(left);
-      row.appendChild(el("span", "sw" + (visible ? " on" : "")));
-      rowHolder.appendChild(row);
-      if (!visible) rowHolder.appendChild(el("p", "idhint", lt("id_visible_off")));
-    }
-    drawRow();
-
     holder.appendChild(sec);
   };
 })();
