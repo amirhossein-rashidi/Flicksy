@@ -3,6 +3,7 @@
 
 import { json } from "./util.js";
 import { buildCard, pickLang, WORDS } from "./share.js";
+import { handleLinkMessage, handleLinkCallback } from "./botlinks.js";
 
 const MAX_RESULTS = 15;
 
@@ -37,7 +38,7 @@ export async function handleBotSetup(request, env) {
     set = await tg(env, "setWebhook", {
       url: origin + "/bot/webhook",
       secret_token: await webhookSecret(env),
-      allowed_updates: ["inline_query"],
+      allowed_updates: ["inline_query", "message", "callback_query"],
     });
     info = await tg(env, "getWebhookInfo", {});
   } catch (e) {
@@ -156,6 +157,20 @@ export async function handleBotWebhook(request, env) {
       await answerInline(env, update.inline_query, new URL(request.url).origin);
     } catch (e) {
       // nothing to do: the person just sees no results
+    }
+  }
+  if (update && update.message) {
+    try {
+      await handleLinkMessage(env, update.message);
+    } catch (e) {
+      // ignore: the person just gets no answer
+    }
+  }
+  if (update && update.callback_query) {
+    try {
+      await handleLinkCallback(env, update.callback_query);
+    } catch (e) {
+      // ignore
     }
   }
   return json({ ok: true });
