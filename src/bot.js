@@ -3,7 +3,7 @@
 
 import { json } from "./util.js";
 import { buildCard, pickLang, WORDS } from "./share.js";
-import { handleLinkMessage, handleLinkCallback } from "./botlinks.js";
+import { handleLinkMessage, handleLinkCallback, inlineTitleResults, findUser, langFor } from "./botlinks.js";
 
 const MAX_RESULTS = 15;
 
@@ -107,7 +107,8 @@ async function loadCards(env, ownerId, onlyPublic, filter, lang, origin) {
 }
 
 async function answerInline(env, iq, origin) {
-  const lang = pickLang(iq.from && iq.from.language_code);
+  const me = iq.from && typeof iq.from.id === "number" ? await findUser(env, iq.from.id) : null;
+  const lang = langFor(me, iq.from);
   const words = WORDS[lang];
   const q = String(iq.query || "").trim().slice(0, 64);
 
@@ -123,10 +124,19 @@ async function answerInline(env, iq, origin) {
       .bind(q)
       .first();
     if (owner) results = await loadCards(env, owner.id, true, "", lang, origin);
-  } else if (iq.from && typeof iq.from.id === "number") {
-    // your own lists (all except private ones), optionally narrowed by a word of the title
-    const me = await env.DB.prepare("SELECT id FROM users WHERE telegram_id = ?1").bind(iq.from.id).first();
-    if (me) results = await loadCards(env, me.id, false, q, lang, origin);
+  } else {
+    // words: movie / series info cards first, then your own lists (all except private ones) with that word in the title
+    if (q.length >= 2) {
+      try {
+        results = await inlineTitleResults(env, me, q, lang, 6);
+      } catch (e) {
+        results = [];
+      }
+    }
+    if (me) {
+      const lists = await loadCards(env, me.id, false, q, lang, origin);
+      results = results.concat(lists.slice(0, MAX_RESULTS));
+    }
   }
 
   const payload = {
