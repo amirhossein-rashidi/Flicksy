@@ -81,6 +81,16 @@ export default {
         const user = await getOrCreateUser(env, auth.user, path === "/api/me");
 
         if (path === "/api/me") {
+          // the app tells us its language, so the bot can answer in the same one
+          const appLang = url.searchParams.get("lang");
+          if (appLang && /^(en|fa|ar|tr|ru|es|fr|de)$/.test(appLang) && appLang !== user.app_lang) {
+            try {
+              await env.DB.prepare("UPDATE users SET app_lang = ?1 WHERE id = ?2").bind(appLang, user.id).run();
+              user.app_lang = appLang;
+            } catch (e) {
+              // the column is added by migration 7
+            }
+          }
           return json({ user: user });
         }
         if (path === "/api/search" && method === "GET") {
