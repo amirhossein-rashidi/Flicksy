@@ -10,6 +10,7 @@
   // ---------- texts ----------
   var STR = {
     en: {
+      sync_b: "Mark finished series as watched", sync_done: "Series marked as watched: {n}", r_upgraded: "Series marked as watched",
       title: "Backup", export_t: "Export", export_d: "Sends a backup file with your whole library and all your lists (private ones too) to your chat with the bot.",
       export_b: "Send backup to my chat", export_ok: "Backup sent to your chat with the bot.", export_fail: "Couldn’t send it. Open the bot chat, press Start, and try again.",
       import_t: "Import", import_d: "Bring your data from IMDb, TV Time, Letterboxd, Bingers or a Flicksy backup. Choose the exported file (ZIP, CSV or JSON). Nothing you already have is changed or deleted: “watched” always wins and your ratings stay.",
@@ -21,6 +22,7 @@
       err_net: "Connection problem. Try again.", sources: "From", too_many_lists: "Some lists were skipped (limit reached).", list_cut: "Long lists were cut to 200 titles."
     },
     fa: {
+      sync_b: "سریال‌های کامل‌دیده را «دیده‌ام» کن", sync_done: "سریال‌هایی که «دیده‌ام» شد: {n}", r_upgraded: "سریال «دیده‌ام» شد",
       title: "بکاپ", export_t: "خروجی گرفتن", export_d: "یک فایل بکاپ از کل کتابخانه و همه‌ی لیست‌هایت (حتی خصوصی‌ها) را به چت تو با ربات می‌فرستد.",
       export_b: "ارسال بکاپ به چت من", export_ok: "بکاپ به چت تو با ربات ارسال شد.", export_fail: "ارسال نشد. چت ربات را باز کن، Start را بزن و دوباره امتحان کن.",
       import_t: "ورودی گرفتن", import_d: "اطلاعاتت را از IMDb، TV Time، Letterboxd، Bingers یا بکاپ Flicksy بیاور. فایل خروجی (ZIP، CSV یا JSON) را انتخاب کن. هیچ چیزی از اطلاعات فعلی‌ات تغییر نمی‌کند یا پاک نمی‌شود: «دیده‌ام» همیشه می‌ماند و امتیازهایت حفظ می‌شود.",
@@ -32,6 +34,7 @@
       err_net: "مشکل اتصال. دوباره امتحان کن.", sources: "از", too_many_lists: "بعضی لیست‌ها رد شدند (به سقف رسید).", list_cut: "لیست‌های طولانی تا ۲۰۰ عنوان کوتاه شدند."
     },
     ar: {
+      sync_b: "اجعل المسلسلات المكتملة «شاهدته»", sync_done: "مسلسلات تم تعليمها كمشاهدة: {n}", r_upgraded: "مسلسلات شاهدتها",
       title: "نسخة احتياطية", export_t: "تصدير", export_d: "يرسل ملف نسخة احتياطية بمكتبتك كاملة وكل قوائمك (حتى الخاصة) إلى محادثتك مع البوت.",
       export_b: "أرسل النسخة إلى محادثتي", export_ok: "تم إرسال النسخة إلى محادثتك مع البوت.", export_fail: "تعذّر الإرسال. افتح محادثة البوت واضغط Start ثم حاول مجددًا.",
       import_t: "استيراد", import_d: "استورد بياناتك من IMDb أو TV Time أو Letterboxd أو Bingers أو نسخة Flicksy. اختر الملف المُصدَّر (ZIP أو CSV أو JSON). لن يتغير أو يُحذف شيء لديك: «شاهدته» يبقى دائمًا وتقييماتك محفوظة.",
@@ -43,6 +46,7 @@
       err_net: "مشكلة في الاتصال. حاول مجددًا.", sources: "من", too_many_lists: "تم تخطي بعض القوائم (بلغت الحد).", list_cut: "تم اقتطاع القوائم الطويلة إلى 200 عمل."
     },
     tr: {
+      sync_b: "Bitmiş dizileri “izledim” yap", sync_done: "“İzledim” yapılan dizi: {n}", r_upgraded: "İzledim yapılan dizi",
       title: "Yedek", export_t: "Dışa aktar", export_d: "Tüm kitaplığını ve bütün listelerini (özel olanlar dahil) içeren bir yedek dosyasını bot sohbetine gönderir.",
       export_b: "Yedeği sohbetime gönder", export_ok: "Yedek bot sohbetine gönderildi.", export_fail: "Gönderilemedi. Bot sohbetini aç, Start’a bas ve tekrar dene.",
       import_t: "İçe aktar", import_d: "Verilerini IMDb, TV Time, Letterboxd, Bingers veya bir Flicksy yedeğinden getir. Dışa aktarılan dosyayı (ZIP, CSV veya JSON) seç. Mevcut hiçbir şey değişmez veya silinmez: “izledim” her zaman kalır, puanların korunur.",
@@ -54,6 +58,7 @@
       err_net: "Bağlantı sorunu. Tekrar dene.", sources: "Kaynak", too_many_lists: "Bazı listeler atlandı (sınıra ulaşıldı).", list_cut: "Uzun listeler 200 yapıma kısaltıldı."
     },
     ru: {
+      sync_b: "Отметить досмотренные сериалы", sync_done: "Сериалов отмечено как просмотренные: {n}", r_upgraded: "Сериалов просмотрено",
       title: "Резервная копия", export_t: "Экспорт", export_d: "Отправляет в твой чат с ботом файл резервной копии: вся библиотека и все списки (включая приватные).",
       export_b: "Отправить копию в мой чат", export_ok: "Копия отправлена в твой чат с ботом.", export_fail: "Не удалось отправить. Открой чат с ботом, нажми Start и попробуй снова.",
       import_t: "Импорт", import_d: "Перенеси данные из IMDb, TV Time, Letterboxd, Bingers или копии Flicksy. Выбери экспортированный файл (ZIP, CSV или JSON). Ничего из того, что у тебя уже есть, не меняется и не удаляется: «просмотрено» всегда остаётся, оценки сохраняются.",
@@ -65,6 +70,7 @@
       err_net: "Проблема с соединением. Попробуй снова.", sources: "Из", too_many_lists: "Часть списков пропущена (достигнут лимит).", list_cut: "Длинные списки обрезаны до 200 тайтлов."
     },
     es: {
+      sync_b: "Marcar series terminadas como vistas", sync_done: "Series marcadas como vistas: {n}", r_upgraded: "Series vistas",
       title: "Copia de seguridad", export_t: "Exportar", export_d: "Envía a tu chat con el bot un archivo con toda tu biblioteca y todas tus listas (también las privadas).",
       export_b: "Enviar copia a mi chat", export_ok: "Copia enviada a tu chat con el bot.", export_fail: "No se pudo enviar. Abre el chat del bot, pulsa Start e inténtalo de nuevo.",
       import_t: "Importar", import_d: "Trae tus datos de IMDb, TV Time, Letterboxd, Bingers o una copia de Flicksy. Elige el archivo exportado (ZIP, CSV o JSON). Nada de lo que ya tienes se cambia ni se borra: “visto” siempre gana y tus valoraciones se mantienen.",
@@ -76,6 +82,7 @@
       err_net: "Problema de conexión. Inténtalo de nuevo.", sources: "Desde", too_many_lists: "Se omitieron algunas listas (límite alcanzado).", list_cut: "Las listas largas se cortaron a 200 títulos."
     },
     fr: {
+      sync_b: "Marquer les séries terminées comme vues", sync_done: "Séries marquées comme vues : {n}", r_upgraded: "Séries vues",
       title: "Sauvegarde", export_t: "Exporter", export_d: "Envoie à ton chat avec le bot un fichier de sauvegarde avec toute ta bibliothèque et toutes tes listes (même privées).",
       export_b: "Envoyer la sauvegarde à mon chat", export_ok: "Sauvegarde envoyée à ton chat avec le bot.", export_fail: "Envoi impossible. Ouvre le chat du bot, appuie sur Start et réessaie.",
       import_t: "Importer", import_d: "Apporte tes données depuis IMDb, TV Time, Letterboxd, Bingers ou une sauvegarde Flicksy. Choisis le fichier exporté (ZIP, CSV ou JSON). Rien de ce que tu as déjà n’est modifié ni supprimé : « vu » gagne toujours et tes notes restent.",
@@ -87,6 +94,7 @@
       err_net: "Problème de connexion. Réessaie.", sources: "Depuis", too_many_lists: "Certaines listes ont été ignorées (limite atteinte).", list_cut: "Les longues listes ont été coupées à 200 titres."
     },
     de: {
+      sync_b: "Fertige Serien als gesehen markieren", sync_done: "Serien als gesehen markiert: {n}", r_upgraded: "Serien als gesehen",
       title: "Backup", export_t: "Exportieren", export_d: "Sendet eine Backup-Datei mit deiner ganzen Bibliothek und allen Listen (auch privaten) an deinen Chat mit dem Bot.",
       export_b: "Backup an meinen Chat senden", export_ok: "Backup an deinen Chat mit dem Bot gesendet.", export_fail: "Senden fehlgeschlagen. Öffne den Bot-Chat, tippe auf Start und versuche es erneut.",
       import_t: "Importieren", import_d: "Hol deine Daten aus IMDb, TV Time, Letterboxd, Bingers oder einem Flicksy-Backup. Wähle die exportierte Datei (ZIP, CSV oder JSON). Nichts, was du schon hast, wird geändert oder gelöscht: „Gesehen“ gewinnt immer und deine Bewertungen bleiben.",
@@ -233,10 +241,11 @@
     var cur = acc.map[k];
     if (!cur) {
       cur = acc.map[k] = { type: o.type || null, tmdb: o.tmdb || null, imdb: o.imdb || null, tvdb: o.tvdb || null, title: o.title || "", year: o.year || null,
-        status: null, rating: null, started: null, finished: null, note: null, mood: null, actor: null, episodes: [], epKeys: {} };
+        status: null, rating: null, started: null, finished: null, note: null, mood: null, actor: null, episodes: [], epKeys: {}, alt: o.alt || "" };
       acc.order.push(cur);
     }
     if (!cur.imdb && o.imdb) cur.imdb = o.imdb;
+    if (!cur.alt && o.alt) cur.alt = o.alt;
     if (!cur.tvdb && o.tvdb) cur.tvdb = o.tvdb;
     if (!cur.year && o.year) cur.year = o.year;
     if (o.status && (!cur.status || (RANK[o.status] || 0) > (RANK[cur.status] || 0))) cur.status = o.status;
@@ -288,10 +297,10 @@
         var type = r.type === "show" ? "tv" : "movie";
         var st = r.list_status;
         if (type === "movie") {
-          if (st === "for_later") addItem(acc, S, { type: type, tmdb: toInt(r.tmdb_id), tvdb: null, title: r.title, year: toInt(r.year), status: "want" });
+          if (st === "for_later") addItem(acc, S, { type: type, tmdb: toInt(r.tmdb_id), tvdb: null, title: r.title, alt: r.original_title, year: toInt(r.year), status: "want" });
           return; // followed movies are added from the watches file
         }
-        addItem(acc, S, { type: type, tmdb: toInt(r.tmdb_id), tvdb: toInt(r.tvdb_id), title: r.title, year: toInt(r.year), status: st === "for_later" ? "want" : null });
+        addItem(acc, S, { type: type, tmdb: toInt(r.tmdb_id), tvdb: toInt(r.tvdb_id), title: r.title, alt: r.original_title, year: toInt(r.year), status: st === "for_later" ? "want" : null });
       });
     } else if (t.kind === "bg_watches") {
       t.rows.forEach(function (r) {
@@ -537,7 +546,7 @@
   var MAX_BATCH = 10, MAX_EPS_BATCH = 3000;
 
   function payload(x, episodes, withMeta) {
-    var o = { type: x.type || undefined, tmdb: x.tmdb || undefined, imdb: x.imdb || undefined, tvdb: x.tvdb || undefined, title: x.title || undefined, year: x.year || undefined };
+    var o = { alt: x.alt || undefined, type: x.type || undefined, tmdb: x.tmdb || undefined, imdb: x.imdb || undefined, tvdb: x.tvdb || undefined, title: x.title || undefined, year: x.year || undefined };
     if (withMeta) {
       if (x.status) o.status = x.status;
       if (x.rating) o.rating = x.rating;
@@ -590,6 +599,20 @@
   }
 
   function titleName(src) { return src.title || src.imdb || (src.tmdb ? "TMDB " + src.tmdb : src.tvdb ? "TVDB " + src.tvdb : "?"); }
+
+  // After an import: series with every aired episode marked become "watched".
+  function syncSeries(job, onStep) {
+    function step(after) {
+      if (job.cancelled) return Promise.resolve();
+      return post("/api/import-sync", { after: after }, job).then(function (res) {
+        if (res.status !== 200 || !res.data) return;
+        job.upgraded = (job.upgraded || 0) + (res.data.upgraded || 0);
+        if (onStep) onStep();
+        if (res.data.next) return step(res.data.next);
+      });
+    }
+    return step(0);
+  }
 
   function runImport(data, job, onProgress) {
     var batches = buildBatches(data.items);
@@ -674,6 +697,12 @@
         });
         return lc;
       });
+    });
+
+    // series with every episode marked become "watched"
+    chain = chain.then(function () {
+      if (job.cancelled || job.error || !data.episodes) return;
+      return syncSeries(job, onProgress);
     });
 
     return chain;
@@ -808,6 +837,16 @@
     input.addEventListener("change", function () { pickFiles(p, input.files); });
     im.appendChild(input);
     im.appendChild(button("btn primary block", lt("pick"), function () { input.click(); }));
+    var syncBtn = button("btn glass block", lt("sync_b"), function () {
+      syncBtn.disabled = true;
+      var job = { cancelled: false, upgraded: 0 };
+      syncSeries(job, null).then(function () {
+        syncBtn.disabled = false;
+        FX.haptic();
+        FX.toast(lt("sync_done", { n: job.upgraded }));
+      }).catch(function () { syncBtn.disabled = false; FX.toast(lt("err_net"), true); });
+    });
+    im.appendChild(syncBtn);
     body.appendChild(im);
 
     // add by link
@@ -874,7 +913,7 @@
   }
 
   function startJob(p) {
-    var job = { cancelled: false, error: null, total: 0, done: 0, added: 0, updated: 0, same: 0, missing: [], errors: 0, eps: 0, listsMade: 0, listsDone: 0, listsSkipped: false, cut: false };
+    var job = { upgraded: 0, cancelled: false, error: null, total: 0, done: 0, added: 0, updated: 0, same: 0, missing: [], errors: 0, eps: 0, listsMade: 0, listsDone: 0, listsSkipped: false, cut: false };
     p.job = job;
     p.view = "running";
     draw(p);
@@ -915,6 +954,7 @@
     stats.appendChild(pill(job.same, lt("r_same")));
     stats.appendChild(pill(job.missing.length + job.errors, lt("r_missing")));
     if (job.eps) stats.appendChild(pill(job.eps, lt("r_eps")));
+    if (job.upgraded) stats.appendChild(pill(job.upgraded, lt("r_upgraded")));
     if (job.listsMade) stats.appendChild(pill(job.listsMade, lt("r_lists")));
     c.appendChild(stats);
     if (job.listsSkipped) c.appendChild(el("div", "bk-note", lt("too_many_lists")));
