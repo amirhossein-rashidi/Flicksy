@@ -424,13 +424,45 @@
     box.appendChild(dots);
     var index = 0;
     function show(i) {
-      slides.forEach(function (s, n) { s.classList.toggle("on", n === i); });
+      index = i;
+      // only the slide on top may receive taps (the others are stacked invisibly underneath)
+      slides.forEach(function (s, n) { s.classList.toggle("on", n === i); s.style.pointerEvents = n === i ? "auto" : "none"; });
       dotNodes.forEach(function (d, n) { d.classList.toggle("on", n === i); });
     }
     show(0);
-    if (picks.length > 1) {
-      heroTimer = setInterval(function () { index = (index + 1) % picks.length; show(index); }, 6000);
+    function startTimer() {
+      stopHero();
+      if (picks.length > 1) heroTimer = setInterval(function () { show((index + 1) % picks.length); }, 6000);
     }
+    startTimer();
+
+    // swipe left / right to change the slide by hand
+    var startX = 0, startY = 0, swiped = false, tracking = false;
+    box.addEventListener("touchstart", function (e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      tracking = true; swiped = false;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      stopHero();
+    }, { passive: true });
+    box.addEventListener("touchend", function (e) {
+      if (!tracking) return;
+      tracking = false;
+      var t0 = e.changedTouches && e.changedTouches[0];
+      if (t0 && picks.length > 1) {
+        var dx = t0.clientX - startX, dy = t0.clientY - startY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+          swiped = true;
+          var rtl = document.documentElement.dir === "rtl";
+          var forward = rtl ? dx > 0 : dx < 0;
+          show((index + (forward ? 1 : picks.length - 1)) % picks.length);
+        }
+      }
+      startTimer();
+    }, { passive: true });
+    box.addEventListener("touchcancel", function () { tracking = false; startTimer(); }, { passive: true });
+    // a swipe must not count as a tap on the title
+    box.addEventListener("click", function (e) { if (swiped) { e.stopPropagation(); e.preventDefault(); swiped = false; } }, true);
+    dotNodes.forEach(function (d, n) { d.addEventListener("click", function (e) { e.stopPropagation(); show(n); startTimer(); }); });
   }
 
   function renderHome() {
@@ -701,6 +733,7 @@
   function setLanguage(code) {
     I18N.set(code);
     try { localStorage.setItem(LS_LANG, code); } catch (e) {}
+    api("/api/me?lang=" + code).catch(function () {}); // tell the server, so the bot answers in the same language
     closeSheet();
     renderNav();
     renderTab(currentTab);
@@ -1476,7 +1509,7 @@
       showFatal(t("err_open_tg"));
       return;
     }
-    api("/api/me").then(function (res) {
+    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res) {
       if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
       me = res.data.user;
       goTab("home");
