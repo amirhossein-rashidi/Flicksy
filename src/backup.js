@@ -7,7 +7,7 @@
 import { json } from "./util.js";
 import { tmdbGet } from "./tmdb.js";
 
-const MAX_ENTRIES = 10; // titles per import request (keeps every request small and fast)
+export const MAX_ENTRIES = 10; // titles per import request (keeps every request small and fast)
 const MAX_EPISODES = 4000; // episodes per import request
 const MAX_LIST_ITEMS = 200;
 const STATUSES = ["want", "watching", "watched", "paused", "dropped"];
@@ -46,6 +46,7 @@ function cleanEntry(raw) {
   if (!e.tmdb && !e.imdb && !e.tvdb && !e.title) return null;
 
   e.status = STATUSES.indexOf(raw.status) >= 0 ? raw.status : null;
+  e.override = raw.override === true; // the user explicitly chose this status: it replaces the old one
   e.rating = Number.isInteger(raw.rating) && raw.rating >= 1 && raw.rating <= 10 ? raw.rating : null;
   e.started_at = cleanDate(raw.started_at);
   e.finished_at = cleanDate(raw.finished_at);
@@ -75,7 +76,7 @@ function cleanEntry(raw) {
   return e;
 }
 
-function cleanEntries(list) {
+export function cleanEntries(list) {
   if (!Array.isArray(list) || list.length === 0 || list.length > MAX_ENTRIES) return null;
   const out = [];
   let episodes = 0;
@@ -195,7 +196,7 @@ async function resolveEntry(env, e, known) {
 
 // Finds every entry on TMDB, makes sure the titles exist in our table, and returns, for each entry,
 // { titleId, tmdbId, mediaType, title, year } or { error: "notfound" | "error" }.
-async function resolveAndStore(env, entries) {
+export async function resolveAndStore(env, entries) {
   // Titles we already know (no TMDB call needed when the entry carries a TMDB id).
   const wantedIds = entries.filter((e) => e && e.tmdb).map((e) => e.tmdb);
   const known = new Map();
@@ -313,18 +314,14 @@ function nowText() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
-// POST /api/import-batch  { entries: [ ... up to 10 ... ] }
-export async function handleImportBatch(request, env, user) {
-  const body = await readBody(request);
-  const entries = body ? cleanEntries(body.entries) : null;
-  if (!entries) return json({ error: "bad_request" }, 400);
-  if (!env.TMDB_TOKEN) return json({ error: "server_misconfigured" }, 500);
-
+// Core of the import (also used by the bot for pasted links). `entries` must already be cleaned
+// with cleanEntries(). Returns { ok, results, counts, episodes_added } or { error }.
+export async function importEntries(env, user, entries) {
   let found;
   try {
     found = await resolveAndStore(env, entries);
   } catch (e) {
-    return json({ error: "server_error" }, 500);
+    return { error: "server_error" };
   }
 
   // What the user already has for these titles.
@@ -362,7 +359,7 @@ export async function handleImportBatch(request, env, user) {
     if (!incoming && f.mediaType === "tv" && e.episodes.length) incoming = "watching";
     if (!incoming && !before) incoming = "want";
 
-    const status = mergeStatus(before ? before.status : null, incoming);
+    const status = e.override && incoming ? incoming : mergeStatus(before ? before.status : null, incoming);
     let rating = before ? before.rating : null;
     let mood = before ? before.mood : null;
     let actor = before && before.fav_actor_id ? { id: before.fav_actor_id, name: before.fav_actor_name, photo: before.fav_actor_photo } : null;
@@ -411,7 +408,7 @@ export async function handleImportBatch(request, env, user) {
     if (f.mediaType === "tv") {
       for (const ep of e.episodes) episodeRows.push({ t: f.titleId, s: ep.s, e: ep.e, at: ep.at });
     }
-    results.push({ i: i, outcome: outcome, tmdb_id: f.tmdbId, media_type: f.mediaType, title: f.title, year: f.year, episodes: f.mediaType === "tv" ? e.episodes.length : 0 });
+    results.push({ i: i, outcome: outcome, tmdb_id: f.tmdbId, media_type: f.mediaType, title: f.title, year: f.year, status: next.status, episodes: f.mediaType === "tv" ? e.episodes.length : 0 });
   });
 
   const changedRows = [];
@@ -456,13 +453,23 @@ export async function handleImportBatch(request, env, user) {
         episodesAdded = meta && Number.isInteger(meta.changes) ? meta.changes : 0;
       }
     } catch (e) {
-      return json({ error: "server_error" }, 500);
+      return { error: "server_error" };
     }
   }
 
   const counts = { added: 0, updated: 0, same: 0, notfound: 0, error: 0 };
   for (const r of results) counts[r.outcome] = (counts[r.outcome] || 0) + 1;
-  return json({ ok: true, results: results, counts: counts, episodes_added: episodesAdded });
+  return { ok: true, results: results, counts: counts, episodes_added: episodesAdded };
+}
+
+// POST /api/import-batch  { entries: [ ... up to 10 ... ] }
+export async function handleImportBatch(request, env, user) {
+  const body = await readBody(request);
+  const entries = body ? cleanEntries(body.entries) : null;
+  if (!entries) return json({ error: "bad_request" }, 400);
+  if (!env.TMDB_TOKEN) return json({ error: "server_misconfigured" }, 500);
+  const out = await importEntries(env, user, entries);
+  return out.error ? json({ error: out.error }, 500) : json(out);
 }
 
 // POST /api/import-list-items  { list_id, entries: [ ... up to 10 ... ] }
