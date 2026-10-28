@@ -209,10 +209,22 @@
   function ensureLibrary(force) {
     if (!force && library.loaded && !library.stale) return Promise.resolve(true);
     if (library.loading) return library.loading;
-    library.loading = api("/api/library").then(function (res) {
+    // the library can hold thousands of titles (after an import): load it in pages of 500
+    function page(offset, all) {
+      return api("/api/library?limit=500&offset=" + offset).then(function (res) {
+        if (res.status !== 200) return null;
+        var got = res.data.items || [];
+        all = all.concat(got);
+        var counts = res.data.counts || {}, total = 0;
+        Object.keys(counts).forEach(function (k) { total += counts[k] || 0; });
+        if (got.length >= 500 && all.length < total && offset < 20000) return page(offset + 500, all);
+        return all;
+      });
+    }
+    library.loading = page(0, []).then(function (all) {
       library.loading = null;
-      if (res.status !== 200) return false;
-      library.items = res.data.items || [];
+      if (!all) return false;
+      library.items = all;
       library.loaded = true;
       library.stale = false;
       ingest(library.items);
