@@ -21,7 +21,7 @@ import {
 import { handleListShare } from "./share.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
-import { handleImportBatch, handleImportListItems, handleBackupExport, handleBackupSend } from "./backup.js";
+import { handleImportBatch, handleImportListItems, handleImportSync, handleBackupExport, handleBackupSend } from "./backup.js";
 import {
   handlePeopleSearch,
   handleProfile,
@@ -171,6 +171,9 @@ export default {
         }
         if (path === "/api/import-batch" && method === "POST") {
           return await handleImportBatch(request, env, user);
+        }
+        if (path === "/api/import-sync" && method === "POST") {
+          return await handleImportSync(request, env, user);
         }
         if (path === "/api/import-list-items" && method === "POST") {
           return await handleImportListItems(request, env, user);
