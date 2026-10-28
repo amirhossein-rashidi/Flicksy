@@ -21,6 +21,7 @@ import {
 import { handleListShare } from "./share.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
+import { handleImportBatch, handleImportListItems, handleBackupExport, handleBackupSend } from "./backup.js";
 import {
   handlePeopleSearch,
   handleProfile,
@@ -73,6 +74,7 @@ export default {
 
         let kind = "read";
         if (path === "/api/search") kind = "search";
+        else if (path.startsWith("/api/import-")) kind = "import";
         else if (method !== "GET") kind = "write";
         if (!(await allow(env, kind, auth.user.id))) return tooMany();
 
@@ -156,6 +158,18 @@ export default {
         }
         if (path === "/api/header-options" && method === "GET") {
           return await handleHeaderOptions(url, env, user);
+        }
+        if (path === "/api/import-batch" && method === "POST") {
+          return await handleImportBatch(request, env, user);
+        }
+        if (path === "/api/import-list-items" && method === "POST") {
+          return await handleImportListItems(request, env, user);
+        }
+        if (path === "/api/backup-export" && method === "GET") {
+          return await handleBackupExport(url, env, user);
+        }
+        if (path === "/api/backup-send" && method === "POST") {
+          return await handleBackupSend(request, env, user);
         }
         return json({ error: "not_found" }, 404);
       }
