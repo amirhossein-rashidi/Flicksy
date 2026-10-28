@@ -3,7 +3,7 @@
 const MAX_INITDATA_AGE_SECONDS = 24 * 60 * 60; // reject login data older than 24 hours
 
 const USER_SELECT =
-  "SELECT id, telegram_id, username, display_name, photo_url, is_private, public_id, inline_hidden, header, activity_visible, created_at " +
+  "SELECT id, telegram_id, username, display_name, photo_url, is_private, public_id, inline_hidden, header, activity_visible, app_lang, created_at " +
   "FROM users WHERE telegram_id = ?1";
 
 function hexToBytes(hex) {
