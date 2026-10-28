@@ -3,8 +3,8 @@
 
 import { cleanEntries, importEntries, resolveAndStore, MAX_ENTRIES } from "./backup.js";
 import { pickLang } from "./share.js";
+import { findByImdb, loadCard, searchCards, supportedLang } from "./titlecard.js";
 
-const IMG = "https://image.tmdb.org/t/p/w500";
 const BOT_LINK = "https://t.me/flicksyrobot";
 
 const W = {
@@ -134,17 +134,22 @@ export function extractRefs(text) {
   return found;
 }
 
+// The language of the answer: the app's language, else Telegram's, else English.
+export function langFor(user, from) {
+  return (user && supportedLang(user.app_lang)) || pickLang(from && from.language_code);
+}
+
 function openButton(lang) {
   return { text: t(lang, "open"), url: BOT_LINK };
 }
 
-async function findUser(env, telegramId) {
-  return await env.DB.prepare("SELECT id, telegram_id, display_name, public_id, is_private FROM users WHERE telegram_id = ?1")
+export async function findUser(env, telegramId) {
+  return await env.DB.prepare("SELECT id, telegram_id, display_name, public_id, is_private, app_lang FROM users WHERE telegram_id = ?1")
     .bind(telegramId)
     .first();
 }
 
-function statusKeyboard(lang, type, tmdbId, current) {
+export function statusKeyboard(lang, type, tmdbId, current) {
   const row = ["want", "watching", "watched"].map(function (s) {
     return {
       text: (current === s ? "✓ " : "") + t(lang, s),
@@ -154,12 +159,27 @@ function statusKeyboard(lang, type, tmdbId, current) {
   return { inline_keyboard: [row, [openButton(lang)]] };
 }
 
+async function statusOf(env, userId, type, tmdbId) {
+  const row = await env.DB.prepare(
+    "SELECT ut.status FROM user_titles ut JOIN titles t ON t.id = ut.title_id WHERE ut.user_id = ?1 AND t.media_type = ?2 AND t.tmdb_id = ?3"
+  )
+    .bind(userId, type, tmdbId)
+    .first();
+  return row ? row.status : null;
+}
+
+// Preview of the poster above the text of a card.
+function cardPreview(card) {
+  return card.poster ? { url: card.poster, show_above_text: true, prefer_large_media: true } : { is_disabled: true };
+}
+
 // A message with links arrived.
 export async function handleLinkMessage(env, message) {
   if (!message || !message.chat || message.chat.type !== "private" || !message.from) return;
-  const lang = pickLang(message.from.language_code);
   const chatId = message.chat.id;
   const text = message.text || message.caption || "";
+  const user = await findUser(env, message.from.id);
+  const lang = langFor(user, message.from);
 
   if (/^\/(start|help)(@\w+)?(\s|$)/i.test(text)) {
     await tg(env, "sendMessage", {
@@ -173,9 +193,28 @@ export async function handleLinkMessage(env, message) {
   const refs = extractRefs(text);
   if (!refs.length) return;
 
-  const user = await findUser(env, message.from.id);
   if (!user) {
     await tg(env, "sendMessage", { chat_id: chatId, text: t(lang, "first"), reply_markup: { inline_keyboard: [[openButton(lang)]] } });
+    return;
+  }
+
+  // One link: the full info card.
+  if (refs.length === 1) {
+    let ref = refs[0];
+    if (ref.imdb) {
+      const f = await findByImdb(env, ref.imdb);
+      ref = f ? { type: f.type, tmdb: f.tmdb } : null;
+    }
+    const card = ref ? await loadCard(env, ref.type, ref.tmdb, lang) : null;
+    if (!card) {
+      await tg(env, "sendMessage", { chat_id: chatId, text: t(lang, "none"), reply_to_message_id: message.message_id });
+      return;
+    }
+    const status = await statusOf(env, user.id, card.type, card.tmdb);
+    await tg(env, "sendMessage", {
+      chat_id: chatId, text: card.text, parse_mode: "HTML", link_preview_options: cardPreview(card),
+      reply_markup: statusKeyboard(lang, card.type, card.tmdb, status), reply_to_message_id: message.message_id,
+    });
     return;
   }
 
@@ -213,24 +252,6 @@ export async function handleLinkMessage(env, message) {
   const name = function (r) { return lang === "fa" && r.title_fa ? r.title_fa : r.title; };
   const kind = function (r) { return t(lang, r.media_type === "tv" ? "tv" : "movie"); };
 
-  if (good.length === 1 && refs.length === 1) {
-    const r = byId.get(good[0].titleId);
-    if (!r) { await tg(env, "sendMessage", { chat_id: chatId, text: t(lang, "err") }); return; }
-    let caption = "<b>" + esc(name(r)) + "</b>" + (r.year ? " (" + r.year + ")" : "") + "\n" + (r.media_type === "tv" ? "📺 " : "🎬 ") + esc(kind(r));
-    if (r.tmdb_rating) caption += " · ⭐ " + (Math.round(r.tmdb_rating * 10) / 10);
-    if (r.overview) caption += "\n\n" + esc(r.overview.length > 280 ? r.overview.slice(0, 277) + "…" : r.overview);
-    const markup = statusKeyboard(lang, r.media_type, r.tmdb_id, r.status);
-    if (r.poster_path) {
-      await tg(env, "sendPhoto", {
-        chat_id: chatId, photo: IMG + r.poster_path, caption: caption, parse_mode: "HTML",
-        reply_markup: markup, reply_to_message_id: message.message_id,
-      });
-    } else {
-      await tg(env, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: markup, reply_to_message_id: message.message_id });
-    }
-    return;
-  }
-
   // Several links: a list, with "all" buttons.
   const lines = [];
   good.forEach(function (f, i) {
@@ -255,14 +276,14 @@ export async function handleLinkMessage(env, message) {
 
 // A button under one of our cards was pressed.
 export async function handleLinkCallback(env, cq) {
-  if (!cq || !cq.from || !cq.message || typeof cq.data !== "string") return;
-  const lang = pickLang(cq.from.language_code);
+  if (!cq || !cq.from || (!cq.message && !cq.inline_message_id) || typeof cq.data !== "string") return;
+  const user = await findUser(env, cq.from.id);
+  const lang = langFor(user, cq.from);
   const answer = function (text) { return tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: text }); };
 
-  const user = await findUser(env, cq.from.id);
   if (!user) { await answer(t(lang, "first")); return; }
-  const chatId = cq.message.chat.id;
-  const messageId = cq.message.message_id;
+  // a button under a normal message, or under a card sent through @flicksyrobot in some chat
+  const target = cq.message ? { chat_id: cq.message.chat.id, message_id: cq.message.message_id } : { inline_message_id: cq.inline_message_id };
 
   let m;
   if ((m = /^a:([mt]):(\d{1,9}):([wgd])$/.exec(cq.data))) {
@@ -275,15 +296,14 @@ export async function handleLinkCallback(env, cq) {
       return;
     }
     await answer(t(lang, "saved", { s: t(lang, out.results[0].status || status) }));
-    await tg(env, "editMessageReplyMarkup", {
-      chat_id: chatId, message_id: messageId,
+    await tg(env, "editMessageReplyMarkup", Object.assign({
       reply_markup: statusKeyboard(lang, type, parseInt(m[2], 10), out.results[0].status || status),
-    });
+    }, target));
     return;
   }
 
   if ((m = /^all:([wgd])$/.exec(cq.data))) {
-    const original = cq.message.reply_to_message;
+    const original = cq.message && cq.message.reply_to_message;
     const refs = extractRefs((original && (original.text || original.caption)) || "").slice(0, MAX_ENTRIES);
     if (!refs.length) { await answer(t(lang, "err")); return; }
     const status = CODE[m[1]];
@@ -293,9 +313,40 @@ export async function handleLinkCallback(env, cq) {
     const c = out.counts;
     const summary = t(lang, "done", { a: c.added, u: c.updated, s: c.same }) + (c.notfound ? "\n" + t(lang, "missing", { n: c.notfound }) : "");
     await answer(t(lang, "saved", { s: t(lang, status) }));
-    await tg(env, "editMessageText", {
-      chat_id: chatId, message_id: messageId, text: "✅ " + summary,
+    await tg(env, "editMessageText", Object.assign({
+      text: "✅ " + summary,
       reply_markup: { inline_keyboard: [[openButton(lang)]] },
-    });
+    }, target));
   }
+}
+
+// Results for @flicksyrobot <words>: one info card per title found, with the same buttons.
+export async function inlineTitleResults(env, user, query, lang, max) {
+  const cards = await searchCards(env, query, lang, max);
+  if (!cards.length) return [];
+  let status = new Map();
+  if (user) {
+    const rows = ((await env.DB.prepare(
+      "SELECT t.media_type, t.tmdb_id, ut.status FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+        "WHERE ut.user_id = ?1 AND t.tmdb_id IN (SELECT value FROM json_each(?2))"
+    )
+      .bind(user.id, JSON.stringify(cards.map(function (c) { return c.tmdb; })))
+      .all()).results) || [];
+    rows.forEach(function (r) { status.set(r.media_type + ":" + r.tmdb_id, r.status); });
+  }
+  return cards.map(function (c) {
+    const bits = [t(lang, c.type === "tv" ? "tv" : "movie")];
+    if (c.year) bits.push(c.year);
+    if (c.rating) bits.push("⭐ " + c.rating);
+    const res = {
+      type: "article",
+      id: "t" + c.type[0] + c.tmdb,
+      title: c.title + (c.year ? " (" + c.year + ")" : ""),
+      description: bits.join(" · ") + (c.overview ? "\n" + c.overview.slice(0, 120) : ""),
+      input_message_content: { message_text: c.text, parse_mode: "HTML", link_preview_options: cardPreview(c) },
+      reply_markup: statusKeyboard(lang, c.type, c.tmdb, status.get(c.type + ":" + c.tmdb) || null),
+    };
+    if (c.thumb) { res.thumbnail_url = c.thumb; res.thumbnail_width = 185; res.thumbnail_height = 278; }
+    return res;
+  });
 }
