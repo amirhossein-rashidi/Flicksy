@@ -163,3 +163,8 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read, id DESC);
 
 INSERT INTO schema_version (version) SELECT 6 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 6);
+
+-- ===== Migration 7: the app's language, so the bot answers in the same language =====
+ALTER TABLE users ADD COLUMN app_lang TEXT;
+
+INSERT INTO schema_version (version) SELECT 7 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 7);
