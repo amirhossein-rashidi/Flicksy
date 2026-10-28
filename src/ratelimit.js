@@ -11,6 +11,7 @@ const LIMITS = {
   read: 120, // opening screens, library list
   search: 30, // title search (each one costs a TMDB call)
   write: 40, // saving / removing library items
+  import: 150, // backup import: small batches, one every second or two
   health: 10, // the public /api/health page (per IP address)
 };
 
