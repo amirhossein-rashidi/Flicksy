@@ -41,7 +41,18 @@ function cleanEntry(raw) {
   e.imdb = typeof raw.imdb === "string" && /^tt\d{5,10}$/.test(raw.imdb) ? raw.imdb : null;
   e.tvdb = Number.isInteger(raw.tvdb) && raw.tvdb > 0 ? raw.tvdb : null;
   e.title = typeof raw.title === "string" ? raw.title.trim().slice(0, 200) : "";
+  e.alt = typeof raw.alt === "string" ? raw.alt.trim().slice(0, 200) : "";
   e.year = Number.isInteger(raw.year) && raw.year > 1870 && raw.year < 2200 ? raw.year : null;
+  // "Them (2021)", "Shelter - 2010", "God Loves Storks (IR)": the year / country is not part of the name
+  if (e.title) {
+    const ym = /\s*[(\[]\s*((?:19|20)\d{2})\s*[)\]]\s*$/.exec(e.title) || /\s+-\s+((?:19|20)\d{2})\s*$/.exec(e.title);
+    if (ym && ym.index > 0) {
+      if (!e.year) e.year = parseInt(ym[1], 10);
+      e.title = e.title.slice(0, ym.index).trim();
+    }
+    const cm = /\s*\(([A-Z]{2,3})\)\s*$/.exec(e.title);
+    if (cm && cm.index > 0) e.title = e.title.slice(0, cm.index).trim();
+  }
   if (e.tmdb && !e.type) e.tmdb = null; // an id alone is not enough: it needs a type
   if (!e.tmdb && !e.imdb && !e.tvdb && !e.title) return null;
 
@@ -94,10 +105,10 @@ export function cleanEntries(list) {
 function norm(s) {
   return String(s || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/&/g, "and")
-    .replace(/[^a-z0-9؀-ۿЀ-ӿ]+/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 }
 
@@ -142,7 +153,11 @@ function pickBest(results, e, fixedType) {
   // Accept an exact name, or the first result when the year matches.
   const nameHit = want && [best.r.title, best.r.name, best.r.original_title, best.r.original_name].map(norm).indexOf(want) >= 0;
   const yearHit = e.year && yearOf(best.r) === e.year;
-  if (!nameHit && !(yearHit && results[0] === best.r)) return null;
+  // "Formula 1" for "Formula 1: Drive to Survive": the first result starts with (or is a start of) the name
+  const near = want && results[0] === best.r && [best.r.title, best.r.name, best.r.original_title, best.r.original_name].map(norm).some(function (n) {
+    return n && (n.indexOf(want + " ") === 0 || want.indexOf(n + " ") === 0);
+  });
+  if (!nameHit && !(yearHit && results[0] === best.r) && !near) return null;
   return lite(best.r, best.type);
 }
 
@@ -172,10 +187,20 @@ async function resolveEntry(env, e, known) {
       if (e.imdb) found.imdb_id = e.imdb;
       return found;
     }
-    if (!e.title) return null;
+    if (!e.title && !e.alt) return null;
   }
 
-  if (!e.title) return null;
+  if (!e.title && !e.alt) return null;
+  const names = [e.title, e.alt].filter(function (n, i, all) { return n && all.indexOf(n) === i; });
+  for (const name of names) {
+    const one = Object.assign({}, e, { title: name });
+    const hit = await searchByTitle(env, one);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+async function searchByTitle(env, e) {
   const q = encodeURIComponent(e.title);
   if (e.type) {
     const yearParam = e.year ? (e.type === "movie" ? "&year=" : "&first_air_date_year=") + e.year : "";
@@ -660,4 +685,58 @@ export async function handleBackupSend(request, env, user) {
     return json({ error: "send_failed" }, 502);
   }
   return json({ ok: true, titles: data.library.length, lists: data.lists.length, file: name });
+}
+
+// POST /api/import-sync { after: <title id> }
+// After an import: series whose every aired episode is marked get the status "watched" (instead of "watching").
+// Works through the user's series in small steps; the app calls it again with `next` until it is null.
+export async function handleImportSync(request, env, user) {
+  const body = await readBody(request);
+  const after = body && Number.isInteger(body.after) && body.after > 0 ? body.after : 0;
+  if (!env.TMDB_TOKEN) return json({ error: "server_misconfigured" }, 500);
+
+  const rows = await env.DB.prepare(
+    "SELECT ut.id AS ut_id, ut.title_id, t.tmdb_id, " +
+      "(SELECT COUNT(*) FROM episode_progress e WHERE e.user_id = ?1 AND e.title_id = ut.title_id AND e.season_number > 0) AS seen, " +
+      "(SELECT MAX(e.watched_at) FROM episode_progress e WHERE e.user_id = ?1 AND e.title_id = ut.title_id) AS last_at " +
+      "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+      "WHERE ut.user_id = ?1 AND t.media_type = 'tv' AND ut.status IN ('want', 'watching') AND ut.title_id > ?2 " +
+      "AND EXISTS (SELECT 1 FROM episode_progress e WHERE e.user_id = ?1 AND e.title_id = ut.title_id) " +
+      "ORDER BY ut.title_id LIMIT 12"
+  )
+    .bind(user.id, after)
+    .all();
+  const list = rows.results || [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const done = [];
+  await Promise.all(
+    list.map(async (r) => {
+      try {
+        const res = await tmdbGet(env, "/tv/" + r.tmdb_id + "?language=en-US", 86400);
+        const seasons = (res.data && res.data.seasons) || [];
+        let total = 0;
+        for (const s of seasons) {
+          if (!s.season_number || s.season_number < 1) continue;
+          if (s.air_date && s.air_date <= today) total += s.episode_count || 0;
+        }
+        if (total > 0 && r.seen >= total) done.push(r);
+      } catch (e) {
+        // leave it as it is
+      }
+    })
+  );
+
+  if (done.length) {
+    await env.DB.batch(
+      done.map((r) =>
+        env.DB.prepare(
+          "UPDATE user_titles SET status = 'watched', finished_at = COALESCE(finished_at, ?1), updated_at = datetime('now') WHERE id = ?2"
+        ).bind(r.last_at || null, r.ut_id)
+      )
+    );
+  }
+
+  const next = list.length >= 12 ? list[list.length - 1].title_id : null;
+  return json({ ok: true, checked: list.length, upgraded: done.length, next: next });
 }
