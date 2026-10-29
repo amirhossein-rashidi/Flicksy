@@ -55,11 +55,11 @@ img { display: block; }
 /* home header: avatar + greeting on the left, bell on the right (same in both directions) */
 .home-bar { direction: ltr; padding: 20px 2px 14px; }
 .who { display: flex; align-items: center; gap: 12px; direction: inherit; text-align: start; }
-.greet { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.greet { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; text-align: left; }
 .greet small { font-size: 13px; color: var(--muted); }
 .greet b { color: var(--text); font-size: 24px; font-weight: 800; letter-spacing: -.4px; }
 .greet span { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-html[dir="rtl"] .greet { direction: rtl; text-align: right; }
+html[dir="rtl"] .greet { direction: rtl; }
 .home-slot { display: flex; align-items: center; gap: 8px; direction: ltr; }
 .hbell { position: relative; width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: #d8d8f0; }
 .hbell .dot-new { position: absolute; top: 10px; inset-inline-end: 11px; width: 9px; height: 9px; border-radius: 50%; background: #ff5b8a; box-shadow: 0 0 0 2px var(--bg); }
