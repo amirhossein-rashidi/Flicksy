@@ -9,8 +9,8 @@
 
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
-  var TABS = ["home", "discover", "library", "profile"];
-  var TAB_ICON = { home: "home", discover: "compass", library: "bookmark", profile: "user" };
+  var TABS = ["home", "discover", "activity", "library", "profile"];
+  var TAB_ICON = { home: "home", discover: "compass", activity: "activity", library: "bookmark", profile: "user" };
 
   // ---------- state ----------
   var initData = "";
@@ -45,7 +45,9 @@
     play: ["M7 4l13 8-13 8z"],
     listplus: ["M4 6h12M4 12h12M4 18h8M18 15v6M15 18h6"],
     pencil: ["M4 20h4L19 9l-4-4L4 16z"],
-    trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"]
+    trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"],
+    activity: ["M3 12h4l3-8 4 16 3-8h4"],
+    bell: ["M6 16V11a6 6 0 0 1 12 0v5l2 2H4z", "M10 21h4"]
   };
   var FILLED = { star: true, play: true };
 
@@ -357,12 +359,27 @@
     if (name === "home") renderHome();
     else if (name === "discover") renderDiscover();
     else if (name === "library") renderLibrary();
+    else if (name === "activity") renderActivity();
     else renderProfile();
+  }
+
+  // Every tab has a "view-<name>" box inside <main class="app">; the box is created here if index.html does not have it yet.
+  function viewNode(name) {
+    var v = $("view-" + name);
+    if (!v) {
+      v = el("div", "view hidden");
+      v.id = "view-" + name;
+      var host = document.querySelector("main.app");
+      var after = $("view-" + TABS[Math.max(0, TABS.indexOf(name) - 1)]);
+      if (after && after.parentNode === host && name !== TABS[0]) host.insertBefore(v, after.nextSibling);
+      else host.appendChild(v);
+    }
+    return v;
   }
 
   function goTab(name) {
     currentTab = name;
-    TABS.forEach(function (n) { $("view-" + n).classList.toggle("hidden", n !== name); });
+    TABS.forEach(function (n) { viewNode(n).classList.toggle("hidden", n !== name); });
     renderNav();
     renderTab(name);
     window.scrollTo(0, 0);
@@ -485,11 +502,14 @@
     var who = button("who", null, function () { goTab("profile"); });
     who.appendChild(avatarNode());
     var greet = el("div", "greet");
-    greet.appendChild(el("span", "", t("hello")));
+    greet.appendChild(el("small", "", t("hello")));
     greet.appendChild(el("b", "", (me && me.display_name) || ""));
+    greet.appendChild(el("span", "", t("home_sub")));
     who.appendChild(greet);
     head.appendChild(who);
-    head.appendChild(el("div", "brand", "Flicksy"));
+    var slot = el("div", "home-slot");
+    head.appendChild(slot);
+    if (FX.hooks.homeTop) FX.hooks.homeTop(slot, me);
     v.appendChild(head);
 
     var heroBox = el("div", "hero skel");
@@ -519,6 +539,27 @@
     v.appendChild(lazyRow("sec_popular_tv", "popular_tv"));
     v.appendChild(lazyRow("sec_top_movies", "top_movies"));
     v.appendChild(lazyRow("sec_top_tv", "top_tv"));
+  }
+
+  // ---------- activity (the feed and the leaderboard are built later; for now an empty state) ----------
+  var actView = "following";
+
+  function renderActivity() {
+    var v = viewNode("activity");
+    clear(v);
+    v.appendChild(topBar(t("act_title")));
+    var seg = el("div", "segment");
+    [["following", "act_following"], ["board", "act_board"]].forEach(function (pair) {
+      seg.appendChild(button("seg-btn" + (actView === pair[0] ? " active" : ""), t(pair[1]), function () {
+        actView = pair[0];
+        renderActivity();
+      }));
+    });
+    v.appendChild(seg);
+    var box = el("div", "empty");
+    box.appendChild(icon("activity", 44));
+    box.appendChild(el("p", "", t("act_empty")));
+    v.appendChild(box);
   }
 
   // ---------- discover ----------
