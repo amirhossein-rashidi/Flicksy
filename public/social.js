@@ -958,28 +958,30 @@
     });
   }
 
-  // ---------- plug into the Profile tab ----------
-  // Top of the profile: header picture + the bell.
-  FX.hooks.profileTop = function (view, me) {
+  // ---------- plug into the Home tab ----------
+  // Top right of Home: the notification bell (it used to live at the top of the Profile tab).
+  FX.hooks.homeTop = function (slot, me) {
     if (!me) return;
-    var bar = view.querySelector(".topbar");
-    if (!bar) return;
-
-    var bell = button("sp-bell", null, null);
+    var bell = button("hbell", null, null);
     bell.setAttribute("aria-label", lt("sx_bell"));
     bell.appendChild(svg(BELL, 22));
-    var badge = el("span", "sp-badge hidden", "0");
-    bell.appendChild(badge);
-    function setBadge(n) {
-      badge.textContent = n > 99 ? "99+" : String(n);
-      badge.classList.toggle("hidden", !(n > 0));
-    }
+    var dot = el("i", "dot-new hidden");
+    bell.appendChild(dot);
+    function setBadge(n) { dot.classList.toggle("hidden", !(n > 0)); }
     bell.addEventListener("click", function () { openBellSheet(me, setBadge); });
-    bar.appendChild(bell);
+    slot.appendChild(bell);
 
     FX.api("/api/notifications").then(function (res) {
       if (res.status === 200 && bell.isConnected) setBadge(res.data.badge || 0);
     }).catch(function () {});
+  };
+
+  // ---------- plug into the Profile tab ----------
+  // Top of the profile: header picture.
+  FX.hooks.profileTop = function (view, me) {
+    if (!me) return;
+    var bar = view.querySelector(".topbar");
+    if (!bar) return;
 
     var ban = banner(me.header, me.public_id);
     var edit = button("sp-edit", null, function () { openHeaderPicker(me); });
