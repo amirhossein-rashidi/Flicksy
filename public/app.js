@@ -669,7 +669,9 @@
     }
 
     // Tapping a tab must not take the focus away from the search box (that would hide the tabs first).
+    // Tapping a tab or a chip must not take the focus away from the search box (that would switch the menu back to All / Movies / Series).
     seg.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    chipsHolder.addEventListener("mousedown", function (e) { e.preventDefault(); });
     input.addEventListener("focus", function () { searching = true; drawSeg(); drawChips(); });
     input.addEventListener("blur", function () {
       setTimeout(function () {
