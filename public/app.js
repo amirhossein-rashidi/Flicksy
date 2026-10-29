@@ -302,9 +302,9 @@
   }
 
   // A titled row that fills itself when the data arrives.
-  function lazyRow(titleKey, kind, filterFn) {
-    var wrap = el("section", "section");
-    wrap.appendChild(sectionHeader(t(titleKey)));
+  function lazyRow(titleKey, kind, filterFn, hairline) {
+    var wrap = el("section", hairline ? "" : "section");
+    wrap.appendChild(hairline ? el("h2", "sec", t(titleKey)) : sectionHeader(t(titleKey)));
     var holder = rowSkeleton();
     wrap.appendChild(holder);
     fetchRow(kind).then(function (items) {
@@ -563,14 +563,6 @@
   }
 
   // ---------- discover ----------
-  function filterChips(current, onPick) {
-    var row = el("div", "chips");
-    [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
-      row.appendChild(button("chip" + (current === pair[0] ? " active" : ""), t(pair[1]), function () { onPick(pair[0]); }));
-    });
-    return row;
-  }
-
   function renderDiscover() {
     var v = $("view-discover");
     clear(v);
@@ -587,35 +579,26 @@
     box.appendChild(input);
     v.appendChild(box);
 
-    var tabsHolder = el("div", "segment sp-tabs");
-    v.appendChild(tabsHolder);
-    var chipsHolder = el("div");
-    v.appendChild(chipsHolder);
+    // One fixed segment: All / Movies / Series. "People" is added next to them while the search box is in use (keyboard open) or has text.
+    var seg = el("div", "segment sp-tabs");
+    v.appendChild(seg);
     var body = el("div", "disc-body");
     v.appendChild(body);
 
-    // The Titles / People tabs show only while the search box is in use (keyboard open) or has text.
     var searching = false;
-    function syncTabs() {
-      tabsHolder.classList.toggle("hidden", !(searching || disc.q.trim().length > 0));
-    }
-
-    function drawTabs() {
-      clear(tabsHolder);
-      [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
-        tabsHolder.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
-          if (disc.tab === pair[0]) return;
-          disc.tab = pair[0];
-          drawTabs(); drawChips(); drawBody();
+    function drawSeg() {
+      clear(seg);
+      var pairs = [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]];
+      if (searching || disc.q.trim().length > 0) pairs.push(["people", "sx_tab_people"]);
+      pairs.forEach(function (pair) {
+        var on = pair[0] === "people" ? disc.tab === "people" : (disc.tab === "titles" && disc.filter === pair[0]);
+        seg.appendChild(button("seg-btn" + (on ? " active" : ""), t(pair[1]), function () {
+          if (pair[0] === "people") disc.tab = "people";
+          else { disc.tab = "titles"; disc.filter = pair[0]; }
+          drawSeg(); drawBody();
           if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
         }));
       });
-    }
-
-    function drawChips() {
-      clear(chipsHolder);
-      if (disc.tab !== "titles") return;
-      chipsHolder.appendChild(filterChips(disc.filter, function (f) { disc.filter = f; drawChips(); drawBody(); }));
     }
 
     function drawBody() {
@@ -628,8 +611,8 @@
       if (q.length < 2) {
         if (q.length === 1) body.appendChild(msg(t("search_hint")));
         var f = disc.filter;
-        if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies")); body.appendChild(lazyRow("sec_popular_movies", "popular_movies")); }
-        if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv")); body.appendChild(lazyRow("sec_popular_tv", "popular_tv")); }
+        if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies", null, true)); body.appendChild(lazyRow("sec_popular_movies", "popular_movies", null, true)); }
+        if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv", null, true)); body.appendChild(lazyRow("sec_popular_tv", "popular_tv", null, true)); }
         return;
       }
       if (disc.status === "loading") { body.appendChild(msg(t("searching"))); return; }
@@ -661,23 +644,23 @@
     }
 
     // Tapping a tab must not take the focus away from the search box (that would hide the tabs first).
-    tabsHolder.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    input.addEventListener("focus", function () { searching = true; syncTabs(); });
+    seg.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    input.addEventListener("focus", function () { searching = true; drawSeg(); });
     input.addEventListener("blur", function () {
       setTimeout(function () {
         searching = document.activeElement === input;
         if (!searching && disc.q.trim().length === 0 && disc.tab !== "titles") {
           disc.tab = "titles";
-          drawTabs(); drawChips(); drawBody();
+          drawSeg(); drawBody();
         }
-        syncTabs();
+        drawSeg();
       }, 150);
     });
 
     input.addEventListener("input", function () {
       clearTimeout(disc.timer);
       disc.q = input.value;
-      syncTabs();
+      drawSeg();
       if (disc.tab === "people") {
         disc.timer = setTimeout(drawBody, 400);
         return;
@@ -692,9 +675,7 @@
       disc.timer = setTimeout(function () { runSearch(q); }, 400);
     });
 
-    drawTabs();
-    syncTabs();
-    drawChips();
+    drawSeg();
     if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
     drawBody();
   }
