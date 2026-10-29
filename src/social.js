@@ -41,7 +41,8 @@ function personOut(row, relation) {
 
 // GET /api/people-search?q=...
 // q = 3 to 8 digits  -> up to 5 people whose Flicksy ID starts with those digits
-// q = a Telegram username (with or without @) -> that exact person
+// q = a Telegram username (with or without @) -> that exact person, plus people whose name contains it
+// q = any other text (at least 2 characters, any language) -> up to 10 people whose name contains it
 export async function handlePeopleSearch(url, env, user) {
   const raw = (url.searchParams.get("q") || "").trim();
   if (!raw) return json({ people: [] });
@@ -60,12 +61,18 @@ export async function handlePeopleSearch(url, env, user) {
       .bind(user.id, raw + "%")
       .all();
   } else {
-    const name = raw.replace(/^@/, "");
-    if (!/^[A-Za-z0-9_]{3,32}$/.test(name)) return json({ people: [] });
+    const name = raw.replace(/^@/, "").trim();
+    if (Array.from(name).length < 2 || name.length > 40) return json({ people: [] });
+    // % _ and \ are escaped so they are searched as normal characters.
+    const safe = name.replace(/[\\%_]/g, (c) => "\\" + c);
     rows = await env.DB.prepare(
-      base + "WHERE lower(u.username) = lower(?2) AND u.id != ?1 LIMIT 5"
+      base +
+        "WHERE u.id != ?1 AND u.public_id IS NOT NULL " +
+        "AND (lower(u.username) = lower(?2) OR u.display_name LIKE ?3 ESCAPE '\\') " +
+        "ORDER BY CASE WHEN lower(u.username) = lower(?2) THEN 0 " +
+        "WHEN u.display_name LIKE ?4 ESCAPE '\\' THEN 1 ELSE 2 END, u.display_name LIMIT 10"
     )
-      .bind(user.id, name)
+      .bind(user.id, name, "%" + safe + "%", safe + "%")
       .all();
   }
 
