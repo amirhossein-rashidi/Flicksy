@@ -563,6 +563,14 @@
   }
 
   // ---------- discover ----------
+  function filterChips(current, onPick) {
+    var row = el("div", "chips");
+    [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
+      row.appendChild(button("chip" + (current === pair[0] ? " active" : ""), t(pair[1]), function () { onPick(pair[0]); }));
+    });
+    return row;
+  }
+
   function renderDiscover() {
     var v = $("view-discover");
     clear(v);
@@ -579,26 +587,43 @@
     box.appendChild(input);
     v.appendChild(box);
 
-    // One fixed segment: All / Movies / Series. "People" is added next to them while the search box is in use (keyboard open) or has text.
+    // Browsing: one segment (All / Movies / Series). While the search box is in use (keyboard open) or has text:
+    // two tabs (Titles | People) and, under Titles, the All / Movies / Series chips.
     var seg = el("div", "segment sp-tabs");
     v.appendChild(seg);
+    var chipsHolder = el("div");
+    v.appendChild(chipsHolder);
     var body = el("div", "disc-body");
     v.appendChild(body);
 
     var searching = false;
+    function searchMode() { return searching || disc.q.trim().length > 0; }
+
     function drawSeg() {
       clear(seg);
-      var pairs = [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]];
-      if (searching || disc.q.trim().length > 0) pairs.push(["people", "sx_tab_people"]);
-      pairs.forEach(function (pair) {
-        var on = pair[0] === "people" ? disc.tab === "people" : (disc.tab === "titles" && disc.filter === pair[0]);
-        seg.appendChild(button("seg-btn" + (on ? " active" : ""), t(pair[1]), function () {
-          if (pair[0] === "people") disc.tab = "people";
-          else { disc.tab = "titles"; disc.filter = pair[0]; }
-          drawSeg(); drawBody();
-          if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
-        }));
-      });
+      if (searchMode()) {
+        [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
+          seg.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
+            if (disc.tab === pair[0]) return;
+            disc.tab = pair[0];
+            drawSeg(); drawChips(); drawBody();
+            if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
+          }));
+        });
+      } else {
+        [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
+          seg.appendChild(button("seg-btn" + (disc.filter === pair[0] ? " active" : ""), t(pair[1]), function () {
+            disc.filter = pair[0];
+            drawSeg(); drawBody();
+          }));
+        });
+      }
+    }
+
+    function drawChips() {
+      clear(chipsHolder);
+      if (!searchMode() || disc.tab !== "titles") return;
+      chipsHolder.appendChild(filterChips(disc.filter, function (f) { disc.filter = f; drawChips(); drawBody(); }));
     }
 
     function drawBody() {
@@ -645,22 +670,22 @@
 
     // Tapping a tab must not take the focus away from the search box (that would hide the tabs first).
     seg.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    input.addEventListener("focus", function () { searching = true; drawSeg(); });
+    input.addEventListener("focus", function () { searching = true; drawSeg(); drawChips(); });
     input.addEventListener("blur", function () {
       setTimeout(function () {
         searching = document.activeElement === input;
         if (!searching && disc.q.trim().length === 0 && disc.tab !== "titles") {
           disc.tab = "titles";
-          drawSeg(); drawBody();
+          drawBody();
         }
-        drawSeg();
+        drawSeg(); drawChips();
       }, 150);
     });
 
     input.addEventListener("input", function () {
       clearTimeout(disc.timer);
       disc.q = input.value;
-      drawSeg();
+      drawSeg(); drawChips();
       if (disc.tab === "people") {
         disc.timer = setTimeout(drawBody, 400);
         return;
@@ -676,6 +701,7 @@
     });
 
     drawSeg();
+    drawChips();
     if (disc.tab === "titles" && disc.q.trim().length >= 2 && disc.status === "idle") runSearch(disc.q.trim());
     drawBody();
   }
