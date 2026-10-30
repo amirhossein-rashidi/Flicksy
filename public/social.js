@@ -365,25 +365,42 @@
       ".sp-stats-card { display: flex; margin-top: 18px; padding: 16px 4px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }" +
       ".sp-own-stats { margin-top: 0; padding-top: 0; border-top: none; }" +
       ".sp-locked { margin-top: 12px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px dashed var(--line); font-size: 13px; line-height: 1.8; color: var(--muted); }" +
-      /* modern profile tab */
-      "#view-profile .sp-banner { height: 168px; margin-bottom: 0; border: none; border-radius: 30px; box-shadow: 0 26px 50px -26px rgba(99,60,220,.8); }" +
-      "#view-profile .sp-banner::after { background: linear-gradient(180deg, rgba(7,7,26,.25) 0%, rgba(7,7,26,0) 35%, rgba(7,7,26,.55) 100%); }" +
-      "#view-profile .sp-edit { top: 12px; bottom: auto; inset-inline-end: 12px; padding: 8px 13px; border-radius: 999px; }" +
-      "#view-profile .profile-card { position: relative; margin-top: -58px; padding: 0 2px; background: none; border: none; border-radius: 0; }" +
-      "#view-profile .avatar-lg { width: 96px; height: 96px; font-size: 34px; border: 4px solid var(--bg); box-shadow: 0 0 0 3px rgba(168,85,247,.65), 0 14px 40px rgba(139,92,246,.55); }" +
-      "#view-profile .profile-name { margin-top: 12px; font-size: 23px; letter-spacing: -.3px; }" +
+      /* profile: the cover fades into the page and the avatar overlaps it */
       ".sp-idline { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; color: #cfc2ff; background: rgba(139,92,246,.16); border: 1px solid rgba(168,85,247,.28); direction: ltr; }" +
-      "#view-profile .stats { gap: 10px; margin-top: 20px; padding-top: 0; border-top: none; }" +
-      "#view-profile .stat { padding: 14px 4px 12px; border-radius: 20px; background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border: 1px solid var(--line); }" +
-      "#view-profile .stat b { font-size: 24px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }" +
-      "#view-profile .sp-own-stats { margin-top: 10px; }" +
-      "#view-profile .sp-own-stats .stat b { font-size: 21px; }" +
-      "#view-profile .settings { margin-top: 30px; gap: 10px; }" +
-      "#view-profile .settings .sec-title { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 0 4px 2px; }" +
-      "#view-profile .setting { padding: 12px 14px; border-radius: 20px; background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); }" +
-      "#view-profile .setting-left { gap: 14px; }" +
-      "#view-profile .setting-left .ic { box-sizing: content-box; padding: 8px; border-radius: 13px; background: rgba(139,92,246,.2); color: #d4c6ff; }" +
-      "#view-profile .topbar .sp-bell { width: 44px; height: 44px; background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04)); box-shadow: 0 8px 22px -10px rgba(0,0,0,.8); }" +
+      ".pf-head { position: relative; }" +
+      ".pf-cover { position: relative; margin: 0 -16px; height: 230px; -webkit-mask-image: linear-gradient(#000 50%, transparent); mask-image: linear-gradient(#000 50%, transparent); }" +
+      ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; }" +
+      ".pf-cover .sp-banner::after, .spage .pf-cover .sp-banner::after { background: radial-gradient(circle at 75% 25%, rgba(255,255,255,.18), transparent 55%); }" +
+      ".pf-more { position: absolute; top: 16px; right: 0; z-index: 3; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(7,7,26,.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); color: #fff; }" +
+      ".pf-more .ic { stroke-width: 3.4; }" +
+      ".pf-mov { position: fixed; inset: 0; z-index: 35; }" +
+      ".pf-menu { position: absolute; z-index: 36; top: 66px; right: 0; min-width: 215px; padding: 6px; border-radius: 18px; background: rgba(26,26,58,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); box-shadow: 0 20px 40px -10px #000; animation: rise .18s ease both; }" +
+      ".pf-menu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; font-weight: 600; }" +
+      ".pf-menu button:active { background: var(--surface-2); }" +
+      ".pf-menu .ic { width: 19px; height: 19px; color: #b794ff; }" +
+      ".pf-fg { position: relative; margin-top: -70px; }" +
+      ".spage .sbody { margin-top: -70px; }" +
+      ".pf-av { width: 92px; height: 92px; font-size: 36px; border: none; box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px rgba(168,85,247,.85); }" +
+      ".pf-name { margin-top: 14px; font-size: 30px; font-weight: 900; letter-spacing: -.8px; line-height: 1.15; }" +
+      ".pf-soc { display: flex; gap: 18px; margin-top: 10px; font-size: 13px; color: #cfcfe6; }" +
+      ".pf-soc b { color: #fff; }" +
+      ".pf-stats { display: flex; direction: ltr; margin: 20px 0 2px; }" +
+      ".pf-stat { flex: 1; text-align: center; }" +
+      ".pf-stat + .pf-stat { border-inline-start: 1px solid var(--line); }" +
+      ".pf-stat b { display: block; font-size: 28px; font-weight: 900; letter-spacing: -1px; }" +
+      ".pf-stat span { font-size: 12px; color: var(--muted); }" +
+      ".pf-tabline { display: flex; gap: 22px; border-bottom: 1px solid var(--line); margin: 24px 0 4px; }" +
+      ".pf-tabline button { padding: 10px 2px; font-size: 15px; font-weight: 800; position: relative; }" +
+      ".pf-tabline button::after { content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 3px; border-radius: 3px; background: var(--grad); }" +
+      ".ar { display: flex; width: 100%; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.07); text-align: start; }" +
+      ".ar-po { position: relative; width: 42px; flex: none; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: #15152f; border: 1px solid var(--line); }" +
+      ".ar-po .poster { width: 100%; height: 100%; object-fit: cover; }" +
+      ".ar-tx { flex: 1; min-width: 0; }" +
+      ".ar-tx b { display: block; font-size: 14.5px; font-weight: 800; line-height: 1.45; }" +
+      ".ar-tx small { font-size: 12px; color: var(--muted); }" +
+      ".ar-sc { display: flex; gap: 3px; align-items: center; color: var(--star); font-weight: 800; font-size: 14px; }" +
+      ".pf-empty { margin: 30px 10px; text-align: center; color: var(--muted); line-height: 1.9; font-size: 14px; }" +
+      ".sheet .settings { margin-top: 0; }" +
       /* header picker */
       ".sp-presets { display: flex; gap: 10px; flex-wrap: wrap; }" +
       ".sp-preset { width: 54px; height: 38px; border-radius: 12px; border: 2px solid transparent; }" +
@@ -601,6 +618,27 @@
     return box;
   }
 
+  // ---------- profile pieces shared by your profile and other people's ----------
+  function pfStat(label, value) {
+    var d = el("div", "pf-stat");
+    d.appendChild(el("b", "", String(value)));
+    d.appendChild(el("span", "", label));
+    return d;
+  }
+
+  function socLine(stats) {
+    var soc = el("div", "pf-soc");
+    function part(n, label) {
+      var sp = el("span");
+      sp.appendChild(el("b", "", String(n || 0)));
+      sp.appendChild(document.createTextNode(" " + label));
+      return sp;
+    }
+    soc.appendChild(part(stats && stats.followers, lt("sx_followers")));
+    soc.appendChild(part(stats && stats.following, lt("sx_following_n")));
+    return soc;
+  }
+
   function drawProfile(p) {
     var root = p.root;
     clear(root);
@@ -622,23 +660,27 @@
 
     var d = p.data;
     var pr = d.profile;
-    scroller.appendChild(banner(pr.header, pr.public_id));
+    var cover = el("div", "pf-cover");
+    cover.appendChild(banner(pr.header, pr.public_id));
+    scroller.appendChild(cover);
     root.appendChild(back);
 
     var body = el("div", "sbody");
     scroller.appendChild(body);
 
-    var head = el("div", "sp-head");
-    head.appendChild(avatar(pr));
-    var info = el("div", "sp-info");
-    info.appendChild(el("div", "sp-name", pr.display_name || ""));
+    body.appendChild(avatar(pr, "pf-av"));
+    body.appendChild(el("div", "pf-name", pr.display_name || ""));
     var sub = [];
     if (pr.username) sub.push("@" + pr.username);
     sub.push(pr.public_id);
-    info.appendChild(el("div", "sp-sub", sub.join(" · ")));
-    if (pr.is_private) info.appendChild(el("span", "tag sp-priv-tag", lt("sx_private_badge")));
-    head.appendChild(info);
-    body.appendChild(head);
+    body.appendChild(el("div", "sp-idline", sub.join(" · ")));
+    if (pr.is_private) {
+      var ptag = el("div");
+      ptag.appendChild(el("span", "tag sp-priv-tag", lt("sx_private_badge")));
+      ptag.style.marginTop = "8px";
+      body.appendChild(ptag);
+    }
+    body.appendChild(socLine(d.stats));
 
     if (d.relation !== "self") {
       var act = el("div", "sp-act");
@@ -649,13 +691,11 @@
       body.appendChild(act);
     }
 
-    var card = el("div", "sp-stats-card");
-    card.appendChild(statsRow(d.stats, "stats sp-stats"));
-    var inner = card.firstChild;
-    inner.style.margin = "0";
-    inner.style.padding = "0";
-    inner.style.border = "none";
-    body.appendChild(card);
+    var vstats = el("div", "pf-stats");
+    vstats.appendChild(pfStat(lt("sx_movies"), (d.stats && d.stats.movies) || 0));
+    vstats.appendChild(pfStat(lt("sx_episodes"), (d.stats && d.stats.episodes) || 0));
+    vstats.appendChild(pfStat(I18N.t("pf_lists"), d.lists_locked ? "–" : d.lists.length));
+    body.appendChild(vstats);
 
     var sec = el("section", "section");
     sec.appendChild(el("h2", "sec-title", lt("sx_lists")));
@@ -977,34 +1017,88 @@
   };
 
   // ---------- plug into the Profile tab ----------
-  // Top of the profile: header picture.
-  FX.hooks.profileTop = function (view, me) {
+  var MORE = ["M12 5h.01", "M12 12h.01", "M12 19h.01"];
+  var SHARE = ["M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"];
+  var SPARK = ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"];
+
+  function shareProfile(me) {
+    var link = "https://t.me/flicksyrobot?startapp=user-" + me.public_id;
+    var text = I18N.t("pf_share_text", { name: me.display_name || "Flicksy" });
+    var url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text);
+    try {
+      var tg = window.Telegram && Telegram.WebApp;
+      if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; }
+    } catch (e) {}
+    window.open(url, "_blank");
+  }
+
+  function openMenu(head, me) {
+    var ov = el("div", "pf-mov");
+    var menu = el("div", "pf-menu");
+    function close() { ov.remove(); menu.remove(); }
+    function item(path, label, fn) {
+      var b = button("", null, function () { close(); fn(); });
+      b.appendChild(svg(path, 19));
+      b.appendChild(document.createTextNode(label));
+      menu.appendChild(b);
+    }
+    item(SHARE, I18N.t("pf_share"), function () { shareProfile(me); });
+    item(PEN, lt("sx_header_change"), function () { openHeaderPicker(me); });
+    item(SPARK, I18N.t("pf_yir"), function () { FX.toast(I18N.t("pf_soon")); });
+    item(["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"], I18N.t("settings"), function () { if (FX.openSettings) FX.openSettings(); });
+    ov.addEventListener("click", close);
+    head.appendChild(ov);
+    head.appendChild(menu);
+  }
+
+  // Top of the profile: cover, avatar, name, counts, the three-dot menu and the numbers.
+  FX.hooks.profileHead = function (view, me) {
     if (!me) return;
-    var bar = view.querySelector(".topbar");
-    if (!bar) return;
+    var head = el("div", "pf-head");
+    var cover = el("div", "pf-cover");
+    cover.appendChild(banner(me.header, me.public_id));
+    head.appendChild(cover);
 
-    var ban = banner(me.header, me.public_id);
-    var edit = button("sp-edit", null, function () { openHeaderPicker(me); });
-    edit.appendChild(svg(PEN, 14));
-    edit.appendChild(document.createTextNode(lt("sx_header_change")));
-    ban.appendChild(edit);
-    bar.insertAdjacentElement("afterend", ban);
-  };
+    var more = button("pf-more", null, function () { openMenu(head, me); });
+    more.setAttribute("aria-label", I18N.t("settings"));
+    more.appendChild(svg(MORE, 22));
+    head.appendChild(more);
 
-  // Inside the profile card: the same numbers other people see.
-  FX.hooks.profileCard = function (card, me) {
-    if (!me || !me.public_id) return;
-    var nameNode = card.querySelector(".profile-name");
-    if (nameNode) {
+    var fg = el("div", "pf-fg");
+    fg.appendChild(avatar(me, "pf-av"));
+    fg.appendChild(el("div", "pf-name", me.display_name || ""));
+    if (me.public_id) {
       var idParts = [];
       if (me.username) idParts.push("@" + me.username);
       idParts.push(me.public_id);
-      nameNode.insertAdjacentElement("afterend", el("div", "sp-idline", idParts.join(" · ")));
+      fg.appendChild(el("div", "sp-idline", idParts.join(" · ")));
     }
+    var socHolder = el("div");
+    fg.appendChild(socHolder);
+    head.appendChild(fg);
+    view.appendChild(head);
+
+    var sMovies = pfStat(lt("sx_movies"), "–");
+    var sEps = pfStat(lt("sx_episodes"), "–");
+    var sLists = pfStat(I18N.t("pf_lists"), "–");
+    var stats = el("div", "pf-stats");
+    stats.appendChild(sMovies);
+    stats.appendChild(sEps);
+    stats.appendChild(sLists);
+    view.appendChild(stats);
+
+    if (!me.public_id) return;
     FX.api("/api/profile?id=" + encodeURIComponent(me.public_id)).then(function (res) {
-      if (res.status !== 200 || !card.isConnected) return;
-      var row = statsRow(res.data.stats, "stats sp-own-stats");
-      card.appendChild(row);
+      if (res.status !== 200 || !head.isConnected) return;
+      var st = res.data.stats || {};
+      sMovies.firstChild.textContent = String(st.movies || 0);
+      sEps.firstChild.textContent = String(st.episodes || 0);
+      clear(socHolder);
+      socHolder.appendChild(socLine(st));
+    }).catch(function () {});
+    FX.api("/api/lists").then(function (res) {
+      if (res.status !== 200 || !head.isConnected) return;
+      sLists.firstChild.textContent = String((res.data.lists || []).length);
     }).catch(function () {});
   };
 
