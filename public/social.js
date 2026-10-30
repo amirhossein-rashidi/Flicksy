@@ -399,6 +399,7 @@
       ".ar-tx b { display: block; font-size: 14.5px; font-weight: 800; line-height: 1.45; }" +
       ".ar-tx small { font-size: 12px; color: var(--muted); }" +
       ".ar-sc { display: flex; gap: 3px; align-items: center; color: var(--star); font-weight: 800; font-size: 14px; }" +
+      ".pf-showmore { display: block; width: 100%; padding: 16px 0 6px; text-align: center; font-size: 14px; font-weight: 700; color: #c9b6ff; }" +
       ".pf-empty { margin: 30px 10px; text-align: center; color: var(--muted); line-height: 1.9; font-size: 14px; }" +
       ".sheet .settings { margin-top: 0; }" +
       /* header picker */
