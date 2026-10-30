@@ -18,6 +18,7 @@
       pf_act_empty: "Titles you mark as watched, watching or rated will show up here.",
       pf_share_text: "{name} on Flicksy — follow me to see what I watch",
       pf_more: "Tap to show more",
+      pf_less: "Tap to show less",
       disc_start: "Start typing to search titles and people"
     },
     fa: {
@@ -35,6 +36,7 @@
       pf_act_empty: "فیلم‌ها و سریال‌هایی که دیده‌ای، در حال دیدنشان هستی یا امتیاز داده‌ای اینجا می‌آیند.",
       pf_share_text: "{name} در Flicksy — دنبالم کن تا ببینی چی می‌بینم",
       pf_more: "برای دیدن بیشتر بزن",
+      pf_less: "برای دیدن کمتر بزن",
       disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن"
     },
     ar: {
@@ -52,6 +54,7 @@
       pf_act_empty: "الأفلام والمسلسلات التي تشاهدها أو قيّمتها ستظهر هنا.",
       pf_share_text: "{name} على Flicksy — تابعني لتعرف ما أشاهده",
       pf_more: "اضغط لعرض المزيد",
+      pf_less: "اضغط لعرض أقل",
       disc_start: "ابدأ الكتابة للبحث عن الأفلام والمسلسلات والأشخاص"
     },
     tr: {
@@ -69,6 +72,7 @@
       pf_act_empty: "İzlediğin, izlemekte olduğun veya puanladığın yapımlar burada görünür.",
       pf_share_text: "{name} Flicksy'de — ne izlediğimi görmek için beni takip et",
       pf_more: "Daha fazlasını göstermek için dokun",
+      pf_less: "Daha azını göstermek için dokun",
       disc_start: "Yapımları ve kişileri aramak için yazmaya başla"
     },
     ru: {
@@ -86,6 +90,7 @@
       pf_act_empty: "Здесь появятся фильмы и сериалы, которые ты смотришь, посмотрел или оценил.",
       pf_share_text: "{name} в Flicksy — подписывайся, чтобы видеть, что я смотрю",
       pf_more: "Нажми, чтобы показать ещё",
+      pf_less: "Нажми, чтобы свернуть",
       disc_start: "Начни вводить, чтобы искать фильмы, сериалы и людей"
     },
     es: {
@@ -103,6 +108,7 @@
       pf_act_empty: "Aquí aparecerán los títulos que veas, estés viendo o puntúes.",
       pf_share_text: "{name} en Flicksy — sígueme para ver lo que veo",
       pf_more: "Toca para ver más",
+      pf_less: "Toca para ver menos",
       disc_start: "Empieza a escribir para buscar títulos y personas"
     },
     fr: {
@@ -120,6 +126,7 @@
       pf_act_empty: "Les titres que tu regardes, as vus ou notés apparaîtront ici.",
       pf_share_text: "{name} sur Flicksy — suis-moi pour voir ce que je regarde",
       pf_more: "Touche pour en voir plus",
+      pf_less: "Touche pour en voir moins",
       disc_start: "Commence à taper pour chercher des titres et des personnes"
     },
     de: {
@@ -137,6 +144,7 @@
       pf_act_empty: "Filme und Serien, die du schaust, gesehen oder bewertet hast, erscheinen hier.",
       pf_share_text: "{name} auf Flicksy — folge mir, um zu sehen, was ich schaue",
       pf_more: "Tippe, um mehr zu sehen",
+      pf_less: "Tippe, um weniger zu sehen",
       disc_start: "Tippe los, um Titel und Personen zu suchen"
     }
   };
