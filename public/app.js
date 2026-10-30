@@ -7,6 +7,9 @@
   // Small bridge so extra feature files (like lists.js) can plug into the app.
   var FX = window.FX = { hooks: {}, backStack: [] };
 
+  // New look: each new element shows only when its flag is true (and its data is there). The backend steps turn them on one by one.
+  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: false, commentsRow: false, friendsRow: false, profileTabs: false };
+
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
   var TABS = ["home", "discover", "activity", "library", "profile"];
@@ -847,46 +850,71 @@
     return row;
   }
 
+  // Settings now open from the profile's three-dot menu.
+  function openSettingsSheet() {
+    openSheet(function (sh) {
+      var list = el("div", "settings sheet-settings");
+      list.appendChild(el("h2", "sec-title", t("settings")));
+      list.appendChild(settingRow("globe", t("language"), languageName(), openLanguageSheet));
+      list.appendChild(settingRow("info", t("about"), "", openAboutSheet));
+      if (FX.hooks.settings) FX.hooks.settings(list, me);
+      // tapping a row closes this sheet first, so pages and sheets that rows open are not hidden behind it
+      list.addEventListener("click", function () { closeSheet(); }, true);
+      sh.appendChild(list);
+    });
+  }
+
+  // "My activity": the titles you marked lately, newest first (taken from your library).
+  function activityRows() {
+    var box = el("div", "pf-acts");
+    var items = library.items.filter(function (i) { var s = getMine(i).status; return s && s !== "want"; }).slice(0, 20);
+    if (!items.length) {
+      box.appendChild(el("div", "pf-empty", t("pf_act_empty")));
+      return box;
+    }
+    items.forEach(function (it) {
+      var m = getMine(it);
+      var row = el("button", "ar");
+      row.type = "button";
+      var po = el("div", "ar-po");
+      po.appendChild(posterNode(it));
+      row.appendChild(po);
+      var tx = el("div", "ar-tx");
+      tx.appendChild(el("b", "", displayTitle(it)));
+      var sub = [t("status_" + m.status)];
+      if (it.year) sub.push(String(it.year));
+      tx.appendChild(el("small", "", sub.join(" · ")));
+      row.appendChild(tx);
+      if (m.rating) {
+        var sc = el("span", "ar-sc");
+        sc.appendChild(icon("star", 13));
+        sc.appendChild(el("span", "", String(m.rating)));
+        row.appendChild(sc);
+      }
+      row.addEventListener("click", function () { openDetail(it); });
+      box.appendChild(row);
+    });
+    return box;
+  }
+
   function renderProfile() {
     var v = $("view-profile");
     clear(v);
-    v.appendChild(topBar(t("nav_profile")));
-    if (FX.hooks.profileTop) FX.hooks.profileTop(v, me);
+    if (FX.hooks.profileHead) FX.hooks.profileHead(v, me);
+    else v.appendChild(topBar(t("nav_profile")));
+    if (FX.hooks.profileLists) FX.hooks.profileLists(v, me);
 
-    var card = el("div", "profile-card");
-    var av = avatarNode();
-    av.classList.add("avatar-lg");
-    card.appendChild(av);
-    card.appendChild(el("div", "profile-name", (me && me.display_name) || ""));
-    var stats = el("div", "stats");
-    function stat(value, label) {
-      var s = el("div", "stat");
-      s.appendChild(el("b", "", String(value)));
-      s.appendChild(el("span", "", label));
-      return s;
-    }
-    var statsNodes = { watched: stat("–", t("status_watched")), watching: stat("–", t("status_watching")), want: stat("–", t("status_want")) };
-    stats.appendChild(statsNodes.watched);
-    stats.appendChild(statsNodes.watching);
-    stats.appendChild(statsNodes.want);
-    card.appendChild(stats);
-    if (FX.hooks.profileCard) FX.hooks.profileCard(card, me);
-    v.appendChild(card);
+    var tabs = el("div", "pf-tabline");
+    tabs.appendChild(el("button", "", t("pf_myact")));
+    v.appendChild(tabs);
 
-    function fillStats() {
-      var c = { watched: 0, watching: 0, want: 0 };
-      library.items.forEach(function (i) { var s = getMine(i).status; if (c[s] !== undefined) c[s]++; });
-      Object.keys(statsNodes).forEach(function (k) { statsNodes[k].firstChild.textContent = String(c[k]); });
-    }
-    if (library.loaded) fillStats();
-    ensureLibrary(false).then(function () { if (currentTab === "profile") fillStats(); });
+    var actHolder = el("div");
+    v.appendChild(actHolder);
+    function drawAct() { clear(actHolder); actHolder.appendChild(activityRows()); }
+    if (library.loaded) drawAct();
+    else actHolder.appendChild(msg(t("loading")));
+    ensureLibrary(false).then(function () { if (currentTab === "profile" && actHolder.isConnected) drawAct(); });
 
-    var list = el("div", "settings");
-    list.appendChild(el("h2", "sec-title", t("settings")));
-    list.appendChild(settingRow("globe", t("language"), languageName(), openLanguageSheet));
-    list.appendChild(settingRow("info", t("about"), "", openAboutSheet));
-    if (FX.hooks.settings) FX.hooks.settings(list, me);
-    v.appendChild(list);
     if (FX.hooks.profile) FX.hooks.profile(v, me);
   }
 
@@ -1517,6 +1545,7 @@
   FX.displayTitle = displayTitle;
   FX.sectionHeader = sectionHeader;
   FX.rerender = function () { renderTab(currentTab); };
+  FX.openSettings = openSettingsSheet;
   FX.refreshLock = function () { syncLock(); tgBack(); };
   FX.pushBack = function (fn) { FX.backStack.push(fn); FX.refreshLock(); };
   FX.popBack = function (fn) {
@@ -1562,6 +1591,8 @@
     var param = readStartParam();
     var m = /^(?:list-|list_|l_)([a-z0-9]{4,16})$/.exec(param);
     if (m && FX.openListByCode) FX.openListByCode(m[1]);
+    var u = /^user-(\d{3,12})$/.exec(param);
+    if (u && FX.openProfile) FX.openProfile(u[1]);
   }
 
   function start(attempt) {
