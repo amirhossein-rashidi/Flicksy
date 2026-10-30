@@ -787,26 +787,61 @@
   }
 
   // ---------- plug into the app ----------
+  function miniStack(posters) {
+    var box = el("div", "mini");
+    var list = (posters || []).slice(0, 3);
+    if (!list.length) list = [null];
+    list.forEach(function (src) {
+      var cell = el("div", "mp");
+      if (src) {
+        var img = el("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        cell.appendChild(img);
+      }
+      box.appendChild(cell);
+    });
+    return box;
+  }
+
+  function listRow(l) {
+    var row = button("pl", null, function () { openListPage({ id: l.id }); });
+    row.appendChild(miniStack(l.posters));
+    var info = el("div", "t");
+    info.appendChild(el("b", "", l.title));
+    info.appendChild(el("small", "", lt("list_count", { n: l.count })));
+    row.appendChild(info);
+    return row;
+  }
+
+  function newRow(handler) {
+    var row = button("pl new", null, handler);
+    var pw = el("div", "pw");
+    pw.appendChild(icon("plus", 22));
+    row.appendChild(pw);
+    row.appendChild(el("span", "", lt("list_new")));
+    return row;
+  }
+
   FX.hooks.library = function (holder) {
-    var sec = el("section", "section lists-sec");
-    sec.appendChild(el("h2", "sec-title", lt("lists_title")));
+    var sec = el("section", "lists-sec");
+    sec.appendChild(el("div", "sec", lt("lists_title")));
     var body = el("div");
     sec.appendChild(body);
     holder.appendChild(sec);
 
-    function drawRow(lists) {
+    function drawRows(lists) {
       clear(body);
-      var row = el("div", "hscroll");
-      row.appendChild(newCard(function () {
+      (lists || []).forEach(function (l) { body.appendChild(listRow(l)); });
+      body.appendChild(newRow(function () {
         openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
       }));
-      (lists || []).forEach(function (l) { row.appendChild(listCard(l)); });
-      body.appendChild(row);
     }
 
-    drawRow(cache.lists);
+    drawRows(cache.lists);
     fetchLists().then(function (lists) {
-      if (lists && sec.isConnected) drawRow(lists);
+      if (lists && sec.isConnected) drawRows(lists);
     });
   };
 
