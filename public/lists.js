@@ -844,6 +844,30 @@
     });
   };
 
+  // Own profile: the lists row (all your lists, plus a "New list" card).
+  FX.hooks.profileLists = function (holder) {
+    var sec = el("section", "lists-sec");
+    sec.appendChild(el("div", "sec", I18N.t("pf_lists")));
+    var body = el("div");
+    sec.appendChild(body);
+    holder.appendChild(sec);
+
+    function drawRow(lists) {
+      clear(body);
+      var row = el("div", "hscroll");
+      (lists || []).forEach(function (l) { row.appendChild(listCard(l)); });
+      row.appendChild(newCard(function () {
+        openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
+      }));
+      body.appendChild(row);
+    }
+
+    drawRow(cache.lists);
+    fetchLists().then(function (lists) {
+      if (lists && sec.isConnected) drawRow(lists);
+    });
+  };
+
   FX.hooks.detailAction = function (d, box) {
     box.appendChild(FX.iconButton("abtn icon-only", "listplus", lt("list_add"), function () { openAddSheet(d.item); }));
   };
