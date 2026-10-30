@@ -787,6 +787,38 @@
   }
 
   // ---------- plug into the app ----------
+  // Library: a card with a small stack of up to 3 posters, the name and the count.
+  function stackCard(l) {
+    var card = button("lscard", null, function () { openListPage({ id: l.id }); });
+    var stack = el("div", "lstack");
+    var posters = (l.posters || []).slice(0, 3);
+    if (!posters.length) posters = [null];
+    posters.forEach(function (src) {
+      var cell = el("div", "lsp");
+      if (src) {
+        var img = el("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        cell.appendChild(img);
+      }
+      stack.appendChild(cell);
+    });
+    card.appendChild(stack);
+    card.appendChild(el("div", "ptitle", l.title));
+    card.appendChild(el("div", "psub", lt("list_count", { n: l.count })));
+    return card;
+  }
+
+  function newStackCard(handler) {
+    var card = button("lscard", null, handler);
+    var box = el("div", "lstack lsnew");
+    box.appendChild(icon("plus", 24));
+    card.appendChild(box);
+    card.appendChild(el("div", "ptitle", lt("list_new")));
+    return card;
+  }
+
   FX.hooks.library = function (holder) {
     var sec = el("section", "lists-sec");
     sec.appendChild(el("div", "sec", lt("lists_title")));
@@ -797,8 +829,8 @@
     function drawGrid(lists) {
       clear(body);
       var grid = el("div", "lgrid");
-      (lists || []).forEach(function (l) { grid.appendChild(listCard(l)); });
-      grid.appendChild(newCard(function () {
+      (lists || []).forEach(function (l) { grid.appendChild(stackCard(l)); });
+      grid.appendChild(newStackCard(function () {
         openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
       }));
       body.appendChild(grid);
