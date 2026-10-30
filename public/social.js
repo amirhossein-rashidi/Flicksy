@@ -24,6 +24,7 @@
       sx_not_found: "Profile not found.",
       sx_bell: "Notifications", sx_requests: "Follow requests", sx_accept: "Accept", sx_decline: "Decline",
       sx_n_follow: "{name} started following you",
+      sx_n_request: "{name} wants to follow you",
       sx_n_accepted: "{name} accepted your follow request",
       sx_n_empty: "Nothing new.",
       sx_privacy: "Privacy",
@@ -58,6 +59,7 @@
       sx_not_found: "پروفایل پیدا نشد.",
       sx_bell: "اعلان‌ها", sx_requests: "درخواست‌های دنبال کردن", sx_accept: "قبول", sx_decline: "رد",
       sx_n_follow: "{name} شروع به دنبال کردن تو کرد",
+      sx_n_request: "{name} می‌خواهد تو را دنبال کند",
       sx_n_accepted: "{name} درخواست دنبال کردنت را قبول کرد",
       sx_n_empty: "خبر تازه‌ای نیست.",
       sx_privacy: "حریم خصوصی",
@@ -92,6 +94,7 @@
       sx_not_found: "الملف غير موجود.",
       sx_bell: "الإشعارات", sx_requests: "طلبات المتابعة", sx_accept: "قبول", sx_decline: "رفض",
       sx_n_follow: "بدأ {name} بمتابعتك",
+      sx_n_request: "يريد {name} متابعتك",
       sx_n_accepted: "قبل {name} طلب متابعتك",
       sx_n_empty: "لا جديد.",
       sx_privacy: "الخصوصية",
@@ -126,6 +129,7 @@
       sx_not_found: "Profil bulunamadı.",
       sx_bell: "Bildirimler", sx_requests: "Takip istekleri", sx_accept: "Kabul et", sx_decline: "Reddet",
       sx_n_follow: "{name} seni takip etmeye başladı",
+      sx_n_request: "{name} seni takip etmek istiyor",
       sx_n_accepted: "{name} takip isteğini kabul etti",
       sx_n_empty: "Yeni bir şey yok.",
       sx_privacy: "Gizlilik",
@@ -160,6 +164,7 @@
       sx_not_found: "Профиль не найден.",
       sx_bell: "Уведомления", sx_requests: "Запросы на подписку", sx_accept: "Принять", sx_decline: "Отклонить",
       sx_n_follow: "{name} подписался на тебя",
+      sx_n_request: "{name} хочет подписаться на тебя",
       sx_n_accepted: "{name} принял твой запрос на подписку",
       sx_n_empty: "Ничего нового.",
       sx_privacy: "Приватность",
@@ -194,6 +199,7 @@
       sx_not_found: "Perfil no encontrado.",
       sx_bell: "Notificaciones", sx_requests: "Solicitudes de seguimiento", sx_accept: "Aceptar", sx_decline: "Rechazar",
       sx_n_follow: "{name} empezó a seguirte",
+      sx_n_request: "{name} quiere seguirte",
       sx_n_accepted: "{name} aceptó tu solicitud",
       sx_n_empty: "Nada nuevo.",
       sx_privacy: "Privacidad",
@@ -228,6 +234,7 @@
       sx_not_found: "Profil introuvable.",
       sx_bell: "Notifications", sx_requests: "Demandes d’abonnement", sx_accept: "Accepter", sx_decline: "Refuser",
       sx_n_follow: "{name} te suit maintenant",
+      sx_n_request: "{name} veut te suivre",
       sx_n_accepted: "{name} a accepté ta demande",
       sx_n_empty: "Rien de nouveau.",
       sx_privacy: "Confidentialité",
@@ -262,6 +269,7 @@
       sx_not_found: "Profil nicht gefunden.",
       sx_bell: "Mitteilungen", sx_requests: "Folgeanfragen", sx_accept: "Annehmen", sx_decline: "Ablehnen",
       sx_n_follow: "{name} folgt dir jetzt",
+      sx_n_request: "{name} möchte dir folgen",
       sx_n_accepted: "{name} hat deine Anfrage angenommen",
       sx_n_empty: "Nichts Neues.",
       sx_privacy: "Datenschutz",
@@ -337,13 +345,17 @@
       ".sp-sub { font-size: 12px; color: var(--muted); direction: ltr; text-align: start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }" +
       ".btn.rel { padding: 9px 14px; font-size: 13px; flex: none; }" +
       /* notifications */
-      ".sp-nrow { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.5; }" +
-      ".sp-nrow:first-child { border-top: none; }" +
-      ".sp-nrow .sp-av { width: 40px; height: 40px; font-size: 16px; }" +
+      ".sp-nrow { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 14px; line-height: 1.55; }" +
+      ".sp-nrow .sp-av { width: 40px; height: 40px; font-size: 16px; flex: none; cursor: pointer; }" +
       ".sp-nrow .sp-ntext { flex: 1; min-width: 0; text-align: start; }" +
-      ".sp-nrow.unread .sp-ntext { font-weight: 700; }" +
-      ".sp-nbtns { display: flex; gap: 8px; flex: none; }" +
-      ".sp-nbtns .btn { padding: 8px 12px; font-size: 12px; }" +
+      ".sp-nrow .sp-ntext b { font-weight: 800; }" +
+      ".sp-nrow .sp-ntext small { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }" +
+      ".sp-nrow.unread::after { content: ''; flex: none; width: 9px; height: 9px; border-radius: 50%; background: #ff5b8a; }" +
+      ".sp-nbtns { display: flex; gap: 8px; margin-top: 8px; }" +
+      ".fbtn { flex: none; padding: 7px 16px; border-radius: 99px; font-size: 12px; font-weight: 800; background: var(--grad); color: #fff; }" +
+      ".fbtn.on { background: none; color: var(--muted); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }" +
+      ".sp-nposter { width: 36px; flex: none; aspect-ratio: 2 / 3; border-radius: 7px; overflow: hidden; background: #15152f; border: 1px solid var(--line); }" +
+      ".sp-nposter img { width: 100%; height: 100%; object-fit: cover; }" +
       ".sp-sub-title { font-size: 13px; font-weight: 800; color: var(--muted); margin: 16px 2px 6px; }" +
       /* privacy */
       ".sp-prow { margin-top: 10px; }" +
@@ -748,6 +760,36 @@
   FX.openProfile = openProfile;
 
   // ---------- notification bell (top of the Profile tab) ----------
+  // "2 hours ago" in the app language (the server sends UTC times like 2026-10-30 09:09:36)
+  function ago(at) {
+    if (!at) return "";
+    var d = new Date(String(at).replace(" ", "T") + "Z");
+    if (isNaN(d.getTime())) return "";
+    var sec = Math.round((d.getTime() - Date.now()) / 1000);
+    if (sec > 0) sec = 0; // a slightly fast phone clock must never say "in 2 seconds"
+    var abs = Math.abs(sec);
+    var unit = "second", val = sec;
+    if (abs >= 86400) { unit = "day"; val = Math.round(sec / 86400); }
+    else if (abs >= 3600) { unit = "hour"; val = Math.round(sec / 3600); }
+    else if (abs >= 60) { unit = "minute"; val = Math.round(sec / 60); }
+    try { return new Intl.RelativeTimeFormat(I18N.lang, { numeric: "auto" }).format(val, unit); } catch (e) { return d.toLocaleDateString(); }
+  }
+
+  // Puts the person's name in bold inside a translated sentence like "{name} started following you".
+  function nameText(text, name) {
+    var node = el("div", "sp-ntext");
+    var parts = text.split("\u0000");
+    node.appendChild(document.createTextNode(parts[0]));
+    if (parts.length > 1) {
+      var b = el("b");
+      var bd = el("bdi", "", name || "");
+      b.appendChild(bd);
+      node.appendChild(b);
+      node.appendChild(document.createTextNode(parts.slice(1).join("")));
+    }
+    return node;
+  }
+
   function openBellSheet(state, bellBadge) {
     FX.openSheet(function (sh) {
       sh.appendChild(el("h3", "sheet-title", lt("sx_bell")));
@@ -772,45 +814,59 @@
           clear(box);
           if (!reqs.length && !items.length) { box.appendChild(FX.msg(lt("sx_n_empty"))); return; }
 
-          if (reqs.length) {
-            box.appendChild(el("div", "sp-sub-title", lt("sx_requests")));
-            reqs.forEach(function (r) {
-              var row = el("div", "sp-nrow");
-              var av = avatar(r);
-              av.style.cursor = "pointer";
-              av.addEventListener("click", function () { goProfile(r.public_id); });
-              row.appendChild(av);
-              var text = el("div", "sp-ntext", r.display_name || "");
-              row.appendChild(text);
-              var btns = el("div", "sp-nbtns");
-              function answer(action) {
-                FX.api("/api/follow-requests", { method: "POST", body: { id: r.public_id, action: action } }).then(function (res2) {
-                  if (res2.status !== 200 && res2.status !== 404) { FX.toast(netError(res2), true); return; }
-                  FX.haptic();
-                  reqs = reqs.filter(function (x) { return x !== r; });
-                  setBadge();
-                  drawAll();
-                }).catch(function () { FX.toast(I18N.t("err_network"), true); });
-              }
-              btns.appendChild(button("btn primary", lt("sx_accept"), function () { answer("accept"); }));
-              btns.appendChild(button("btn glass", lt("sx_decline"), function () { answer("decline"); }));
-              row.appendChild(btns);
-              box.appendChild(row);
-            });
-          }
+          reqs.forEach(function (r) {
+            var row = el("div", "sp-nrow");
+            var av = avatar(r);
+            av.addEventListener("click", function () { goProfile(r.public_id); });
+            row.appendChild(av);
+            var text = nameText(lt("sx_n_request", { name: "\u0000" }), r.display_name);
+            var ts = ago(r.at);
+            if (ts) text.appendChild(el("small", "", ts));
+            var btns = el("div", "sp-nbtns");
+            function answer(action) {
+              FX.api("/api/follow-requests", { method: "POST", body: { id: r.public_id, action: action } }).then(function (res2) {
+                if (res2.status !== 200 && res2.status !== 404) { FX.toast(netError(res2), true); return; }
+                FX.haptic();
+                reqs = reqs.filter(function (x) { return x !== r; });
+                setBadge();
+                drawAll();
+              }).catch(function () { FX.toast(I18N.t("err_network"), true); });
+            }
+            btns.appendChild(button("fbtn", lt("sx_accept"), function () { answer("accept"); }));
+            btns.appendChild(button("fbtn on", lt("sx_decline"), function () { answer("decline"); }));
+            text.appendChild(btns);
+            row.appendChild(text);
+            box.appendChild(row);
+          });
 
-          if (items.length) {
-            box.appendChild(el("div", "sp-sub-title", lt("sx_bell")));
-            items.forEach(function (n) {
-              var row = el("div", "sp-nrow" + (n.read ? "" : " unread"));
-              row.style.cursor = "pointer";
-              row.appendChild(avatar(n.person));
+          items.forEach(function (n) {
+            var row = el("div", "sp-nrow" + (n.read ? "" : " unread"));
+            row.style.cursor = "pointer";
+            var text;
+            if (FX.features && FX.features.reminders && n.type === "ep" && n.title) {
+              // new-episode alert: a small poster instead of an avatar (switched on together with the backend)
+              var po = el("div", "sp-nposter");
+              if (n.poster) { var pi = el("img"); pi.src = n.poster; pi.alt = ""; po.appendChild(pi); }
+              row.appendChild(po);
+              text = el("div", "sp-ntext");
+              text.innerHTML = "";
+              text.appendChild(document.createTextNode(lt("ep_n", { name: n.title, ep: "S" + (n.season || 1) + "E" + (n.episode || 1) })));
+              row.addEventListener("click", function () {
+                FX.closeSheet();
+                if (FX.openDetail) FX.openDetail({ tmdb_id: n.tmdb_id, media_type: "tv", title: n.title, poster: n.poster || null });
+              });
+            } else {
+              var av = avatar(n.person);
+              row.appendChild(av);
               var key = n.type === "request_accepted" ? "sx_n_accepted" : "sx_n_follow";
-              row.appendChild(el("div", "sp-ntext", lt(key, { name: n.person.display_name || "" })));
+              text = nameText(lt(key, { name: "\u0000" }), n.person.display_name);
               row.addEventListener("click", function () { goProfile(n.person.public_id); });
-              box.appendChild(row);
-            });
-          }
+            }
+            var ts2 = ago(n.at);
+            if (ts2) text.appendChild(el("small", "", ts2));
+            row.appendChild(text);
+            box.appendChild(row);
+          });
         }
 
         drawAll();
