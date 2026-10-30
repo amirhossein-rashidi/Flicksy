@@ -507,7 +507,6 @@
     var greet = el("div", "greet");
     greet.appendChild(el("small", "", t("hello")));
     greet.appendChild(el("b", "", (me && me.display_name) || ""));
-    greet.appendChild(el("span", "", t("home_sub")));
     who.appendChild(greet);
     head.appendChild(who);
     var slot = el("div", "home-slot");
@@ -625,8 +624,8 @@
 
     function drawChips() {
       clear(chipsHolder);
-      if (!searchMode() || disc.tab !== "titles") return;
-      chipsHolder.appendChild(filterChips(disc.filter, function (f) { disc.filter = f; drawChips(); drawBody(); }));
+      // while searching there are only the two tabs (Titles | People), no All / Movies / Series chips
+      return;
     }
 
     function drawBody() {
@@ -636,8 +635,14 @@
         return;
       }
       var q = disc.q.trim();
+      if (q.length < 2 && searchMode()) {
+        var hint = el("div", "empty");
+        hint.appendChild(icon("search", 40));
+        hint.appendChild(el("p", "", t(q.length === 1 ? "search_hint" : "disc_start")));
+        body.appendChild(hint);
+        return;
+      }
       if (q.length < 2) {
-        if (q.length === 1) body.appendChild(msg(t("search_hint")));
         var f = disc.filter;
         if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies", null, true)); body.appendChild(lazyRow("sec_popular_movies", "popular_movies", null, true)); }
         if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv", null, true)); body.appendChild(lazyRow("sec_popular_tv", "popular_tv", null, true)); }
@@ -645,7 +650,7 @@
       }
       if (disc.status === "loading") { body.appendChild(msg(t("searching"))); return; }
       if (disc.status === "error") { body.appendChild(msg(disc.error, true)); return; }
-      var list = disc.results.filter(function (r) { return disc.filter === "all" || r.media_type === disc.filter; });
+      var list = disc.results;
       if (!list.length) { body.appendChild(msg(t("no_results"))); return; }
       var grid = el("div", "grid");
       list.forEach(function (it) { grid.appendChild(posterCard(it)); });
@@ -675,7 +680,7 @@
     // Tapping a tab or a chip must not take the focus away from the search box (that would switch the menu back to All / Movies / Series).
     seg.addEventListener("mousedown", function (e) { e.preventDefault(); });
     chipsHolder.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    input.addEventListener("focus", function () { searching = true; drawSeg(); drawChips(); });
+    input.addEventListener("focus", function () { searching = true; drawSeg(); drawChips(); drawBody(); });
     input.addEventListener("blur", function () {
       setTimeout(function () {
         searching = document.activeElement === input;
@@ -683,7 +688,7 @@
           disc.tab = "titles";
           drawBody();
         }
-        drawSeg(); drawChips();
+        drawSeg(); drawChips(); drawBody();
       }, 150);
     });
 
@@ -872,9 +877,10 @@
       box.appendChild(el("div", "pf-empty", t("pf_act_empty")));
       return box;
     }
-    items.forEach(function (it) {
+    var SHOW = 5;
+    items.forEach(function (it, idx) {
       var m = getMine(it);
-      var row = el("button", "ar");
+      var row = el("button", "ar" + (idx >= SHOW ? " hidden more-row" : ""));
       row.type = "button";
       var po = el("div", "ar-po");
       po.appendChild(posterNode(it));
@@ -894,6 +900,15 @@
       row.addEventListener("click", function () { openDetail(it); });
       box.appendChild(row);
     });
+    if (items.length > SHOW) {
+      var more = el("button", "pf-showmore", t("pf_more"));
+      more.type = "button";
+      more.addEventListener("click", function () {
+        Array.prototype.forEach.call(box.querySelectorAll(".more-row"), function (r) { r.classList.remove("hidden"); });
+        more.remove();
+      });
+      box.appendChild(more);
+    }
     return box;
   }
 
