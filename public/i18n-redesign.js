@@ -19,6 +19,7 @@
       pf_share_text: "{name} on Flicksy — follow me to see what I watch",
       pf_more: "Tap to show more",
       pf_less: "Tap to show less",
+      ep_n: "New episode of {name} is out · {ep}",
       disc_start: "Start typing to search titles and people"
     },
     fa: {
@@ -37,6 +38,7 @@
       pf_share_text: "{name} در Flicksy — دنبالم کن تا ببینی چی می‌بینم",
       pf_more: "برای دیدن بیشتر بزن",
       pf_less: "برای دیدن کمتر بزن",
+      ep_n: "قسمت جدید {name} منتشر شد · {ep}",
       disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن"
     },
     ar: {
@@ -55,6 +57,7 @@
       pf_share_text: "{name} على Flicksy — تابعني لتعرف ما أشاهده",
       pf_more: "اضغط لعرض المزيد",
       pf_less: "اضغط لعرض أقل",
+      ep_n: "صدرت حلقة جديدة من {name} · {ep}",
       disc_start: "ابدأ الكتابة للبحث عن الأفلام والمسلسلات والأشخاص"
     },
     tr: {
@@ -73,6 +76,7 @@
       pf_share_text: "{name} Flicksy'de — ne izlediğimi görmek için beni takip et",
       pf_more: "Daha fazlasını göstermek için dokun",
       pf_less: "Daha azını göstermek için dokun",
+      ep_n: "{name} dizisinin yeni bölümü yayında · {ep}",
       disc_start: "Yapımları ve kişileri aramak için yazmaya başla"
     },
     ru: {
@@ -91,6 +95,7 @@
       pf_share_text: "{name} в Flicksy — подписывайся, чтобы видеть, что я смотрю",
       pf_more: "Нажми, чтобы показать ещё",
       pf_less: "Нажми, чтобы свернуть",
+      ep_n: "Вышла новая серия «{name}» · {ep}",
       disc_start: "Начни вводить, чтобы искать фильмы, сериалы и людей"
     },
     es: {
@@ -109,6 +114,7 @@
       pf_share_text: "{name} en Flicksy — sígueme para ver lo que veo",
       pf_more: "Toca para ver más",
       pf_less: "Toca para ver menos",
+      ep_n: "Ya está disponible un nuevo episodio de {name} · {ep}",
       disc_start: "Empieza a escribir para buscar títulos y personas"
     },
     fr: {
@@ -127,6 +133,7 @@
       pf_share_text: "{name} sur Flicksy — suis-moi pour voir ce que je regarde",
       pf_more: "Touche pour en voir plus",
       pf_less: "Touche pour en voir moins",
+      ep_n: "Un nouvel épisode de {name} est disponible · {ep}",
       disc_start: "Commence à taper pour chercher des titres et des personnes"
     },
     de: {
@@ -145,6 +152,7 @@
       pf_share_text: "{name} auf Flicksy — folge mir, um zu sehen, was ich schaue",
       pf_more: "Tippe, um mehr zu sehen",
       pf_less: "Tippe, um weniger zu sehen",
+      ep_n: "Neue Folge von {name} ist da · {ep}",
       disc_start: "Tippe los, um Titel und Personen zu suchen"
     }
   };
