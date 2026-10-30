@@ -12,7 +12,7 @@
     en: {
       sx_search_ph: "Search titles and people…",
       sx_tab_titles: "Titles", sx_tab_people: "People",
-      sx_people_hint: "Type a Flicksy ID (at least 3 digits) or a Telegram username.",
+      sx_people_hint: "Type a name, a Flicksy ID (at least 3 digits) or a Telegram username.",
       sx_people_none: "Nobody found.",
       sx_follow: "Follow", sx_request: "Request", sx_following: "Following", sx_requested: "Requested",
       sx_unfollow: "Unfollow", sx_cancel_req: "Cancel request", sx_cancel: "Cancel",
@@ -46,7 +46,7 @@
     fa: {
       sx_search_ph: "جست‌وجوی فیلم، سریال و افراد…",
       sx_tab_titles: "فیلم و سریال", sx_tab_people: "افراد",
-      sx_people_hint: "آیدی Flicksy (حداقل ۳ رقم) یا یوزرنیم تلگرام را بنویس.",
+      sx_people_hint: "یک اسم، آیدی Flicksy (حداقل ۳ رقم) یا یوزرنیم تلگرام را بنویس.",
       sx_people_none: "کسی پیدا نشد.",
       sx_follow: "دنبال کردن", sx_request: "درخواست", sx_following: "دنبال می‌کنی", sx_requested: "درخواست داده‌ای",
       sx_unfollow: "لغو دنبال کردن", sx_cancel_req: "لغو درخواست", sx_cancel: "انصراف",
@@ -80,7 +80,7 @@
     ar: {
       sx_search_ph: "ابحث عن أفلام ومسلسلات وأشخاص…",
       sx_tab_titles: "الأعمال", sx_tab_people: "الأشخاص",
-      sx_people_hint: "اكتب معرّف Flicksy (3 أرقام على الأقل) أو اسم مستخدم تيليجرام.",
+      sx_people_hint: "اكتب اسماً أو معرّف Flicksy (3 أرقام على الأقل) أو اسم مستخدم تيليجرام.",
       sx_people_none: "لم يتم العثور على أحد.",
       sx_follow: "متابعة", sx_request: "طلب", sx_following: "تتابعه", sx_requested: "تم الطلب",
       sx_unfollow: "إلغاء المتابعة", sx_cancel_req: "إلغاء الطلب", sx_cancel: "إلغاء",
@@ -114,7 +114,7 @@
     tr: {
       sx_search_ph: "Film, dizi ve kişi ara…",
       sx_tab_titles: "Yapımlar", sx_tab_people: "Kişiler",
-      sx_people_hint: "Bir Flicksy kimliği (en az 3 rakam) veya Telegram kullanıcı adı yaz.",
+      sx_people_hint: "Bir isim, Flicksy kimliği (en az 3 rakam) veya Telegram kullanıcı adı yaz.",
       sx_people_none: "Kimse bulunamadı.",
       sx_follow: "Takip et", sx_request: "İstek gönder", sx_following: "Takiptesin", sx_requested: "İstek gönderildi",
       sx_unfollow: "Takibi bırak", sx_cancel_req: "İsteği geri çek", sx_cancel: "Vazgeç",
@@ -148,7 +148,7 @@
     ru: {
       sx_search_ph: "Поиск фильмов, сериалов и людей…",
       sx_tab_titles: "Фильмы и сериалы", sx_tab_people: "Люди",
-      sx_people_hint: "Введи Flicksy ID (минимум 3 цифры) или имя пользователя Telegram.",
+      sx_people_hint: "Введи имя, Flicksy ID (минимум 3 цифры) или имя пользователя Telegram.",
       sx_people_none: "Никого не найдено.",
       sx_follow: "Подписаться", sx_request: "Запрос", sx_following: "Вы подписаны", sx_requested: "Запрос отправлен",
       sx_unfollow: "Отписаться", sx_cancel_req: "Отменить запрос", sx_cancel: "Отмена",
@@ -182,7 +182,7 @@
     es: {
       sx_search_ph: "Buscar títulos y personas…",
       sx_tab_titles: "Títulos", sx_tab_people: "Personas",
-      sx_people_hint: "Escribe un ID de Flicksy (mínimo 3 dígitos) o un usuario de Telegram.",
+      sx_people_hint: "Escribe un nombre, un ID de Flicksy (mínimo 3 dígitos) o un usuario de Telegram.",
       sx_people_none: "No se encontró a nadie.",
       sx_follow: "Seguir", sx_request: "Solicitar", sx_following: "Siguiendo", sx_requested: "Solicitado",
       sx_unfollow: "Dejar de seguir", sx_cancel_req: "Cancelar solicitud", sx_cancel: "Cancelar",
@@ -216,7 +216,7 @@
     fr: {
       sx_search_ph: "Rechercher titres et personnes…",
       sx_tab_titles: "Titres", sx_tab_people: "Personnes",
-      sx_people_hint: "Saisis un ID Flicksy (3 chiffres minimum) ou un nom d’utilisateur Telegram.",
+      sx_people_hint: "Saisis un nom, un ID Flicksy (3 chiffres minimum) ou un nom d’utilisateur Telegram.",
       sx_people_none: "Personne trouvé.",
       sx_follow: "Suivre", sx_request: "Demander", sx_following: "Suivi", sx_requested: "Demandé",
       sx_unfollow: "Ne plus suivre", sx_cancel_req: "Annuler la demande", sx_cancel: "Annuler",
@@ -250,7 +250,7 @@
     de: {
       sx_search_ph: "Titel und Personen suchen…",
       sx_tab_titles: "Titel", sx_tab_people: "Personen",
-      sx_people_hint: "Gib eine Flicksy-ID (mind. 3 Ziffern) oder einen Telegram-Benutzernamen ein.",
+      sx_people_hint: "Gib einen Namen, eine Flicksy-ID (mind. 3 Ziffern) oder einen Telegram-Benutzernamen ein.",
       sx_people_none: "Niemand gefunden.",
       sx_follow: "Folgen", sx_request: "Anfragen", sx_following: "Folgst du", sx_requested: "Angefragt",
       sx_unfollow: "Nicht mehr folgen", sx_cancel_req: "Anfrage zurückziehen", sx_cancel: "Abbrechen",
@@ -555,7 +555,7 @@
     clear(container);
     var raw = String(q || "").trim().replace(/^@/, "");
     var digits = /^\d+$/.test(raw);
-    var valid = digits ? raw.length >= 3 && raw.length <= 8 : /^[A-Za-z0-9_]{3,32}$/.test(raw);
+    var valid = digits ? raw.length >= 3 && raw.length <= 8 : (Array.from(raw).length >= 2 && raw.length <= 40);
     if (!valid) { container.appendChild(FX.msg(lt("sx_people_hint"))); return; }
 
     container.appendChild(FX.msg(I18N.t("searching")));
