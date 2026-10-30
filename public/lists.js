@@ -787,14 +787,14 @@
   }
 
   // ---------- plug into the app ----------
-  // Library: a card with a small stack of up to 3 posters, the name and the count.
-  function stackCard(l) {
-    var card = button("lscard", null, function () { openListPage({ id: l.id }); });
-    var stack = el("div", "lstack");
+  // Library: rows of (small poster stack + name + count), 3 per column, scrolling sideways.
+  function listRow(l) {
+    var row = button("pl", null, function () { openListPage({ id: l.id }); });
+    var stack = el("div", "mini");
     var posters = (l.posters || []).slice(0, 3);
     if (!posters.length) posters = [null];
     posters.forEach(function (src) {
-      var cell = el("div", "lsp");
+      var cell = el("div", "mp");
       if (src) {
         var img = el("img");
         img.src = src;
@@ -804,19 +804,21 @@
       }
       stack.appendChild(cell);
     });
-    card.appendChild(stack);
-    card.appendChild(el("div", "ptitle", l.title));
-    card.appendChild(el("div", "psub", lt("list_count", { n: l.count })));
-    return card;
+    row.appendChild(stack);
+    var info = el("div", "t");
+    info.appendChild(el("b", "", l.title));
+    info.appendChild(el("small", "", lt("list_count", { n: l.count })));
+    row.appendChild(info);
+    return row;
   }
 
-  function newStackCard(handler) {
-    var card = button("lscard", null, handler);
-    var box = el("div", "lstack lsnew");
-    box.appendChild(icon("plus", 24));
-    card.appendChild(box);
-    card.appendChild(el("div", "ptitle", lt("list_new")));
-    return card;
+  function newRow(handler) {
+    var row = button("pl new", null, handler);
+    var pw = el("div", "pw");
+    pw.appendChild(icon("plus", 22));
+    row.appendChild(pw);
+    row.appendChild(el("span", "", lt("list_new")));
+    return row;
   }
 
   FX.hooks.library = function (holder) {
@@ -829,8 +831,8 @@
     function drawGrid(lists) {
       clear(body);
       var grid = el("div", "lgrid");
-      (lists || []).forEach(function (l) { grid.appendChild(stackCard(l)); });
-      grid.appendChild(newStackCard(function () {
+      (lists || []).forEach(function (l) { grid.appendChild(listRow(l)); });
+      grid.appendChild(newRow(function () {
         openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
       }));
       body.appendChild(grid);
