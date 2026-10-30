@@ -16,7 +16,9 @@
       pf_lists: "Lists",
       pf_myact: "My activity",
       pf_act_empty: "Titles you mark as watched, watching or rated will show up here.",
-      pf_share_text: "{name} on Flicksy — follow me to see what I watch"
+      pf_share_text: "{name} on Flicksy — follow me to see what I watch",
+      pf_more: "Tap to show more",
+      disc_start: "Start typing to search titles and people"
     },
     fa: {
       nav_activity: "فعالیت",
@@ -31,7 +33,9 @@
       pf_lists: "لیست‌ها",
       pf_myact: "فعالیت من",
       pf_act_empty: "فیلم‌ها و سریال‌هایی که دیده‌ای، در حال دیدنشان هستی یا امتیاز داده‌ای اینجا می‌آیند.",
-      pf_share_text: "{name} در Flicksy — دنبالم کن تا ببینی چی می‌بینم"
+      pf_share_text: "{name} در Flicksy — دنبالم کن تا ببینی چی می‌بینم",
+      pf_more: "برای دیدن بیشتر بزن",
+      disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن"
     },
     ar: {
       nav_activity: "النشاط",
@@ -46,7 +50,9 @@
       pf_lists: "القوائم",
       pf_myact: "نشاطي",
       pf_act_empty: "الأفلام والمسلسلات التي تشاهدها أو قيّمتها ستظهر هنا.",
-      pf_share_text: "{name} على Flicksy — تابعني لتعرف ما أشاهده"
+      pf_share_text: "{name} على Flicksy — تابعني لتعرف ما أشاهده",
+      pf_more: "اضغط لعرض المزيد",
+      disc_start: "ابدأ الكتابة للبحث عن الأفلام والمسلسلات والأشخاص"
     },
     tr: {
       nav_activity: "Etkinlik",
@@ -61,7 +67,9 @@
       pf_lists: "Listeler",
       pf_myact: "Etkinliğim",
       pf_act_empty: "İzlediğin, izlemekte olduğun veya puanladığın yapımlar burada görünür.",
-      pf_share_text: "{name} Flicksy'de — ne izlediğimi görmek için beni takip et"
+      pf_share_text: "{name} Flicksy'de — ne izlediğimi görmek için beni takip et",
+      pf_more: "Daha fazlasını göstermek için dokun",
+      disc_start: "Yapımları ve kişileri aramak için yazmaya başla"
     },
     ru: {
       nav_activity: "Активность",
@@ -76,7 +84,9 @@
       pf_lists: "Списки",
       pf_myact: "Моя активность",
       pf_act_empty: "Здесь появятся фильмы и сериалы, которые ты смотришь, посмотрел или оценил.",
-      pf_share_text: "{name} в Flicksy — подписывайся, чтобы видеть, что я смотрю"
+      pf_share_text: "{name} в Flicksy — подписывайся, чтобы видеть, что я смотрю",
+      pf_more: "Нажми, чтобы показать ещё",
+      disc_start: "Начни вводить, чтобы искать фильмы, сериалы и людей"
     },
     es: {
       nav_activity: "Actividad",
@@ -91,7 +101,9 @@
       pf_lists: "Listas",
       pf_myact: "Mi actividad",
       pf_act_empty: "Aquí aparecerán los títulos que veas, estés viendo o puntúes.",
-      pf_share_text: "{name} en Flicksy — sígueme para ver lo que veo"
+      pf_share_text: "{name} en Flicksy — sígueme para ver lo que veo",
+      pf_more: "Toca para ver más",
+      disc_start: "Empieza a escribir para buscar títulos y personas"
     },
     fr: {
       nav_activity: "Activité",
@@ -106,7 +118,9 @@
       pf_lists: "Listes",
       pf_myact: "Mon activité",
       pf_act_empty: "Les titres que tu regardes, as vus ou notés apparaîtront ici.",
-      pf_share_text: "{name} sur Flicksy — suis-moi pour voir ce que je regarde"
+      pf_share_text: "{name} sur Flicksy — suis-moi pour voir ce que je regarde",
+      pf_more: "Touche pour en voir plus",
+      disc_start: "Commence à taper pour chercher des titres et des personnes"
     },
     de: {
       nav_activity: "Aktivität",
@@ -121,7 +135,9 @@
       pf_lists: "Listen",
       pf_myact: "Meine Aktivität",
       pf_act_empty: "Filme und Serien, die du schaust, gesehen oder bewertet hast, erscheinen hier.",
-      pf_share_text: "{name} auf Flicksy — folge mir, um zu sehen, was ich schaue"
+      pf_share_text: "{name} auf Flicksy — folge mir, um zu sehen, was ich schaue",
+      pf_more: "Tippe, um mehr zu sehen",
+      disc_start: "Tippe los, um Titel und Personen zu suchen"
     }
   };
 
