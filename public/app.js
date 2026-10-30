@@ -903,9 +903,11 @@
     if (items.length > SHOW) {
       var more = el("button", "pf-showmore", t("pf_more"));
       more.type = "button";
+      var open = false;
       more.addEventListener("click", function () {
-        Array.prototype.forEach.call(box.querySelectorAll(".more-row"), function (r) { r.classList.remove("hidden"); });
-        more.remove();
+        open = !open;
+        Array.prototype.forEach.call(box.querySelectorAll(".more-row"), function (r) { r.classList.toggle("hidden", !open); });
+        more.textContent = t(open ? "pf_less" : "pf_more");
       });
       box.appendChild(more);
     }
