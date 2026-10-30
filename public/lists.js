@@ -787,43 +787,6 @@
   }
 
   // ---------- plug into the app ----------
-  function miniStack(posters) {
-    var box = el("div", "mini");
-    var list = (posters || []).slice(0, 3);
-    if (!list.length) list = [null];
-    list.forEach(function (src) {
-      var cell = el("div", "mp");
-      if (src) {
-        var img = el("img");
-        img.src = src;
-        img.alt = "";
-        img.loading = "lazy";
-        cell.appendChild(img);
-      }
-      box.appendChild(cell);
-    });
-    return box;
-  }
-
-  function listRow(l) {
-    var row = button("pl", null, function () { openListPage({ id: l.id }); });
-    row.appendChild(miniStack(l.posters));
-    var info = el("div", "t");
-    info.appendChild(el("b", "", l.title));
-    info.appendChild(el("small", "", lt("list_count", { n: l.count })));
-    row.appendChild(info);
-    return row;
-  }
-
-  function newRow(handler) {
-    var row = button("pl new", null, handler);
-    var pw = el("div", "pw");
-    pw.appendChild(icon("plus", 22));
-    row.appendChild(pw);
-    row.appendChild(el("span", "", lt("list_new")));
-    return row;
-  }
-
   FX.hooks.library = function (holder) {
     var sec = el("section", "lists-sec");
     sec.appendChild(el("div", "sec", lt("lists_title")));
@@ -831,17 +794,19 @@
     sec.appendChild(body);
     holder.appendChild(sec);
 
-    function drawRows(lists) {
+    function drawGrid(lists) {
       clear(body);
-      (lists || []).forEach(function (l) { body.appendChild(listRow(l)); });
-      body.appendChild(newRow(function () {
+      var grid = el("div", "lgrid");
+      (lists || []).forEach(function (l) { grid.appendChild(listCard(l)); });
+      grid.appendChild(newCard(function () {
         openForm({ onSaved: function (created) { openListPage({ id: created.id }); } });
       }));
+      body.appendChild(grid);
     }
 
-    drawRows(cache.lists);
+    drawGrid(cache.lists);
     fetchLists().then(function (lists) {
-      if (lists && sec.isConnected) drawRows(lists);
+      if (lists && sec.isConnected) drawGrid(lists);
     });
   };
 
