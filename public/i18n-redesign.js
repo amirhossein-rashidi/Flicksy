@@ -20,6 +20,11 @@
       pf_more: "Tap to show more",
       pf_less: "Tap to show less",
       ep_n: "New episode of {name} is out · {ep}",
+      dt_trailer: "See trailer",
+      dt_comments: "Comments",
+      dt_friends: "Watched by friends",
+      dt_share: "Share",
+      dt_reminder: "New-episode reminder",
       disc_start: "Start typing to search titles and people"
     },
     fa: {
@@ -39,6 +44,11 @@
       pf_more: "برای دیدن بیشتر بزن",
       pf_less: "برای دیدن کمتر بزن",
       ep_n: "قسمت جدید {name} منتشر شد · {ep}",
+      dt_trailer: "دیدن تریلر",
+      dt_comments: "نظرها",
+      dt_friends: "دیده‌شده توسط دوستان",
+      dt_share: "اشتراک‌گذاری",
+      dt_reminder: "یادآوری قسمت جدید",
       disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن"
     },
     ar: {
@@ -58,6 +68,11 @@
       pf_more: "اضغط لعرض المزيد",
       pf_less: "اضغط لعرض أقل",
       ep_n: "صدرت حلقة جديدة من {name} · {ep}",
+      dt_trailer: "مشاهدة الإعلان",
+      dt_comments: "التعليقات",
+      dt_friends: "شاهده أصدقاؤك",
+      dt_share: "مشاركة",
+      dt_reminder: "تنبيه الحلقة الجديدة",
       disc_start: "ابدأ الكتابة للبحث عن الأفلام والمسلسلات والأشخاص"
     },
     tr: {
@@ -77,6 +92,11 @@
       pf_more: "Daha fazlasını göstermek için dokun",
       pf_less: "Daha azını göstermek için dokun",
       ep_n: "{name} dizisinin yeni bölümü yayında · {ep}",
+      dt_trailer: "Fragmanı izle",
+      dt_comments: "Yorumlar",
+      dt_friends: "Arkadaşların izledi",
+      dt_share: "Paylaş",
+      dt_reminder: "Yeni bölüm hatırlatıcısı",
       disc_start: "Yapımları ve kişileri aramak için yazmaya başla"
     },
     ru: {
@@ -96,6 +116,11 @@
       pf_more: "Нажми, чтобы показать ещё",
       pf_less: "Нажми, чтобы свернуть",
       ep_n: "Вышла новая серия «{name}» · {ep}",
+      dt_trailer: "Смотреть трейлер",
+      dt_comments: "Комментарии",
+      dt_friends: "Смотрели друзья",
+      dt_share: "Поделиться",
+      dt_reminder: "Напоминание о новой серии",
       disc_start: "Начни вводить, чтобы искать фильмы, сериалы и людей"
     },
     es: {
@@ -115,6 +140,11 @@
       pf_more: "Toca para ver más",
       pf_less: "Toca para ver menos",
       ep_n: "Ya está disponible un nuevo episodio de {name} · {ep}",
+      dt_trailer: "Ver tráiler",
+      dt_comments: "Comentarios",
+      dt_friends: "Vistas por amigos",
+      dt_share: "Compartir",
+      dt_reminder: "Aviso de nuevo episodio",
       disc_start: "Empieza a escribir para buscar títulos y personas"
     },
     fr: {
@@ -134,6 +164,11 @@
       pf_more: "Touche pour en voir plus",
       pf_less: "Touche pour en voir moins",
       ep_n: "Un nouvel épisode de {name} est disponible · {ep}",
+      dt_trailer: "Voir la bande-annonce",
+      dt_comments: "Commentaires",
+      dt_friends: "Vu par des amis",
+      dt_share: "Partager",
+      dt_reminder: "Rappel de nouvel épisode",
       disc_start: "Commence à taper pour chercher des titres et des personnes"
     },
     de: {
@@ -153,6 +188,11 @@
       pf_more: "Tippe, um mehr zu sehen",
       pf_less: "Tippe, um weniger zu sehen",
       ep_n: "Neue Folge von {name} ist da · {ep}",
+      dt_trailer: "Trailer ansehen",
+      dt_comments: "Kommentare",
+      dt_friends: "Von Freunden gesehen",
+      dt_share: "Teilen",
+      dt_reminder: "Erinnerung an neue Folge",
       disc_start: "Tippe los, um Titel und Personen zu suchen"
     }
   };
