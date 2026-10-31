@@ -35,6 +35,50 @@ function parseActor(value) {
   return { id: value.id, name: value.name.trim(), photo: photo };
 }
 
+// YYYY-MM-DD, a real date, not before 1900 and not later than tomorrow (UTC), which covers every time zone.
+function validWatchDate(v) {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(v + "T12:00:00Z");
+  if (isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) return false;
+  if (v < "1900-01-01") return false;
+  return v <= new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+}
+
+// Adds to (or corrects) the watch history of a movie.
+//  - first time watched: one row (the given date, or today)
+//  - "watched again": one more row, and a feed event
+//  - only a date sent: corrects the date of the latest row
+async function recordWatch(env, user, titleId, wasWatched, watchedOn, rewatch) {
+  const day = watchedOn || new Date().toISOString().slice(0, 10);
+  const cnt = await env.DB.prepare("SELECT COUNT(*) AS n FROM watch_log WHERE user_id = ?1 AND title_id = ?2")
+    .bind(user.id, titleId)
+    .first();
+  const n = (cnt && cnt.n) || 0;
+
+  if (wasWatched && rewatch) {
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO watch_log (user_id, title_id, watched_on, is_rewatch) VALUES (?1, ?2, ?3, 1)").bind(user.id, titleId, day),
+      env.DB.prepare(
+        "INSERT INTO activities (actor_id, type, title_id, value, visibility) VALUES (?1, 'status', ?2, 'rewatched', ?3)"
+      ).bind(user.id, titleId, user.is_private ? "followers" : "public"),
+    ]);
+    return;
+  }
+  if (n === 0) {
+    await env.DB.prepare("INSERT INTO watch_log (user_id, title_id, watched_on, is_rewatch) VALUES (?1, ?2, ?3, 0)")
+      .bind(user.id, titleId, day)
+      .run();
+    return;
+  }
+  if (watchedOn) {
+    await env.DB.prepare(
+      "UPDATE watch_log SET watched_on = ?3 WHERE id = (SELECT MAX(id) FROM watch_log WHERE user_id = ?1 AND title_id = ?2)"
+    )
+      .bind(user.id, titleId, watchedOn)
+      .run();
+  }
+}
+
 export async function handleLibraryList(url, env, user) {
   const status = url.searchParams.get("status");
   if (status && !STATUSES.includes(status)) return json({ error: "bad_status" }, 400);
@@ -100,6 +144,14 @@ export async function handleLibrarySet(request, env, user) {
     return json({ error: "bad_rating" }, 400);
   }
   const status = body.status;
+
+  // Optional watch date (not in the future) and "watched again" flag (movies only).
+  let watchedOn = null;
+  if (body.watched_on !== undefined && body.watched_on !== null && body.watched_on !== "") {
+    if (!validWatchDate(body.watched_on)) return json({ error: "bad_date" }, 400);
+    watchedOn = body.watched_on;
+  }
+  const rewatch = body.rewatch === true;
 
   const moodIn = parseMood(body.mood);
   if (moodIn === false) return json({ error: "bad_mood" }, 400);
@@ -183,6 +235,14 @@ export async function handleLibrarySet(request, env, user) {
   }
 
   await env.DB.batch(statements);
+
+  // Watch history (movies). Kept apart from the main save so the library keeps working even before the table exists.
+  if (status === "watched" && ref.mediaType === "movie") {
+    try {
+      await recordWatch(env, user, titleId, !!(existing && existing.status === "watched"), watchedOn, rewatch);
+    } catch (e) {}
+  }
+
   return json({
     ok: true,
     status: status,
@@ -202,6 +262,15 @@ export async function handleLibraryDelete(url, env, user) {
   )
     .bind(user.id, ref.tmdbId, ref.mediaType)
     .run();
+
+  try {
+    await env.DB.prepare(
+      "DELETE FROM watch_log WHERE user_id = ?1 AND title_id = " +
+        "(SELECT id FROM titles WHERE tmdb_id = ?2 AND media_type = ?3)"
+    )
+      .bind(user.id, ref.tmdbId, ref.mediaType)
+      .run();
+  } catch (e) {}
 
   return json({ ok: true });
 }
