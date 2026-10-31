@@ -35,3 +35,13 @@
 .lchk { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(99, 60, 220, .55); color: #fff; }
 .pcard.inlist .lchk { display: flex; }
 .pcard.inlist .pimg { border-color: rgba(168, 85, 247, .9); }
+
+/* watched by friends */
+.stk { display: inline-flex; }
+.stk .stk-av { width: 28px; height: 28px; font-size: 12px; border: 2px solid #07071a; box-shadow: none; margin-inline-start: -8px; }
+.stk .stk-av:first-child { margin-inline-start: 0; }
+.rowc em { font-style: normal; }
+.fr-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 2px; border-bottom: 1px solid var(--line); }
+.fr-av { width: 40px; height: 40px; box-shadow: none; }
+.fr-nm { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-sc { display: inline-flex; align-items: center; gap: 4px; color: var(--star); font-weight: 800; font-size: 14px; }
