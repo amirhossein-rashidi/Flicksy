@@ -100,6 +100,20 @@ export async function handleTitle(url, env, user) {
     };
   } catch (e) {}
 
+  // My watch history (movies): how many times and the last date.
+  let myWatch = null;
+  if (!isTv && mine && mine.status === "watched") {
+    try {
+      const w = await env.DB.prepare(
+        "SELECT COUNT(*) AS n, MAX(watched_on) AS last FROM watch_log w JOIN titles t ON t.id = w.title_id " +
+          "WHERE w.user_id = ?1 AND t.tmdb_id = ?2 AND t.media_type = ?3"
+      )
+        .bind(user.id, ref.tmdbId, ref.mediaType)
+        .first();
+      if (w && w.n > 0) myWatch = { watch_count: w.n, last_watched_on: w.last || null };
+    } catch (e) {}
+  }
+
   const runtime = isTv
     ? Array.isArray(d.episode_run_time) && d.episode_run_time.length
       ? d.episode_run_time[0]
@@ -126,6 +140,7 @@ export async function handleTitle(url, env, user) {
     similar: similar,
     trailer_key: trailerKey,
     friends_watched: friendsWatched,
+    my: myWatch,
     status: mine ? mine.status : null,
     my_rating: mine ? mine.rating : null,
     mood: mine && mine.mood ? mine.mood.split(",") : [],
