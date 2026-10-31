@@ -217,3 +217,12 @@ html[dir="rtl"] .greet { direction: rtl; }
 .label { font-size: 13px; color: var(--muted); margin: 16px 2px 8px; }
 .pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .pills.nums { direction: ltr; }
+
+/* title page: top-right tools (reminder bell, share) and the three menu rows */
+.d-tools { position: absolute; z-index: 3; top: calc(14px + env(safe-area-inset-top)); inset-inline-end: 14px; display: flex; gap: 10px; }
+.d-tools .round-btn { position: static; }
+.drows { margin-top: 22px; border-top: 1px solid var(--line); }
+.drow { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 18px 2px; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 700; }
+.rowc { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 600; }
+.yti { width: 38px; height: 27px; border-radius: 9px; display: grid; place-items: center; background: rgba(255, 255, 255, .22); color: #0b0b1f; }
+
