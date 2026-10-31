@@ -1210,7 +1210,7 @@
 
   // Share of people (in %) from the counts the server sends. "–" while nobody has voted.
   function pctText(count, total) {
-    if (!total) return "–";
+    if (!total) return "0%";
     var v = Math.round((count / total) * 100);
     try { return v.toLocaleString(I18N.lang === "fa" ? "fa-IR" : undefined) + "%"; } catch (e) { return v + "%"; }
   }
@@ -1367,8 +1367,9 @@
             });
           });
           b.appendChild(icon("star", 22));
+          // no choice yet: the word (Bad ... Wow); after choosing: the share of people for every star
           var stc = d.data && d.data.stats;
-          b.appendChild(el("span", "", stc ? pctText(stc.stars[num - 1], stc.rated) : ""));
+          b.appendChild(el("span", "", cur > 0 && stc ? pctText(stc.stars[num - 1], stc.rated) : t(STAR_KEYS[num - 1])));
           stars.appendChild(b);
         })(n);
       }
@@ -1396,7 +1397,7 @@
         });
         b.appendChild(el("span", "e", e));
         var smc = d.data.stats;
-        b.appendChild(el("span", "", smc ? pctText((smc.moods && smc.moods[e]) || 0, smc.moded) : ""));
+        b.appendChild(el("span", "", sel.length && smc ? pctText((smc.moods && smc.moods[e]) || 0, smc.moded) : t(MOOD_KEYS[e])));
         b.setAttribute("aria-label", t(MOOD_KEYS[e]));
         moods.appendChild(b);
       });
