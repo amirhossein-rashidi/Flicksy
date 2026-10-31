@@ -37,12 +37,30 @@ export async function handleTitle(url, env, user) {
   const isTv = ref.mediaType === "tv";
   const date = d.release_date || d.first_air_date || "";
   const credits = d.credits || {};
-  const cast = (Array.isArray(credits.cast) ? credits.cast : []).slice(0, 16).map((c) => ({
+  const cast = (Array.isArray(credits.cast) ? credits.cast : []).slice(0, 20).map((c) => ({
     id: c.id,
     name: c.name || "",
     character: c.character || "",
     photo: imgUrl(TMDB_PROFILE, c.profile_path),
   }));
+
+  // Behind the scenes: one card per person (jobs merged), the most important jobs first.
+  const CREW_RANK = ["Director", "Writer", "Screenplay", "Story", "Novel", "Producer", "Executive Producer", "Original Music Composer", "Director of Photography", "Editor", "Production Design", "Costume Design"];
+  const crewMap = new Map();
+  (Array.isArray(credits.crew) ? credits.crew : []).forEach((p) => {
+    const rank = CREW_RANK.indexOf(p.job);
+    if (rank < 0 || !p.id || !p.name) return;
+    const cur = crewMap.get(p.id);
+    if (!cur) crewMap.set(p.id, { id: p.id, name: p.name, jobs: [p.job], rank: rank, photo: imgUrl(TMDB_PROFILE, p.profile_path) });
+    else {
+      if (!cur.jobs.includes(p.job)) cur.jobs.push(p.job);
+      if (rank < cur.rank) cur.rank = rank;
+    }
+  });
+  const crew = Array.from(crewMap.values())
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 24)
+    .map((c) => ({ id: c.id, name: c.name, job: c.jobs.slice(0, 2).join(" · "), photo: c.photo }));
 
   let directors = [];
   if (isTv) {
@@ -137,6 +155,7 @@ export async function handleTitle(url, env, user) {
     seasons: isTv ? d.number_of_seasons || null : null,
     directors: directors.slice(0, 3),
     cast: cast,
+    crew: crew,
     similar: similar,
     trailer_key: trailerKey,
     friends_watched: friendsWatched,
