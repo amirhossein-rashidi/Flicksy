@@ -180,35 +180,6 @@
     return card;
   }
 
-  // ---------- follow button ----------
-  function followButton(row) {
-    var b = el("button", "ac-fbtn");
-    b.type = "button";
-    function paint() {
-      b.className = "ac-fbtn" + (row.relation === "none" ? "" : " on");
-      b.textContent = t(row.relation === "following" ? "ac_following" : row.relation === "requested" ? "ac_requested" : "ac_follow");
-    }
-    paint();
-    b.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (b.disabled) return;
-      b.disabled = true;
-      var pid = row.person.public_id;
-      var req = row.relation === "none"
-        ? FX.api("/api/follow", { method: "POST", body: { id: pid } })
-        : FX.api("/api/follow?id=" + encodeURIComponent(pid), { method: "DELETE" });
-      req.then(function (res) {
-        b.disabled = false;
-        if (res.status === 200 && res.data) {
-          row.relation = row.relation === "none" ? (res.data.relation || "following") : "none";
-          feedCache = null;
-          paint();
-        } else FX.toast(t("ac_err"), true);
-      }).catch(function () { b.disabled = false; FX.toast(t("ac_err"), true); });
-    });
-    return b;
-  }
-
   // ---------- state ----------
   var view = document.getElementById("view-activity");
   var tab = "following";   // following | board
@@ -288,7 +259,6 @@
     v.appendChild(el("b", "", nf(r.value)));
     v.appendChild(el("small", "", t(kind === "movies" ? "ac_movies" : "ac_episodes")));
     row.appendChild(v);
-    if (!r.is_me) row.appendChild(followButton(r));
     if (!r.is_me) row.addEventListener("click", function () { openPerson(r.person); });
     return row;
   }
