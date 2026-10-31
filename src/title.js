@@ -72,6 +72,34 @@ export async function handleTitle(url, env, user) {
     .bind(user.id, ref.tmdbId, ref.mediaType)
     .first();
 
+  // Friends = people you follow (accepted only) who have this title as watched and show their activity.
+  const friendBind = [user.id, ref.tmdbId, ref.mediaType];
+  const friendFrom =
+    "FROM follows f JOIN users u ON u.id = f.followed_id " +
+    "JOIN user_titles ut ON ut.user_id = u.id JOIN titles t ON t.id = ut.title_id " +
+    "WHERE f.follower_id = ?1 AND f.status = 'accepted' AND u.activity_visible = 1 " +
+    "AND ut.status = 'watched' AND t.tmdb_id = ?2 AND t.media_type = ?3";
+  let friendsWatched = { count: 0, sample: [], list: [] };
+  try {
+    const [fc, fl] = await env.DB.batch([
+      env.DB.prepare("SELECT COUNT(*) AS n " + friendFrom).bind(...friendBind),
+      env.DB.prepare(
+        "SELECT u.public_id, u.display_name, u.photo_url, ut.rating " + friendFrom + " ORDER BY ut.updated_at DESC LIMIT 30"
+      ).bind(...friendBind),
+    ]);
+    const list = (fl.results || []).map((r) => ({
+      public_id: r.public_id,
+      display_name: r.display_name,
+      photo_url: r.photo_url || null,
+      rating: r.rating || null,
+    }));
+    friendsWatched = {
+      count: (fc.results && fc.results[0] && fc.results[0].n) || 0,
+      sample: list.slice(0, 2),
+      list: list,
+    };
+  } catch (e) {}
+
   const runtime = isTv
     ? Array.isArray(d.episode_run_time) && d.episode_run_time.length
       ? d.episode_run_time[0]
@@ -97,6 +125,7 @@ export async function handleTitle(url, env, user) {
     cast: cast,
     similar: similar,
     trailer_key: trailerKey,
+    friends_watched: friendsWatched,
     status: mine ? mine.status : null,
     my_rating: mine ? mine.rating : null,
     mood: mine && mine.mood ? mine.mood.split(",") : [],
