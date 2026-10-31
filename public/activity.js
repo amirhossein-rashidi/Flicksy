@@ -25,6 +25,7 @@
       ac_rated: "{name} rated {title} {v}/10",
       ac_watched_m: "{name} watched {title}",
       ac_watched_t: "{name} watched the series {title}",
+      ac_rewatched: "{name} watched {title} again",
       ac_watching: "{name} started watching {title}",
       ac_want: "{name} wants to watch {title}",
       ac_paused: "{name} paused {title}",
@@ -50,6 +51,7 @@
       ac_rated: "{name} به {title} نمره {v} داد",
       ac_watched_m: "{name} فیلم {title} را دید",
       ac_watched_t: "{name} سریال {title} را دید",
+      ac_rewatched: "{name} دوباره {title} را دید",
       ac_watching: "{name} شروع به دیدن {title} کرد",
       ac_want: "{name} می‌خواد {title} را ببیند",
       ac_paused: "{name} {title} را متوقف کرد",
@@ -125,7 +127,7 @@
     if (a.type === "list_add") return "ac_list_add";
     if (a.type === "status") {
       if (a.value === "watched") return a.title && a.title.media_type === "tv" ? "ac_watched_t" : "ac_watched_m";
-      if (["watching", "want", "paused", "dropped"].indexOf(a.value) >= 0) return "ac_" + a.value;
+      if (["watching", "want", "paused", "dropped", "rewatched"].indexOf(a.value) >= 0) return "ac_" + a.value;
     }
     return null;
   }
