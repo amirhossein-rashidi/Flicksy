@@ -1170,6 +1170,106 @@
     scroller.appendChild(body);
   }
 
+  // ---------- person page: biography and filmography (newest first) ----------
+  var personPage = null;
+
+  function closePerson() {
+    if (!personPage) return;
+    personPage.root.remove();
+    FX.popBack(personPage.back);
+    personPage = null;
+  }
+
+  function openPerson(seed) {
+    if (!seed || !seed.id) return;
+    if (personPage) closePerson();
+    var root = el("div", "page spage ppage");
+    root.style.zIndex = "35";
+    var pg = { root: root, back: closePerson, data: null, error: "", open: false };
+    personPage = pg;
+    document.body.appendChild(root);
+    FX.pushBack(pg.back);
+    drawPerson(pg, seed);
+    api(L("/api/person?id=" + encodeURIComponent(seed.id))).then(function (res) {
+      if (personPage !== pg) return;
+      if (res.status !== 200) pg.error = problem(res, "err_load");
+      else pg.data = res.data;
+      drawPerson(pg, seed);
+    }).catch(function () {
+      if (personPage !== pg) return;
+      pg.error = t("err_network");
+      drawPerson(pg, seed);
+    });
+  }
+
+  function drawPerson(pg, seed) {
+    var root = pg.root;
+    clear(root);
+    var scroller = el("div", "page-scroll");
+    root.appendChild(scroller);
+    var back = iconButton("round-btn", "back", t("btn_close"), closePerson);
+    back.firstChild.classList.add("flip");
+    root.appendChild(back);
+
+    var d = pg.data;
+    var name = d ? d.name : seed.name;
+    var photo = d ? d.photo : seed.photo;
+
+    var top = el("div", "pp-top");
+    top.appendChild(personCard(name, "", photo, 0, "div"));
+    var info = el("div", "pp-info");
+    info.appendChild(el("h2", "pp-name", name || ""));
+    if (d) {
+      if (d.department) info.appendChild(el("small", "", t("pp_d_" + d.department) === "pp_d_" + d.department ? d.department : t("pp_d_" + d.department)));
+      var life = [];
+      if (d.birthday) life.push(t("pp_born") + " " + niceDate(d.birthday));
+      if (d.deathday) life.push(t("pp_died") + " " + niceDate(d.deathday));
+      if (life.length) info.appendChild(el("small", "", life.join(" · ")));
+      if (d.place) info.appendChild(el("small", "", d.place));
+    }
+    top.appendChild(info);
+    scroller.appendChild(top);
+
+    var body = el("div", "pp-body");
+    scroller.appendChild(body);
+    if (pg.error && !d) { body.appendChild(msg(pg.error, true)); return; }
+    if (!d) { body.appendChild(msg(t("loading"))); return; }
+
+    var bio = el("p", "pp-bio" + (pg.open ? "" : " cl"), d.bio || t("pp_nobio"));
+    body.appendChild(bio);
+    if ((d.bio || "").length > 260) {
+      var more = button("pp-more", t(pg.open ? "pp_less" : "pp_more"), function () {
+        pg.open = !pg.open;
+        bio.classList.toggle("cl", !pg.open);
+        more.textContent = t(pg.open ? "pp_less" : "pp_more");
+      });
+      body.appendChild(more);
+    }
+
+    if (d.credits && d.credits.length) {
+      var fh = el("div", "pp-fh");
+      fh.appendChild(el("h4", "", t("pp_films") + " (" + d.total + ")"));
+      fh.appendChild(el("small", "", t("pp_newest")));
+      body.appendChild(fh);
+      var list = el("div", "pp-list");
+      d.credits.forEach(function (c) {
+        var r = button("pp-fi", null, function () {
+          openDetail({ tmdb_id: c.tmdb_id, media_type: c.media_type, title: c.title, year: c.year, poster: c.poster });
+        });
+        var mp = el("div", "pp-mp");
+        mp.appendChild(posterNode({ poster: c.poster }, "poster"));
+        r.appendChild(mp);
+        var nm = el("div", "pp-nm");
+        nm.appendChild(el("b", "", c.title));
+        if (c.role) nm.appendChild(el("small", "", c.kind === "cast" ? t("pp_as", { r: c.role }) : c.role));
+        r.appendChild(nm);
+        if (c.year) r.appendChild(el("span", "pp-yr", String(c.year)));
+        list.appendChild(r);
+      });
+      body.appendChild(list);
+    }
+  }
+
   // ---------- movie page: actions, rating, feelings, favorite character ----------
   var PC_COLORS = ["5b3fd0", "2a5bd7", "b0397a", "1f8a8a", "c0662b", "6a4ad0"];
 
@@ -1557,7 +1657,9 @@
       if (!people || !people.length) { pane.appendChild(msg("—")); return; }
       var row = el("div", "hscroll pc-row");
       people.forEach(function (c, i) {
-        row.appendChild(personCard(c.name, d.tab === "crew" ? c.job : c.character, c.photo, i, "div"));
+        var pcard = personCard(c.name, d.tab === "crew" ? c.job : c.character, c.photo, i, "button");
+        pcard.addEventListener("click", function () { openPerson({ id: c.id, name: c.name, photo: c.photo }); });
+        row.appendChild(pcard);
       });
       pane.appendChild(row);
     }
