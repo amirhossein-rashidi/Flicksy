@@ -156,7 +156,7 @@
     var tx = el("div", "ac-tx");
     var vh = el("div", "ac-vh");
     vh.appendChild(who(a));
-    vh.appendChild(sentence(key, { name: a.person.display_name, title: a.title ? a.title.title : "", v: a.value }));
+    vh.appendChild(sentence(key, { name: a.person.display_name, title: a.title ? FX.displayTitle(a.title) : "", v: a.value }));
     tx.appendChild(vh);
     top.appendChild(tx);
     var sc = el("div", "ac-sco");
@@ -174,7 +174,7 @@
     var card = el("div", "ac-mc");
     card.appendChild(who(a));
     var mx = el("div", "ac-mx");
-    mx.appendChild(sentence(key, { name: a.person.display_name, title: a.title ? a.title.title : "", list: a.list ? a.list.title : "" }));
+    mx.appendChild(sentence(key, { name: a.person.display_name, title: a.title ? FX.displayTitle(a.title) : "", list: a.list ? a.list.title : "" }));
     mx.appendChild(el("small", "", ago(a.at)));
     card.appendChild(mx);
     if (a.title) { var po = el("div", "ac-po ac-po-s"); po.appendChild(FX.posterNode(a.title)); card.appendChild(po); }
