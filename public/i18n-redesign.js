@@ -43,6 +43,10 @@
       rw_unwatch: "Mark not watched",
       rw_n: "{n}×",
       tab_crew: "Crew",
+      pp_born: "Born", pp_died: "Died", pp_more: "more", pp_less: "less",
+      pp_films: "Filmography", pp_newest: "Newest first", pp_as: "as {r}", pp_nobio: "No biography yet.",
+      pp_d_Acting: "Actor", pp_d_Directing: "Director", pp_d_Writing: "Writer", pp_d_Production: "Producer",
+      pp_d_Sound: "Music", pp_d_Camera: "Cinematography", pp_d_Editing: "Editing",
     },
     fa: {
       nav_activity: "فعالیت",
@@ -84,6 +88,10 @@
       rw_unwatch: "برداشتن علامت دیده‌شده",
       rw_n: "{n} بار",
       tab_crew: "عوامل",
+      pp_born: "متولد", pp_died: "درگذشته", pp_more: "ادامه", pp_less: "کمتر",
+      pp_films: "فیلم‌شناسی", pp_newest: "جدیدترین", pp_as: "در نقش {r}", pp_nobio: "هنوز بیوگرافی‌ای ثبت نشده.",
+      pp_d_Acting: "بازیگر", pp_d_Directing: "کارگردان", pp_d_Writing: "نویسنده", pp_d_Production: "تهیه‌کننده",
+      pp_d_Sound: "موسیقی", pp_d_Camera: "فیلم‌برداری", pp_d_Editing: "تدوین",
     },
     ar: {
       nav_activity: "النشاط",
