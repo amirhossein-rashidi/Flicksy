@@ -951,6 +951,8 @@
   function openDetail(item) {
     var d = { item: item, data: null, tab: "overview", ep: null, error: "", els: {} };
     detailStack.push(d);
+    // a title opened from a profile that sits on top of the title page must come to the front again
+    $("detail").style.zIndex = document.querySelector(".spage") ? "40" : "";
     $("detail").classList.remove("hidden");
     syncLock();
     tgBack();
@@ -1017,7 +1019,12 @@
       (fw.list || []).forEach(function (p) {
         var r = button("fr-row", null, function () {
           closeSheet();
-          if (FX.openProfile && p.public_id) FX.openProfile(p.public_id);
+          if (FX.openProfile && p.public_id) {
+            FX.openProfile(p.public_id);
+            // the title page is above profile pages by default; lift this profile over it
+            var sp = document.querySelectorAll(".spage");
+            if (sp.length) sp[sp.length - 1].style.zIndex = "35";
+          }
         });
         r.appendChild(friendAvatar(p, "fr-av"));
         var nm = el("span", "fr-nm");
