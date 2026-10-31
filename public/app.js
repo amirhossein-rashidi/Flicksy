@@ -1146,13 +1146,7 @@
     top.appendChild(box);
     body.appendChild(top);
 
-    if (d.data && d.data.genres && d.data.genres.length) {
-      var genres = el("div", "genres");
-      d.data.genres.forEach(function (g) { genres.appendChild(el("span", "genre", g)); });
-      body.appendChild(genres);
-    }
-
-    d.els.actions = el("div", "d-actions");
+    d.els.actions = el("div", "d-actions" + (d.item.media_type === "movie" ? " mv" : ""));
     body.appendChild(d.els.actions);
     renderActions(d);
 
@@ -1168,7 +1162,240 @@
     scroller.appendChild(body);
   }
 
+  // ---------- movie page: actions, rating, feelings, favorite character ----------
+  var PC_COLORS = ["5b3fd0", "2a5bd7", "b0397a", "1f8a8a", "c0662b", "6a4ad0"];
+
+  // A tall card: photo (or a colored letter), name and a small line under it.
+  function personCard(name, sub, photo, i, tag) {
+    var c = el(tag || "div", "pc");
+    if (tag === "button") c.type = "button";
+    if (photo) {
+      var im = el("img", "pc-img");
+      im.src = photo;
+      im.alt = "";
+      im.loading = "lazy";
+      im.addEventListener("error", function () { im.remove(); });
+      c.appendChild(im);
+    }
+    var ph = el("span", "pc-ph", (name || "?").charAt(0).toUpperCase());
+    ph.style.background = "linear-gradient(" + (150 + (i || 0) * 40) + "deg,#" + PC_COLORS[(i || 0) % PC_COLORS.length] + ",#14143a)";
+    c.insertBefore(ph, c.firstChild);
+    var tx = el("span", "pc-tx");
+    tx.appendChild(el("b", "", name || ""));
+    if (sub) tx.appendChild(el("small", "", sub));
+    c.appendChild(tx);
+    return c;
+  }
+
+  function shortDate(iso) {
+    if (!iso) return "";
+    if (iso === todayStr()) return t("dt_today");
+    var dt = new Date(iso + "T12:00:00");
+    if (isNaN(dt.getTime())) return iso;
+    var o = { day: "numeric", month: "short" };
+    if (dt.getFullYear() !== new Date().getFullYear()) o.year = "numeric";
+    try { return dt.toLocaleDateString(I18N.lang === "fa" ? "fa-IR" : I18N.lang, o); } catch (e) { return iso; }
+  }
+
+  var STAR_KEYS = ["st_bad", "st_ok", "st_good", "st_great", "st_wow"];
+  var MOOD_KEYS = { "😍": "mood_love", "😂": "mood_funny", "😢": "mood_sad", "😱": "mood_scared", "🤯": "mood_mind", "😴": "mood_bored", "😡": "mood_angry", "🤔": "mood_think" };
+
+  // The menu that opens when you tap the green "Watched" button.
+  function openWatchedMenu(d) {
+    var item = d.item;
+    openSheet(function (sh) {
+      function row(cls, iconName, label, handler) {
+        var r = button("mi " + cls, null, handler);
+        r.appendChild(icon(iconName, 20));
+        r.appendChild(el("span", "", label));
+        sh.appendChild(r);
+      }
+      row("", "repeat", t("rw_log"), function () {
+        closeSheet();
+        var prev = d.data && d.data.my ? d.data.my.watch_count : 1;
+        setStatus(item, "watched", getMine(item).rating, { rewatch: true, watched_on: todayStr() }).then(function (ok) {
+          if (!ok) return;
+          if (d.data) d.data.my = { watch_count: prev + 1, last_watched_on: todayStr() };
+          toast(t("rw_logged"));
+          if (topDetail() === d) renderActions(d);
+        });
+      });
+      row("", "cal", t("rw_change"), function () { openDateSheet(d); });
+      row("red", "x", t("rw_unwatch"), function () {
+        closeSheet();
+        removeFromLibrary(item).then(function (ok) {
+          if (ok && d.data) { d.data.mood = []; d.data.fav_actor = null; d.data.my = null; }
+          if (topDetail() === d) renderActions(d);
+        });
+      });
+    });
+  }
+
+  function openDateSheet(d) {
+    var item = d.item;
+    var cur = (d.data && d.data.my && d.data.my.last_watched_on) || todayStr();
+    openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", t("wdate")));
+      var inp = document.createElement("input");
+      inp.type = "date";
+      inp.className = "date-input";
+      inp.max = todayStr();
+      inp.value = cur;
+      sh.appendChild(inp);
+      var save = button("btn primary", t("btn_save"), function () {
+        if (!inp.value) return;
+        save.disabled = true;
+        setStatus(item, "watched", getMine(item).rating, { watched_on: inp.value }).then(function (ok) {
+          if (!ok) { save.disabled = false; return; }
+          if (d.data) d.data.my = { watch_count: (d.data.my && d.data.my.watch_count) || 1, last_watched_on: inp.value };
+          closeSheet();
+          if (topDetail() === d) renderActions(d);
+        });
+      });
+      sh.appendChild(save);
+    });
+  }
+
+  function renderMovieActions(d) {
+    var box = d.els.actions;
+    clear(box);
+    var item = d.item;
+    var m = getMine(item);
+    var watched = m.status === "watched";
+    var my = d.data && d.data.my;
+
+    var row = el("div", "mv-row");
+    box.appendChild(row);
+
+    // watchlist: icon only
+    var wl = button("sq" + (m.status === "want" ? " on" : ""), null, function () {
+      var cur = getMine(item).status;
+      if (cur === "watched") { toast(t("status_watched")); return; }
+      var p = cur === "want" ? removeFromLibrary(item) : setStatus(item, "want", null);
+      p.then(function () { if (topDetail() === d) renderActions(d); });
+    });
+    wl.setAttribute("aria-label", t("btn_watchlist"));
+    wl.appendChild(icon("bookmark", 22));
+    row.appendChild(wl);
+
+    // Seen / Watched
+    var seen;
+    if (!watched) {
+      seen = button("seenbtn", null, function () {
+        if (seen.disabled) return;
+        seen.disabled = true;
+        setStatus(item, "watched", getMine(item).rating).then(function (ok) {
+          if (ok && d.data) d.data.my = { watch_count: 1, last_watched_on: todayStr() };
+          if (topDetail() === d) renderActions(d);
+        });
+      });
+      seen.appendChild(icon("check", 20));
+      seen.appendChild(el("span", "", t("btn_seen")));
+    } else {
+      seen = button("seenbtn done", null, function () { openWatchedMenu(d); });
+      var left = el("span", "l");
+      left.appendChild(icon("check", 20));
+      var cnt = my && my.watch_count > 1 ? " · " + t("rw_n", { n: my.watch_count }) : "";
+      left.appendChild(el("span", "", t("status_watched") + cnt));
+      seen.appendChild(left);
+      if (my && my.last_watched_on) seen.appendChild(el("span", "r", shortDate(my.last_watched_on)));
+    }
+    row.appendChild(seen);
+
+    // add to list (button comes from lists.js)
+    if (FX.hooks.detailAction) FX.hooks.detailAction(d, row);
+
+    if (!watched) return;
+
+    var secs = el("div", "mv-secs");
+    box.appendChild(secs);
+
+    // 1) rating: five stars (stored as 2, 4, 6, 8, 10)
+    var s1 = el("div", "mv-sec");
+    s1.appendChild(el("h4", "", t("dt_rate_h")));
+    var stars = el("div", "stars");
+    s1.appendChild(stars);
+    secs.appendChild(s1);
+    function drawStars() {
+      clear(stars);
+      var r = getMine(item).rating;
+      var cur = r ? Math.ceil(r / 2) : 0;
+      for (var n = 1; n <= 5; n++) {
+        (function (num) {
+          var b = button("star" + (cur >= num ? " lit" : "") + (cur === num ? " on" : ""), null, function () {
+            var next = cur === num ? null : num * 2;
+            setStatus(item, "watched", next).then(function (ok) { if (ok) drawStars(); });
+          });
+          b.appendChild(icon("star", 22));
+          b.appendChild(el("span", "", t(STAR_KEYS[num - 1])));
+          stars.appendChild(b);
+        })(n);
+      }
+    }
+    drawStars();
+
+    if (!d.data) return;
+
+    // 2) feelings (up to 3)
+    var s2 = el("div", "mv-sec");
+    s2.appendChild(el("h4", "", t("dt_feel_h")));
+    var moods = el("div", "moods");
+    s2.appendChild(moods);
+    secs.appendChild(s2);
+    function drawMoods() {
+      clear(moods);
+      var sel = d.data.mood || [];
+      MOODS.forEach(function (e) {
+        var on = sel.indexOf(e) >= 0;
+        var b = button("mood" + (on ? " on" : ""), null, function () {
+          var next = on ? sel.filter(function (x) { return x !== e; }) : sel.concat([e]).slice(-3);
+          setStatus(item, "watched", getMine(item).rating, { mood: next }).then(function (ok) {
+            if (ok) { d.data.mood = next; drawMoods(); }
+          });
+        });
+        b.appendChild(el("span", "e", e));
+        b.appendChild(el("span", "", t(MOOD_KEYS[e])));
+        moods.appendChild(b);
+      });
+    }
+    drawMoods();
+
+    // 3) favorite character (the card shows the character; it is saved with the actor's picture)
+    var cast = (d.data.cast || []).filter(function (c) { return c.id; });
+    if (cast.length) {
+      var s3 = el("div", "mv-sec");
+      s3.appendChild(el("h4", "", t("dt_char_h")));
+      var chars = el("div", "hscroll pc-row");
+      s3.appendChild(chars);
+      secs.appendChild(s3);
+      var drawChars = function () {
+        var keep = chars.scrollLeft;
+        clear(chars);
+        var fav = d.data.fav_actor;
+        cast.forEach(function (c, i) {
+          var label = c.character || c.name;
+          var on = !!fav && fav.id === c.id;
+          var card = personCard(label, "", c.photo, i, "button");
+          if (on) card.classList.add("on");
+          var tick = el("span", "pc-tick");
+          tick.appendChild(icon("check", 13));
+          card.appendChild(tick);
+          card.addEventListener("click", function () {
+            var next = on ? null : { id: c.id, name: label.slice(0, 100), photo: c.photo || null };
+            setStatus(item, "watched", getMine(item).rating, { actor: next }).then(function (ok) {
+              if (ok) { d.data.fav_actor = next; drawChars(); }
+            });
+          });
+          chars.appendChild(card);
+        });
+        chars.scrollLeft = keep;
+      };
+      drawChars();
+    }
+  }
+
   function renderActions(d) {
+    if (d.item.media_type === "movie") { renderMovieActions(d); return; }
     var box = d.els.actions;
     clear(box);
     var item = d.item;
@@ -1243,6 +1470,7 @@
     var tabs = [["overview", "tab_overview"]];
     if (d.item.media_type === "tv") tabs.push(["episodes", "tab_episodes"]);
     tabs.push(["cast", "tab_cast"]);
+    tabs.push(["crew", "tab_crew"]);
     tabs.forEach(function (pair) {
       box.appendChild(button("dtab" + (d.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
         d.tab = pair[0];
@@ -1263,7 +1491,8 @@
       if (data.tagline) pane.appendChild(el("p", "tagline", data.tagline));
       if (data.overview) pane.appendChild(el("p", "overview", data.overview));
       var facts = el("div", "facts");
-      if (data.directors && data.directors.length) {
+      if (data.genres && data.genres.length) pane.appendChild(el("p", "gen", data.genres.join(" · ")));
+      if (d.item.media_type === "tv" && data.directors && data.directors.length) {
         var f = el("div", "fact");
         f.appendChild(el("span", "fact-label", t(d.item.media_type === "tv" ? "created_by" : "director")));
         f.appendChild(el("span", "fact-value", data.directors.join(", ")));
@@ -1286,17 +1515,11 @@
       renderEps(d.ep);
       if (d.ep.status === "idle") loadEps(d.ep);
     } else {
-      if (!data.cast || !data.cast.length) { pane.appendChild(msg("—")); return; }
-      var row = el("div", "hscroll cast-row");
-      data.cast.forEach(function (c) {
-        var card = el("div", "cast");
-        var av;
-        if (c.photo) { av = el("img", "cast-photo"); av.src = c.photo; av.alt = ""; av.loading = "lazy"; }
-        else { av = el("div", "cast-photo ph", (c.name || "?").charAt(0)); }
-        card.appendChild(av);
-        card.appendChild(el("div", "cast-name", c.name));
-        if (c.character) card.appendChild(el("div", "cast-role", c.character));
-        row.appendChild(card);
+      var people = d.tab === "crew" ? data.crew : data.cast;
+      if (!people || !people.length) { pane.appendChild(msg("—")); return; }
+      var row = el("div", "hscroll pc-row");
+      people.forEach(function (c, i) {
+        row.appendChild(personCard(c.name, d.tab === "crew" ? c.job : c.character, c.photo, i, "div"));
       });
       pane.appendChild(row);
     }
