@@ -20,6 +20,7 @@ import {
 } from "./lists.js";
 import { handleListShare } from "./share.js";
 import { handleFeed, handleLeaderboard } from "./activity.js";
+import { handlePerson } from "./person.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
 import { handleImportBatch, handleImportListItems, handleImportSync, handleBackupExport, handleBackupSend } from "./backup.js";
@@ -141,6 +142,9 @@ export default {
         }
         if (path === "/api/people-search" && method === "GET") {
           return await handlePeopleSearch(url, env, user);
+        }
+        if (path === "/api/person" && method === "GET") {
+          return await handlePerson(url, env, user);
         }
         if (path === "/api/feed" && method === "GET") {
           return await handleFeed(url, env, user);
