@@ -50,7 +50,8 @@
     pencil: ["M4 20h4L19 9l-4-4L4 16z"],
     trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"],
     activity: ["M3 12h4l3-8 4 16 3-8h4"],
-    bell: ["M6 16V11a6 6 0 0 1 12 0v5l2 2H4z", "M10 21h4"]
+    bell: ["M6 16V11a6 6 0 0 1 12 0v5l2 2H4z", "M10 21h4"],
+    share: ["M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"]
   };
   var FILLED = { star: true, play: true };
 
@@ -989,6 +990,38 @@
 
   function infoOf(d) { return d.data || d.item; }
 
+  // Share a movie or series: opens Telegram's chat picker with a link that opens this title (the text is only the title).
+  function shareTitle(item, name) {
+    var link = "https://t.me/flicksyrobot?startapp=title-" + (item.media_type === "tv" ? "tv" : "movie") + "-" + item.tmdb_id;
+    var url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(name || displayTitle(item));
+    try {
+      if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; }
+    } catch (e) {}
+    window.open(url, "_blank");
+  }
+
+  // Three menu rows under the action buttons. Their screens come later, for now they say "coming soon".
+  function detailRows() {
+    var box = el("div", "drows");
+    function row(label, trail) {
+      var r = button("drow", null, function () { toast(t("pf_soon")); });
+      r.appendChild(el("span", "", label));
+      var end = el("span", "rowc");
+      end.appendChild(trail());
+      r.appendChild(end);
+      box.appendChild(r);
+    }
+    row(t("dt_trailer"), function () {
+      var pill = el("span", "yti");
+      pill.appendChild(icon("play", 13));
+      return pill;
+    });
+    function chev() { var c = icon("chevron", 16); c.classList.add("flip"); return c; }
+    row(t("dt_comments"), chev);
+    row(t("dt_friends"), chev);
+    return box;
+  }
+
   function renderDetail(d) {
     var page = $("detail");
     clear(page);
@@ -1008,6 +1041,13 @@
     var back = iconButton("round-btn d-back", "back", t("btn_close"), backDetail);
     back.firstChild.classList.add("flip");
     hero.appendChild(back);
+    var tools = el("div", "d-tools");
+    if (d.item.media_type === "tv") {
+      // new-episode reminder: the look is ready, it switches on with the backend
+      tools.appendChild(iconButton("round-btn d-bell", "bell", t("dt_reminder"), function () { toast(t("pf_soon")); }));
+    }
+    tools.appendChild(iconButton("round-btn", "share", t("dt_share"), function () { shareTitle(d.item, d.data && d.data.title); }));
+    hero.appendChild(tools);
     scroller.appendChild(hero);
 
     var body = el("div", "d-body");
@@ -1036,6 +1076,8 @@
     d.els.actions = el("div", "d-actions");
     body.appendChild(d.els.actions);
     renderActions(d);
+
+    body.appendChild(detailRows());
 
     d.els.tabs = el("div", "d-tabs");
     body.appendChild(d.els.tabs);
@@ -1610,6 +1652,8 @@
     if (m && FX.openListByCode) FX.openListByCode(m[1]);
     var u = /^user-(\d{3,12})$/.exec(param);
     if (u && FX.openProfile) FX.openProfile(u[1]);
+    var ti = /^title-(movie|tv)-(\d{1,9})$/.exec(param);
+    if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
   }
 
   function start(attempt) {
