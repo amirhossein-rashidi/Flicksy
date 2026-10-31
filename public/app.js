@@ -8,7 +8,7 @@
   var FX = window.FX = { hooks: {}, backStack: [] };
 
   // New look: each new element shows only when its flag is true (and its data is there). The backend steps turn them on one by one.
-  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: false, commentsRow: false, friendsRow: false, profileTabs: false };
+  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: true, commentsRow: false, friendsRow: false, profileTabs: false };
 
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
@@ -1001,7 +1001,7 @@
   }
 
   // Three menu rows under the action buttons. Their screens come later, for now they say "coming soon".
-  function detailRows() {
+  function detailRows(d) {
     var box = el("div", "drows");
     function row(label, trail) {
       var r = button("drow", null, function () { toast(t("pf_soon")); });
@@ -1011,11 +1011,21 @@
       r.appendChild(end);
       box.appendChild(r);
     }
-    row(t("dt_trailer"), function () {
+    var tkey = FEATURES.trailer && d && d.data && d.data.trailer_key;
+    if (tkey) {
+      var tr = button("drow", null, function () {
+        var link = "https://www.youtube.com/watch?v=" + encodeURIComponent(tkey);
+        try { if (tg && tg.openLink) { tg.openLink(link); return; } } catch (e) {}
+        window.open(link, "_blank");
+      });
+      tr.appendChild(el("span", "", t("dt_trailer")));
+      var tend = el("span", "rowc");
       var pill = el("span", "yti");
       pill.appendChild(icon("play", 13));
-      return pill;
-    });
+      tend.appendChild(pill);
+      tr.appendChild(tend);
+      box.appendChild(tr);
+    }
     function chev() { var c = icon("chevron", 16); c.classList.add("flip"); return c; }
     row(t("dt_comments"), chev);
     row(t("dt_friends"), chev);
@@ -1077,7 +1087,7 @@
     body.appendChild(d.els.actions);
     renderActions(d);
 
-    body.appendChild(detailRows());
+    body.appendChild(detailRows(d));
 
     d.els.tabs = el("div", "d-tabs");
     body.appendChild(d.els.tabs);
