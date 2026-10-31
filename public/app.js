@@ -8,7 +8,7 @@
   var FX = window.FX = { hooks: {}, backStack: [] };
 
   // New look: each new element shows only when its flag is true (and its data is there). The backend steps turn them on one by one.
-  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: true, commentsRow: false, friendsRow: true, profileTabs: false };
+  var FEATURES = FX.features = { reminders: false, rewatch: true, spoiler: false, trailer: true, commentsRow: false, friendsRow: true, profileTabs: false };
 
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
@@ -51,6 +51,8 @@
     trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"],
     activity: ["M3 12h4l3-8 4 16 3-8h4"],
     bell: ["M6 16V11a6 6 0 0 1 12 0v5l2 2H4z", "M10 21h4"],
+    repeat: ["M17 2l4 4-4 4", "M3 11V9a3 3 0 0 1 3-3h15", "M7 22l-4-4 4-4", "M21 13v2a3 3 0 0 1-3 3H3"],
+    cal: ["M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z", "M4 10h16M8 3v4M16 3v4"],
     share: ["M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"]
   };
   var FILLED = { star: true, play: true };
@@ -171,11 +173,25 @@
     return t(fallbackKey || "err_generic");
   }
 
+  function todayStr() {
+    var d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  }
+
+  function niceDate(iso) {
+    var d = new Date(iso + "T12:00:00");
+    if (isNaN(d.getTime())) return iso;
+    try { return d.toLocaleDateString(I18N.lang === "fa" ? "fa-IR" : I18N.lang, { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return iso; }
+  }
+
   // extra (optional): { mood: [emoji], actor: { id, name, photo } | null }. Left out = keep what is saved.
   function setStatus(item, status, rating, extra) {
     var body = { tmdb_id: item.tmdb_id, media_type: item.media_type, status: status, rating: rating || null };
     if (extra && extra.mood !== undefined) body.mood = extra.mood;
     if (extra && extra.actor !== undefined) body.actor = extra.actor;
+    if (extra && extra.watched_on) body.watched_on = extra.watched_on;
+    if (extra && extra.rewatch) body.rewatch = true;
     return api("/api/library", { method: "PUT", body: body }).then(function (res) {
       if (res.status !== 200) { toast(problem(res, "err_save"), true); return false; }
       mine[key(item)] = { status: res.data.status, rating: res.data.my_rating || null };
@@ -1169,7 +1185,9 @@
     watch.appendChild(el("span", "", m.status === "want" ? t("btn_in_watchlist") : t("btn_watchlist")));
     box.appendChild(watch);
 
+    var canRewatch = FEATURES.rewatch && item.media_type === "movie" && m.status === "watched";
     var seen = button("abtn" + (m.status === "watched" ? " on seen" : ""), null, function () {
+      if (canRewatch) { openEditSheet(d, { rewatch: true }); return; }
       if (getMine(item).status === "watched") {
         removeFromLibrary(item).then(function () { if (topDetail() === d) renderActions(d); });
         return;
@@ -1180,8 +1198,8 @@
         if (ok) openEditSheet(d, { rate: true });
       });
     });
-    seen.appendChild(icon("check", 18));
-    seen.appendChild(el("span", "", t("btn_seen")));
+    seen.appendChild(icon(canRewatch ? "repeat" : "check", 18));
+    seen.appendChild(el("span", "", t(canRewatch ? "rwl" : "btn_seen")));
     box.appendChild(seen);
 
     box.appendChild(iconButton("abtn icon-only", "sliders", t("btn_edit"), function () { openEditSheet(d); }));
@@ -1207,6 +1225,15 @@
         line.appendChild(fa);
       }
       box.appendChild(line);
+    }
+
+    var my = d.data && d.data.my;
+    if (FEATURES.rewatch && item.media_type === "movie" && m.status === "watched" && my && my.watch_count > 0) {
+      var hist = el("div", "dhist");
+      hist.appendChild(icon("repeat", 17));
+      hist.appendChild(el("span", "", t("rw_times", { n: my.watch_count })));
+      if (my.last_watched_on) hist.appendChild(el("small", "", t("rw_last", { d: niceDate(my.last_watched_on) })));
+      box.appendChild(hist);
     }
   }
 
@@ -1286,6 +1313,12 @@
     var m = getMine(item);
     var hasData = !!d.data;
     var selStatus = m.status, selRating = m.rating, saving = false;
+    var wasWatched = m.status === "watched";
+    var myW = d.data && d.data.my;
+    var selRewatch = !!opts.rewatch && wasWatched;
+    var selDate = selRewatch ? todayStr() : (myW && myW.last_watched_on) || todayStr();
+    var dateTouched = false;
+    var isMovie = item.media_type === "movie";
     var selMood = d.data && d.data.mood ? d.data.mood.slice() : [];
     var selActor = d.data && d.data.fav_actor ? d.data.fav_actor : null;
     var cast = d.data && d.data.cast ? d.data.cast.filter(function (c) { return c.id; }) : [];
@@ -1373,6 +1406,32 @@
           extra.appendChild(el("div", "rate-locked", t("rate_locked")));
           return;
         }
+        if (FEATURES.rewatch && isMovie) {
+          var wrow = el("div", "wrow");
+          var wl = el("label", "wd");
+          wl.appendChild(icon("cal", 17));
+          wl.appendChild(el("span", "", t("wdate")));
+          var wi = document.createElement("input");
+          wi.type = "date";
+          wi.max = todayStr();
+          wi.value = selDate;
+          wi.addEventListener("change", function () {
+            if (wi.value) { selDate = wi.value; dateTouched = true; }
+          });
+          wl.appendChild(wi);
+          wrow.appendChild(wl);
+          if (wasWatched && !rateMode) {
+            var rwb = button("rwb" + (selRewatch ? " on" : ""), null, function () {
+              selRewatch = !selRewatch;
+              if (selRewatch && !dateTouched) { selDate = todayStr(); wi.value = selDate; }
+              rwb.classList.toggle("on", selRewatch);
+            });
+            rwb.appendChild(icon("repeat", 16));
+            rwb.appendChild(el("span", "", t("rwl")));
+            wrow.appendChild(rwb);
+          }
+          extra.appendChild(wrow);
+        }
         extra.appendChild(el("div", "label", t("my_rating")));
         var rb = el("div", "pills nums");
         extra.appendChild(rb);
@@ -1415,12 +1474,21 @@
         save.textContent = t("btn_saving");
         var isWatched = selStatus === "watched";
         var extras = hasData ? { mood: isWatched ? selMood : [], actor: isWatched ? selActor : null } : {};
+        var sendRewatch = isWatched && isMovie && FEATURES.rewatch && selRewatch && wasWatched;
+        if (isWatched && isMovie && FEATURES.rewatch && (sendRewatch || dateTouched)) extras.watched_on = selDate;
+        if (sendRewatch) extras.rewatch = true;
         setStatus(item, selStatus, isWatched ? selRating : null, extras).then(function (ok) {
           saving = false;
           if (ok) {
             if (d.data) {
               d.data.mood = isWatched ? selMood : [];
               d.data.fav_actor = isWatched ? selActor : null;
+              if (isWatched && isMovie && FEATURES.rewatch) {
+                var prev = d.data.my || { watch_count: 0, last_watched_on: null };
+                if (sendRewatch) d.data.my = { watch_count: prev.watch_count + 1, last_watched_on: selDate };
+                else if (!wasWatched && !prev.watch_count) d.data.my = { watch_count: 1, last_watched_on: dateTouched ? selDate : todayStr() };
+                else if (dateTouched && prev.watch_count) d.data.my = { watch_count: prev.watch_count, last_watched_on: selDate };
+              }
             }
             closeSheet();
             if (topDetail() === d) renderActions(d);
