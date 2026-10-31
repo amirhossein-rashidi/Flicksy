@@ -129,8 +129,8 @@ async function upsertUser(env, tgUser) {
   }
 
   await env.DB.prepare(
-    "INSERT INTO users (telegram_id, username, display_name, photo_url, language_code, last_seen_at) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, datetime('now')) " +
+    "INSERT INTO users (telegram_id, username, display_name, photo_url, language_code, is_private, last_seen_at) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, 1, datetime('now')) " +
       "ON CONFLICT(telegram_id) DO UPDATE SET " +
       "username = excluded.username, " +
       "display_name = excluded.display_name, " +
