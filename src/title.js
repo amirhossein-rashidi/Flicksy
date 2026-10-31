@@ -118,6 +118,30 @@ export async function handleTitle(url, env, user) {
     };
   } catch (e) {}
 
+  // What everyone chose (counts only, nobody is named): stars (1-2 = 1 star ... 9-10 = 5 stars) and feelings.
+  const MOOD_LIST = ["😍", "😂", "😢", "😱", "🤯", "😴", "😡", "🤔"];
+  let stats = { rated: 0, stars: [0, 0, 0, 0, 0], moded: 0, moods: {} };
+  try {
+    const sql =
+      "SELECT COUNT(CASE WHEN ut.rating IS NOT NULL THEN 1 END) AS rated, " +
+      [1, 3, 5, 7, 9].map((lo, i) => "COALESCE(SUM(CASE WHEN ut.rating IN (" + lo + "," + (lo + 1) + ") THEN 1 ELSE 0 END),0) AS s" + (i + 1)).join(", ") +
+      ", COUNT(CASE WHEN ut.mood IS NOT NULL AND ut.mood != '' THEN 1 END) AS moded, " +
+      MOOD_LIST.map((e, i) => "COALESCE(SUM(CASE WHEN ut.mood LIKE ?" + (i + 4) + " THEN 1 ELSE 0 END),0) AS m" + i).join(", ") +
+      " FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+      "WHERE t.tmdb_id = ?1 AND t.media_type = ?2 AND ut.status = 'watched'";
+    const binds = [ref.tmdbId, ref.mediaType].concat(MOOD_LIST.map((e) => "%" + e + "%"));
+    const row = await env.DB.prepare(sql).bind(...binds).first();
+    if (row) {
+      stats = {
+        rated: row.rated || 0,
+        stars: [row.s1 || 0, row.s2 || 0, row.s3 || 0, row.s4 || 0, row.s5 || 0],
+        moded: row.moded || 0,
+        moods: {},
+      };
+      MOOD_LIST.forEach((e, i) => { stats.moods[e] = row["m" + i] || 0; });
+    }
+  } catch (e) {}
+
   // My watch history (movies): how many times and the last date.
   let myWatch = null;
   if (!isTv && mine && mine.status === "watched") {
@@ -156,6 +180,7 @@ export async function handleTitle(url, env, user) {
     directors: directors.slice(0, 3),
     cast: cast,
     crew: crew,
+    stats: stats,
     similar: similar,
     trailer_key: trailerKey,
     friends_watched: friendsWatched,
