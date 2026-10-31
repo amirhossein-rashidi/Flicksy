@@ -8,7 +8,7 @@
   var FX = window.FX = { hooks: {}, backStack: [] };
 
   // New look: each new element shows only when its flag is true (and its data is there). The backend steps turn them on one by one.
-  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: true, commentsRow: false, friendsRow: false, profileTabs: false };
+  var FEATURES = FX.features = { reminders: false, rewatch: false, spoiler: false, trailer: true, commentsRow: false, friendsRow: true, profileTabs: false };
 
   var STATUS_ORDER = ["want", "watching", "watched", "paused", "dropped"];
   var LS_LANG = "flicksy_lang";
@@ -1000,6 +1000,40 @@
     window.open(url, "_blank");
   }
 
+  function friendAvatar(p, cls) {
+    if (p.photo_url) {
+      var img = el("img", "avatar " + cls);
+      img.src = p.photo_url;
+      img.alt = "";
+      return img;
+    }
+    return el("div", "avatar " + cls, (p.display_name || "?").charAt(0).toUpperCase());
+  }
+
+  // "Watched by friends": a sheet listing the people you follow who watched this title. Tap a person to open their profile.
+  function openFriendsSheet(fw) {
+    openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", t("dt_friends")));
+      (fw.list || []).forEach(function (p) {
+        var r = button("fr-row", null, function () {
+          closeSheet();
+          if (FX.openProfile && p.public_id) FX.openProfile(p.public_id);
+        });
+        r.appendChild(friendAvatar(p, "fr-av"));
+        var nm = el("span", "fr-nm");
+        nm.appendChild(el("bdi", "", p.display_name || ""));
+        r.appendChild(nm);
+        if (p.rating) {
+          var sc = el("span", "fr-sc");
+          sc.appendChild(icon("star", 13));
+          sc.appendChild(el("span", "", String(p.rating)));
+          r.appendChild(sc);
+        }
+        sh.appendChild(r);
+      });
+    });
+  }
+
   // Three menu rows under the action buttons. Their screens come later, for now they say "coming soon".
   function detailRows(d) {
     var box = el("div", "drows");
@@ -1028,7 +1062,19 @@
     }
     function chev() { var c = icon("chevron", 16); c.classList.add("flip"); return c; }
     row(t("dt_comments"), chev);
-    row(t("dt_friends"), chev);
+    var fw = FEATURES.friendsRow && d && d.data && d.data.friends_watched;
+    if (fw && fw.count > 0) {
+      var fr = button("drow", null, function () { openFriendsSheet(fw); });
+      fr.appendChild(el("span", "", t("dt_friends")));
+      var fend = el("span", "rowc");
+      var stk = el("span", "stk");
+      (fw.sample || []).slice(0, 2).forEach(function (p) { stk.appendChild(friendAvatar(p, "stk-av")); });
+      fend.appendChild(stk);
+      if (fw.count > 2) { var more = el("em", "", "+" + (fw.count - 2)); more.setAttribute("dir", "ltr"); fend.appendChild(more); }
+      fend.appendChild(chev());
+      fr.appendChild(fend);
+      box.appendChild(fr);
+    }
     return box;
   }
 
