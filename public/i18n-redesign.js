@@ -25,7 +25,11 @@
       dt_friends: "Watched by friends",
       dt_share: "Share",
       dt_reminder: "New-episode reminder",
-      disc_start: "Start typing to search titles and people"
+      disc_start: "Start typing to search titles and people",
+      wdate: "Watch date",
+      rwl: "Watched again",
+      rw_times: "Watched {n}×",
+      rw_last: "Last: {d}",
     },
     fa: {
       nav_activity: "فعالیت",
@@ -49,7 +53,11 @@
       dt_friends: "دیده‌شده توسط دوستان",
       dt_share: "اشتراک‌گذاری",
       dt_reminder: "یادآوری قسمت جدید",
-      disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن"
+      disc_start: "برای جستجوی فیلم، سریال و افراد شروع به نوشتن کن",
+      wdate: "تاریخ تماشا",
+      rwl: "دوباره دیدم",
+      rw_times: "{n} بار دیده‌ای",
+      rw_last: "آخرین: {d}",
     },
     ar: {
       nav_activity: "النشاط",
