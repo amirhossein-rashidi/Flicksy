@@ -14,7 +14,7 @@ export async function handleTitle(url, env, user) {
 
   let res;
   try {
-    res = await tmdbGet(env, base + "?language=" + language + "&append_to_response=credits,recommendations", 21600);
+    res = await tmdbGet(env, base + "?language=" + language + "&append_to_response=credits,recommendations,videos&include_video_language=" + (language.slice(0, 2) + ",en,null"), 21600);
   } catch (e) {
     return json({ error: "title_unavailable" }, 502);
   }
@@ -54,6 +54,13 @@ export async function handleTitle(url, env, user) {
       .filter(Boolean);
   }
 
+  // Best YouTube trailer: official first, then the newest one. Only the key is sent to the app.
+  const vids = (d.videos && Array.isArray(d.videos.results) ? d.videos.results : []).filter(
+    (v) => v.site === "YouTube" && v.type === "Trailer" && typeof v.key === "string" && /^[A-Za-z0-9_-]{6,20}$/.test(v.key)
+  );
+  vids.sort((a, b) => (b.official ? 1 : 0) - (a.official ? 1 : 0) || String(b.published_at || "").localeCompare(String(a.published_at || "")));
+  const trailerKey = vids.length ? vids[0].key : null;
+
   const similar = mapList(d.recommendations, ref.mediaType).slice(0, 14);
   await attachLibraryState(env, user.id, similar);
 
@@ -89,6 +96,7 @@ export async function handleTitle(url, env, user) {
     directors: directors.slice(0, 3),
     cast: cast,
     similar: similar,
+    trailer_key: trailerKey,
     status: mine ? mine.status : null,
     my_rating: mine ? mine.rating : null,
     mood: mine && mine.mood ? mine.mood.split(",") : [],
