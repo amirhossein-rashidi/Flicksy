@@ -119,28 +119,33 @@ export async function handleTitle(url, env, user) {
   } catch (e) {}
 
   // What everyone chose (counts only, nobody is named): stars (1-2 = 1 star ... 9-10 = 5 stars) and feelings.
-  const MOOD_LIST = ["😍", "😂", "😢", "😱", "🤯", "😴", "😡", "🤔"];
-  let stats = { rated: 0, stars: [0, 0, 0, 0, 0], moded: 0, moods: {} };
+  // Counted here in code from the saved ratings/feelings; if anything fails the app simply shows the words instead of numbers.
+  let stats = null;
   try {
-    const sql =
-      "SELECT COUNT(CASE WHEN ut.rating IS NOT NULL THEN 1 END) AS rated, " +
-      [1, 3, 5, 7, 9].map((lo, i) => "COALESCE(SUM(CASE WHEN ut.rating IN (" + lo + "," + (lo + 1) + ") THEN 1 ELSE 0 END),0) AS s" + (i + 1)).join(", ") +
-      ", COUNT(CASE WHEN ut.mood IS NOT NULL AND ut.mood != '' THEN 1 END) AS moded, " +
-      MOOD_LIST.map((e, i) => "COALESCE(SUM(CASE WHEN ut.mood LIKE ?" + (i + 4) + " THEN 1 ELSE 0 END),0) AS m" + i).join(", ") +
-      " FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
-      "WHERE t.tmdb_id = ?1 AND t.media_type = ?2 AND ut.status = 'watched'";
-    const binds = [ref.tmdbId, ref.mediaType].concat(MOOD_LIST.map((e) => "%" + e + "%"));
-    const row = await env.DB.prepare(sql).bind(...binds).first();
-    if (row) {
-      stats = {
-        rated: row.rated || 0,
-        stars: [row.s1 || 0, row.s2 || 0, row.s3 || 0, row.s4 || 0, row.s5 || 0],
-        moded: row.moded || 0,
-        moods: {},
-      };
-      MOOD_LIST.forEach((e, i) => { stats.moods[e] = row["m" + i] || 0; });
-    }
-  } catch (e) {}
+    const rowsRes = await env.DB.prepare(
+      "SELECT ut.rating AS rating, ut.mood AS mood FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+        "WHERE t.tmdb_id = ?1 AND t.media_type = ?2 AND ut.status = 'watched' LIMIT 50000"
+    )
+      .bind(ref.tmdbId, ref.mediaType)
+      .all();
+    const st = { rated: 0, stars: [0, 0, 0, 0, 0], moded: 0, moods: {} };
+    (rowsRes.results || []).forEach((r) => {
+      if (Number.isInteger(r.rating) && r.rating >= 1 && r.rating <= 10) {
+        st.stars[Math.ceil(r.rating / 2) - 1] += 1;
+        st.rated += 1;
+      }
+      if (typeof r.mood === "string" && r.mood) {
+        const list = r.mood.split(",").map((x) => x.trim()).filter(Boolean);
+        if (list.length) {
+          st.moded += 1;
+          list.forEach((e) => { st.moods[e] = (st.moods[e] || 0) + 1; });
+        }
+      }
+    });
+    stats = st;
+  } catch (e) {
+    stats = null;
+  }
 
   // My watch history (movies): how many times and the last date.
   let myWatch = null;
