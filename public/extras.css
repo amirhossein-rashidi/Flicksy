@@ -45,3 +45,16 @@
 .fr-av { width: 40px; height: 40px; box-shadow: none; }
 .fr-nm { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fr-sc { display: inline-flex; align-items: center; gap: 4px; color: var(--star); font-weight: 800; font-size: 14px; }
+
+/* watch date + "watched again" */
+.wrow { display: flex; gap: 8px; margin: 4px 0 12px; }
+.wd { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 14px; height: 46px; border-radius: 16px; background: rgba(255, 255, 255, .07); font-size: 13px; color: var(--muted); }
+.wd .ic { width: 17px; height: 17px; flex: none; color: #b794ff; }
+.wd span { display: none; }
+.wd input { flex: 1; min-width: 0; width: 100%; background: none; border: none; outline: none; color: var(--text); font: inherit; font-size: 14px; color-scheme: dark; text-align: end; }
+.rwb { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 46px; border-radius: 16px; font-size: 13px; font-weight: 700; color: var(--muted); background: rgba(255, 255, 255, .07); white-space: nowrap; }
+.rwb .ic { width: 16px; height: 16px; }
+.rwb.on { background: var(--grad); color: #fff; }
+.dhist { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255, 255, 255, .035); font-size: 13.5px; font-weight: 700; }
+.dhist .ic { width: 17px; height: 17px; color: #b794ff; }
+.dhist small { margin-inline-start: auto; color: var(--muted); font-size: 12px; font-weight: 600; }
