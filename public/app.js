@@ -1159,6 +1159,14 @@
     renderTabs(d);
     renderPane(d);
 
+    // "More like this" stays under every tab
+    if (d.data && d.data.similar && d.data.similar.length) {
+      var more = el("section", "section flush d-more");
+      more.appendChild(sectionHeader(t("sec_similar")));
+      more.appendChild(cardsRow(d.data.similar));
+      body.appendChild(more);
+    }
+
     scroller.appendChild(body);
   }
 
@@ -1200,6 +1208,31 @@
   var STAR_KEYS = ["st_bad", "st_ok", "st_good", "st_great", "st_wow"];
   var MOOD_KEYS = { "😍": "mood_love", "😂": "mood_funny", "😢": "mood_sad", "😱": "mood_scared", "🤯": "mood_mind", "😴": "mood_bored", "😡": "mood_angry", "🤔": "mood_think" };
 
+  // Share of people (in %) from the counts the server sends. "–" while nobody has voted.
+  function pctText(count, total) {
+    if (!total) return "–";
+    var v = Math.round((count / total) * 100);
+    try { return v.toLocaleString(I18N.lang === "fa" ? "fa-IR" : undefined) + "%"; } catch (e) { return v + "%"; }
+  }
+
+  // Keeps the community counts in step with what I just changed (so the numbers move when I tap).
+  function statsMine(d, oldRating, newRating, oldMood, newMood) {
+    var st = d.data && d.data.stats;
+    if (!st) return;
+    function bucket(r) { return r ? Math.ceil(r / 2) - 1 : -1; }
+    if (oldRating !== newRating) {
+      var ob = bucket(oldRating), nb = bucket(newRating);
+      if (ob >= 0) { st.stars[ob] = Math.max(0, st.stars[ob] - 1); st.rated = Math.max(0, st.rated - 1); }
+      if (nb >= 0) { st.stars[nb] += 1; st.rated += 1; }
+    }
+    if (oldMood && newMood) {
+      oldMood.forEach(function (e) { if (newMood.indexOf(e) < 0) st.moods[e] = Math.max(0, (st.moods[e] || 0) - 1); });
+      newMood.forEach(function (e) { if (oldMood.indexOf(e) < 0) st.moods[e] = (st.moods[e] || 0) + 1; });
+      if (oldMood.length && !newMood.length) st.moded = Math.max(0, st.moded - 1);
+      if (!oldMood.length && newMood.length) st.moded += 1;
+    }
+  }
+
   // The menu that opens when you tap the green "Watched" button.
   function openWatchedMenu(d) {
     var item = d.item;
@@ -1223,8 +1256,12 @@
       row("", "cal", t("rw_change"), function () { openDateSheet(d); });
       row("red", "x", t("rw_unwatch"), function () {
         closeSheet();
+        var m0 = getMine(item);
         removeFromLibrary(item).then(function (ok) {
-          if (ok && d.data) { d.data.mood = []; d.data.fav_actor = null; d.data.my = null; }
+          if (ok && d.data) {
+            statsMine(d, m0.rating, null, d.data.mood || [], []);
+            d.data.mood = []; d.data.fav_actor = null; d.data.my = null;
+          }
           if (topDetail() === d) renderActions(d);
         });
       });
@@ -1324,10 +1361,14 @@
         (function (num) {
           var b = button("star" + (cur >= num ? " lit" : "") + (cur === num ? " on" : ""), null, function () {
             var next = cur === num ? null : num * 2;
-            setStatus(item, "watched", next).then(function (ok) { if (ok) drawStars(); });
+            var oldR = getMine(item).rating;
+            setStatus(item, "watched", next).then(function (ok) {
+              if (ok) { statsMine(d, oldR, next, null, null); drawStars(); }
+            });
           });
           b.appendChild(icon("star", 22));
-          b.appendChild(el("span", "", t(STAR_KEYS[num - 1])));
+          var stc = d.data && d.data.stats;
+          b.appendChild(el("span", "", stc ? pctText(stc.stars[num - 1], stc.rated) : ""));
           stars.appendChild(b);
         })(n);
       }
@@ -1350,11 +1391,13 @@
         var b = button("mood" + (on ? " on" : ""), null, function () {
           var next = on ? sel.filter(function (x) { return x !== e; }) : sel.concat([e]).slice(-3);
           setStatus(item, "watched", getMine(item).rating, { mood: next }).then(function (ok) {
-            if (ok) { d.data.mood = next; drawMoods(); }
+            if (ok) { statsMine(d, getMine(item).rating, getMine(item).rating, sel, next); d.data.mood = next; drawMoods(); }
           });
         });
         b.appendChild(el("span", "e", e));
-        b.appendChild(el("span", "", t(MOOD_KEYS[e])));
+        var smc = d.data.stats;
+        b.appendChild(el("span", "", smc ? pctText((smc.moods && smc.moods[e]) || 0, smc.moded) : ""));
+        b.setAttribute("aria-label", t(MOOD_KEYS[e]));
         moods.appendChild(b);
       });
     }
@@ -1375,7 +1418,7 @@
         cast.forEach(function (c, i) {
           var label = c.character || c.name;
           var on = !!fav && fav.id === c.id;
-          var card = personCard(label, "", c.photo, i, "button");
+          var card = personCard(c.name, c.character, c.photo, i, "button");
           if (on) card.classList.add("on");
           var tick = el("span", "pc-tick");
           tick.appendChild(icon("check", 13));
@@ -1504,12 +1547,6 @@
         facts.appendChild(s);
       }
       if (facts.firstChild) pane.appendChild(facts);
-      if (data.similar && data.similar.length) {
-        var sec = el("section", "section flush");
-        sec.appendChild(sectionHeader(t("sec_similar")));
-        sec.appendChild(cardsRow(data.similar));
-        pane.appendChild(sec);
-      }
     } else if (d.tab === "episodes") {
       if (!d.ep) d.ep = newEpState(d);
       renderEps(d.ep);
