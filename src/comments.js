@@ -123,7 +123,8 @@ const SELECT =
   "SELECT c.id, c.user_id, c.title_id, c.season_number, c.episode_number, c.parent_id, c.body, c.spoiler, c.deleted, " +
   "c.edited_at, c.created_at, u.public_id, u.display_name, u.photo_url, " +
   "(SELECT COUNT(*) FROM comment_likes l WHERE l.comment_id = c.id) AS likes, " +
-  "(SELECT COUNT(*) FROM comments r WHERE r.parent_id = c.id AND r.deleted = 0) AS reply_count " +
+  "(SELECT COUNT(*) FROM comments r WHERE r.parent_id = c.id AND (r.deleted = 0 OR EXISTS " +
+  "(SELECT 1 FROM comments g WHERE g.parent_id = r.id AND g.deleted = 0))) AS reply_count " +
   "FROM comments c JOIN users u ON u.id = c.user_id ";
 
 function unavailable() {
@@ -149,10 +150,16 @@ export async function handleCommentsGet(url, env, user) {
 
     // all replies of one comment
     if (parentParam) {
-      const rs = await env.DB.prepare(SELECT + "WHERE c.parent_id = ?1 AND c.deleted = 0 ORDER BY c.id ASC LIMIT 200")
+      const rs = await env.DB.prepare(
+        SELECT +
+          "WHERE c.parent_id = ?1 AND (c.deleted = 0 OR EXISTS (SELECT 1 FROM comments g WHERE g.parent_id = c.id AND g.deleted = 0)) " +
+          "ORDER BY c.id ASC LIMIT 200"
+      )
         .bind(parentParam)
         .all();
-      return json({ comments: await shape(env, user, rs.results || []) });
+      const kids = await shape(env, user, rs.results || []);
+      kids.forEach((k) => { k.replies = []; });
+      return json({ comments: kids });
     }
 
     const ref = parseTitleRef(url.searchParams.get("tmdb_id"), url.searchParams.get("type"));
@@ -189,17 +196,8 @@ export async function handleCommentsGet(url, env, user) {
 
     const out = await shape(env, user, rows);
 
-    // first reply of each comment as a preview
-    for (const c of out) {
-      if (c.reply_count > 0) {
-        const r1 = await env.DB.prepare(SELECT + "WHERE c.parent_id = ?1 AND c.deleted = 0 ORDER BY c.id ASC LIMIT 1")
-          .bind(c.id)
-          .all();
-        c.replies = await shape(env, user, r1.results || []);
-      } else {
-        c.replies = [];
-      }
-    }
+    // replies are not sent here: the app loads them when someone taps the comment icon
+    for (const c of out) c.replies = [];
 
     const total = await env.DB.prepare(
       "SELECT COUNT(*) AS n FROM comments WHERE title_id = ?1 AND season_number IS ?2 AND episode_number IS ?3 AND deleted = 0"
@@ -236,9 +234,9 @@ export async function handleCommentCreate(request, env, user) {
       )
         .bind(pid)
         .first();
-      if (!p) return json({ error: "not_found" }, 404);
-      // replies are one level: replying to a reply attaches to the top comment
-      parentId = p.parent_id || p.id;
+      if (!p || p.deleted) return json({ error: "not_found" }, 404);
+      // a reply belongs to exactly the comment it answers (replies can have replies)
+      parentId = p.id;
       titleId = p.title_id;
       season = p.season_number;
       episode = p.episode_number;
@@ -312,7 +310,10 @@ export async function handleCommentDelete(url, env, user) {
     const row = await env.DB.prepare("SELECT id, user_id FROM comments WHERE id = ?1").bind(id).first();
     if (!row) return json({ ok: true });
     if (row.user_id !== user.id) return json({ error: "forbidden" }, 403);
-    const kids = await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE parent_id = ?1 AND deleted = 0")
+    const kids = await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM comments r WHERE r.parent_id = ?1 AND (r.deleted = 0 OR EXISTS " +
+        "(SELECT 1 FROM comments g WHERE g.parent_id = r.id AND g.deleted = 0))"
+    )
       .bind(id)
       .first();
     if (kids && kids.n > 0) {
