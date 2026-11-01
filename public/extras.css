@@ -133,7 +133,7 @@ html[lang="fa"] .gen { letter-spacing: 0; }
 
 /* ===== series page (no tabs) ===== */
 .sx-body { padding-top: 4px; }
-.sx-ov { margin-top: 22px; }
+.sx-ov { margin: 20px 0 8px; }
 .sx-ov .gen { margin-top: 12px; }
 .sx-eps { margin-top: 16px; }
 .sx-people { margin-top: 26px; }
