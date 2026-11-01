@@ -2177,8 +2177,6 @@
       nx.appendChild(button("go", t("sx_mark"), function () { toggleEpisode(ep, n.s, n.e); }));
       box.appendChild(nx);
     }
-
-    if (st === "watched") renderMineSections(d, box);
   }
 
   function menuRow(sh, cls, iconName, label, handler) {
