@@ -1,7 +1,7 @@
 // Episode tracking for TV series: seasons, episodes, and which ones the user has watched.
 
 import { json, parseTitleRef, tmdbLang } from "./util.js";
-import { tmdbGet, ensureTitle } from "./tmdb.js";
+import { tmdbGet, ensureTitle, imgUrl, TMDB_BACKDROP } from "./tmdb.js";
 
 const CACHE_SECONDS = 6 * 60 * 60; // TMDB season/episode data is cached for 6 hours
 const MAX_SEASON = 100;
@@ -86,25 +86,55 @@ export async function handleSeasonEpisodes(url, env, user) {
   }
   if (res.status === 404 || !res.data) return json({ error: "season_not_found" }, 404);
 
-  const watchedSet = new Set();
+  const watchedMap = new Map();
+  const notesMap = new Map();
   const titleId = await getTitleId(env, ref.tmdbId);
   if (titleId) {
     const rows = await env.DB.prepare(
-      "SELECT episode_number FROM episode_progress WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3"
+      "SELECT episode_number, watched_at FROM episode_progress WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3"
     )
       .bind(user.id, titleId, season)
       .all();
-    for (const r of rows.results || []) watchedSet.add(r.episode_number);
+    for (const r of rows.results || []) watchedMap.set(r.episode_number, r.watched_at || "");
+    // my rating / feelings / favorite character per episode (the table may not exist before migration 9)
+    try {
+      const nrows = await env.DB.prepare(
+        "SELECT episode_number, rating, mood, fav_actor_id, fav_actor_name, fav_actor_photo FROM episode_notes " +
+          "WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3"
+      )
+        .bind(user.id, titleId, season)
+        .all();
+      for (const r of nrows.results || []) notesMap.set(r.episode_number, r);
+    } catch (e) {
+      /* no notes yet */
+    }
   }
 
   const list = Array.isArray(res.data.episodes) ? res.data.episodes : [];
-  const episodes = list.map((e) => ({
-    episode_number: e.episode_number,
-    name: e.name || "",
-    air_date: e.air_date || null,
-    runtime: e.runtime || null,
-    watched: watchedSet.has(e.episode_number),
-  }));
+  const episodes = list.map((e) => {
+    const isWatched = watchedMap.has(e.episode_number);
+    const n = notesMap.get(e.episode_number);
+    const at = watchedMap.get(e.episode_number) || "";
+    return {
+      episode_number: e.episode_number,
+      name: e.name || "",
+      air_date: e.air_date || null,
+      runtime: e.runtime || null,
+      overview: e.overview || "",
+      still: imgUrl(TMDB_BACKDROP, e.still_path),
+      vote: e.vote_average && e.vote_count > 0 ? Math.round(e.vote_average * 10) / 10 : null,
+      watched: isWatched,
+      watched_on: isWatched && /^\d{4}-\d{2}-\d{2}/.test(at) ? at.slice(0, 10) : null,
+      my:
+        isWatched && n
+          ? {
+              rating: n.rating || null,
+              mood: n.mood ? n.mood.split(",").filter(Boolean) : [],
+              actor: n.fav_actor_id ? { id: n.fav_actor_id, name: n.fav_actor_name, photo: n.fav_actor_photo } : null,
+            }
+          : null,
+    };
+  });
   return json({ season: season, episodes: episodes });
 }
 
@@ -220,6 +250,29 @@ export async function handleEpisodesSet(request, env, user) {
 
   if (statements.length) await env.DB.batch(statements);
 
+  // Un-marking episodes also forgets my rating / feelings for them (best effort).
+  if (body.watched === false) {
+    try {
+      if (scope === "episode") {
+        await env.DB.prepare(
+          "DELETE FROM episode_notes WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3 AND episode_number = ?4"
+        )
+          .bind(user.id, titleId, season, episode)
+          .run();
+      } else if (scope === "season") {
+        await env.DB.prepare("DELETE FROM episode_notes WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3")
+          .bind(user.id, titleId, season)
+          .run();
+      } else {
+        await env.DB.prepare("DELETE FROM episode_notes WHERE user_id = ?1 AND title_id = ?2")
+          .bind(user.id, titleId)
+          .run();
+      }
+    } catch (e) {
+      /* table not created yet */
+    }
+  }
+
   // Fresh numbers for the screen.
   if (!info) {
     try {
@@ -255,4 +308,83 @@ export async function handleEpisodesSet(request, env, user) {
     library_status: libraryStatus,
     complete: total !== null && total > 0 && watched >= total,
   });
+}
+
+const NOTE_MOODS = ["😍", "😂", "😢", "😱", "🤯", "😴", "😡", "🤔"];
+
+// PUT /api/episode-note
+// body: { tmdb_id, season, episode, rating?: 1-10|null, mood?: [emoji], actor?: {id,name,photo}|null }
+// Only the fields that are sent are changed. The episode has to be marked watched first.
+export async function handleEpisodeNoteSet(request, env, user) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ error: "bad_json" }, 400);
+  }
+  if (!body || typeof body !== "object") return json({ error: "bad_request" }, 400);
+  const ref = parseTitleRef(body.tmdb_id, "tv");
+  const season = parseIntParam(body.season, 1, MAX_SEASON);
+  const episode = parseIntParam(body.episode, 1, MAX_EPISODE);
+  if (!ref || season === null || episode === null) return json({ error: "bad_request" }, 400);
+
+  const sets = [];
+  const binds = [];
+  if (body.rating !== undefined) {
+    if (body.rating !== null && !(Number.isInteger(body.rating) && body.rating >= 1 && body.rating <= 10)) {
+      return json({ error: "bad_request" }, 400);
+    }
+    sets.push("rating = ?");
+    binds.push(body.rating);
+  }
+  if (body.mood !== undefined) {
+    if (!Array.isArray(body.mood) || body.mood.length > 3 || body.mood.some((m) => NOTE_MOODS.indexOf(m) < 0)) {
+      return json({ error: "bad_request" }, 400);
+    }
+    sets.push("mood = ?");
+    binds.push(body.mood.length ? body.mood.join(",") : null);
+  }
+  if (body.actor !== undefined) {
+    const a = body.actor;
+    if (a === null) {
+      sets.push("fav_actor_id = ?", "fav_actor_name = ?", "fav_actor_photo = ?");
+      binds.push(null, null, null);
+    } else {
+      if (!a || !Number.isInteger(a.id) || a.id < 1 || typeof a.name !== "string") return json({ error: "bad_request" }, 400);
+      const photo = typeof a.photo === "string" && a.photo.length < 400 && /^https:\/\//.test(a.photo) ? a.photo : null;
+      sets.push("fav_actor_id = ?", "fav_actor_name = ?", "fav_actor_photo = ?");
+      binds.push(a.id, a.name.slice(0, 100), photo);
+    }
+  }
+  if (!sets.length) return json({ error: "bad_request" }, 400);
+
+  const titleId = await getTitleId(env, ref.tmdbId);
+  if (!titleId) return json({ error: "title_not_found" }, 404);
+
+  try {
+    const seen = await env.DB.prepare(
+      "SELECT 1 AS x FROM episode_progress WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3 AND episode_number = ?4"
+    )
+      .bind(user.id, titleId, season, episode)
+      .first();
+    if (!seen) return json({ error: "not_watched" }, 409);
+
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO episode_notes (user_id, title_id, season_number, episode_number) VALUES (?1, ?2, ?3, ?4)"
+    )
+      .bind(user.id, titleId, season, episode)
+      .run();
+    // placeholders ?1-?4 are the fixed ones; the changed columns continue from ?5
+    let n = 4;
+    const setSql = sets.map((x) => x.replace("?", () => "?" + ++n)).join(", ");
+    await env.DB.prepare(
+      "UPDATE episode_notes SET " + setSql + ", updated_at = datetime('now') " +
+        "WHERE user_id = ?1 AND title_id = ?2 AND season_number = ?3 AND episode_number = ?4"
+    )
+      .bind(user.id, titleId, season, episode, ...binds)
+      .run();
+  } catch (e) {
+    return json({ error: "save_failed" }, 500);
+  }
+  return json({ ok: true });
 }
