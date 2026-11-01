@@ -391,3 +391,75 @@ export async function titleCommentCount(env, titleId) {
     return null;
   }
 }
+
+// ---------- share as a card (a ready-made Telegram message with an "Open" button) ----------
+const SHARE_WORDS = {
+  en: { open: "Open in Flicksy", spoiler: "⚠ Spoiler — open Flicksy to read it", on: "on" },
+  fa: { open: "باز کردن در Flicksy", spoiler: "⚠ اسپویلر — برای خواندن Flicksy را باز کن", on: "درباره‌ی" },
+};
+
+function escHtml(s) {
+  return String(s === undefined || s === null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function cutText(s, max) {
+  const x = String(s || "");
+  return x.length > max ? x.slice(0, max - 1) + "…" : x;
+}
+
+// POST /api/comment-share  { id, lang }  -> { ok, id }  (id goes to Telegram's shareMessage)
+export async function handleCommentShare(request, env, user) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ error: "bad_json" }, 400);
+  }
+  const id = body ? intOrNull(body.id, 2147483647) : null;
+  if (!id) return json({ error: "bad_request" }, 400);
+  const lang = body.lang === "fa" ? "fa" : "en";
+  const w = SHARE_WORDS[lang];
+  try {
+    const row = await env.DB.prepare(SELECT + "WHERE c.id = ?1 AND c.deleted = 0").bind(id).first();
+    if (!row) return json({ error: "not_found" }, 404);
+    const t = await env.DB.prepare("SELECT title, title_fa FROM titles WHERE id = ?1").bind(row.title_id).first();
+    let name = t ? (lang === "fa" && t.title_fa ? t.title_fa : t.title) : "";
+    if (row.season_number !== null) name += " · S" + row.season_number + " E" + row.episode_number;
+    const rtl = lang === "fa" ? "‏" : "";
+    const lines = [];
+    lines.push(rtl + "💬 <b>" + escHtml(cutText(name, 100)) + "</b>");
+    // spoilers never leave the app in a message
+    lines.push(rtl + (row.spoiler ? escHtml(w.spoiler) : "“" + escHtml(cutText(row.body, 600)) + "”"));
+    lines.push(rtl + "— " + escHtml(cutText(row.display_name, 40)));
+    const caption = lines.join("\n");
+    const link = "https://t.me/flicksyrobot?startapp=comment-" + id;
+    if (!env.BOT_TOKEN || !user.telegram_id) return json({ error: "share_failed" }, 502);
+    const res = await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/savePreparedInlineMessage", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.telegram_id,
+        result: {
+          type: "article",
+          id: "c" + id,
+          title: cutText(name, 100),
+          description: row.spoiler ? "Spoiler" : cutText(row.body, 100),
+          input_message_content: { message_text: caption, parse_mode: "HTML" },
+          reply_markup: { inline_keyboard: [[{ text: w.open, url: link }]] },
+        },
+        allow_user_chats: true,
+        allow_bot_chats: false,
+        allow_group_chats: true,
+        allow_channel_chats: true,
+      }),
+    });
+    const reply = await res.json();
+    if (!reply || !reply.ok || !reply.result || !reply.result.id) return json({ error: "share_failed" }, 502);
+    return json({ ok: true, id: reply.result.id });
+  } catch (e) {
+    return json({ error: "share_failed" }, 502);
+  }
+}
