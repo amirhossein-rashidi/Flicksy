@@ -969,7 +969,7 @@
   }
 
   function openDetail(item) {
-    var d = { item: item, data: null, tab: "overview", ep: null, error: "", els: {} };
+    var d = { item: item, data: null, tab: "cast", ep: null, error: "", els: {} };
     detailStack.push(d);
     // a title opened from a profile that sits on top of the title page must come to the front again
     $("detail").style.zIndex = document.querySelector(".spage") ? "40" : "";
@@ -1155,6 +1155,15 @@
     d.els.actions = el("div", "d-actions mv");
     body.appendChild(d.els.actions);
     renderActions(d);
+
+    // overview (tagline, text, genres) sits above the trailer / comments rows
+    if (d.data && (d.data.tagline || d.data.overview || (d.data.genres && d.data.genres.length))) {
+      var ov = el("div", "sx-ov");
+      if (d.data.tagline) ov.appendChild(el("p", "tagline", d.data.tagline));
+      if (d.data.overview) ov.appendChild(el("p", "overview", d.data.overview));
+      if (d.data.genres && d.data.genres.length) ov.appendChild(el("p", "gen", d.data.genres.join(" · ")));
+      body.appendChild(ov);
+    }
 
     body.appendChild(detailRows(d));
 
@@ -1565,7 +1574,7 @@
   function renderTabs(d) {
     var box = d.els.tabs;
     clear(box);
-    var tabs = [["overview", "tab_overview"]];
+    var tabs = [];
     tabs.push(["cast", "tab_cast"]);
     tabs.push(["crew", "tab_crew"]);
     tabs.forEach(function (pair) {
@@ -2081,12 +2090,6 @@
     if (d.error && !d.data) { pane.appendChild(msg(d.error, true)); return; }
     if (!d.data) { pane.appendChild(msg(t("loading"))); return; }
     var data = d.data;
-    var ov = el("div", "sx-ov");
-    if (data.tagline) ov.appendChild(el("p", "tagline", data.tagline));
-    if (data.overview) ov.appendChild(el("p", "overview", data.overview));
-    if (data.genres && data.genres.length) ov.appendChild(el("p", "gen", data.genres.join(" · ")));
-    if (ov.firstChild) pane.appendChild(ov);
-
     d.els.eps = el("div", "sx-eps");
     pane.appendChild(d.els.eps);
     if (!d.ep) d.ep = newEpState(d);
