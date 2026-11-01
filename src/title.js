@@ -3,6 +3,7 @@
 import { json, parseTitleRef, tmdbLang } from "./util.js";
 import { tmdbGet, mapList, imgUrl, TMDB_IMG, TMDB_BACKDROP, TMDB_PROFILE } from "./tmdb.js";
 import { attachLibraryState } from "./search.js";
+import { titleCommentCount } from "./comments.js";
 
 export async function handleTitle(url, env, user) {
   const ref = parseTitleRef(url.searchParams.get("tmdb_id"), url.searchParams.get("media_type"));
@@ -167,7 +168,20 @@ export async function handleTitle(url, env, user) {
       : null
     : d.runtime || null;
 
+  // number of comments on the title (null before the comments tables exist)
+  let commentsCount = null;
+  try {
+    const trow = await env.DB.prepare("SELECT id FROM titles WHERE tmdb_id = ?1 AND media_type = ?2")
+      .bind(ref.tmdbId, ref.mediaType)
+      .first();
+    if (trow) commentsCount = await titleCommentCount(env, trow.id);
+    else commentsCount = 0;
+  } catch (e) {
+    commentsCount = null;
+  }
+
   return json({
+    comments_count: commentsCount,
     tmdb_id: ref.tmdbId,
     media_type: ref.mediaType,
     title: d.title || d.name || "",
