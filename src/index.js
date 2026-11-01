@@ -9,7 +9,7 @@ import { handleSearch } from "./search.js";
 import { handleLibraryList, handleLibrarySet, handleLibraryDelete } from "./library.js";
 import { handleDiscover } from "./discover.js";
 import { handleTitle } from "./title.js";
-import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet } from "./episodes.js";
+import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet, handleEpisodeNoteSet } from "./episodes.js";
 import {
   handleListsGet,
   handleListCreate,
@@ -116,6 +116,10 @@ export default {
         if (path === "/api/episodes") {
           if (method === "GET") return await handleSeasonEpisodes(url, env, user);
           if (method === "PUT") return await handleEpisodesSet(request, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
+        if (path === "/api/episode-note") {
+          if (method === "PUT") return await handleEpisodeNoteSet(request, env, user);
           return json({ error: "method_not_allowed" }, 405);
         }
         if (path === "/api/lists") {
