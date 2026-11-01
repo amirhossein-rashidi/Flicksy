@@ -1089,7 +1089,17 @@
       box.appendChild(tr);
     }
     function chev() { var c = icon("chevron", 16); c.classList.add("flip"); return c; }
-    row(t("dt_comments"), chev);
+    var cc = d && d.data ? d.data.comments_count : null;
+    var cr0 = button("drow", null, function () {
+      if (!FX.openComments) { toast(t("pf_soon")); return; }
+      FX.openComments({ tmdb_id: d.item.tmdb_id, media_type: d.item.media_type, title: d.data ? d.data.title : displayTitle(d.item) });
+    });
+    cr0.appendChild(el("span", "", t("dt_comments")));
+    var cend0 = el("span", "rowc");
+    if (cc) cend0.appendChild(el("em", "", String(cc)));
+    cend0.appendChild(chev());
+    cr0.appendChild(cend0);
+    box.appendChild(cr0);
     var fw = FEATURES.friendsRow && d && d.data && d.data.friends_watched;
     if (fw && fw.count > 0) {
       var fr = button("drow", null, function () { openFriendsSheet(fw); });
@@ -2358,7 +2368,13 @@
     var com = el("div", "mv-sec");
     com.appendChild(el("h4", "", t("sx_community")));
     var rows = el("div", "drows");
-    var cr = button("drow", null, function () { toast(t("pf_soon")); });
+    var cr = button("drow", null, function () {
+      if (!FX.openComments) { toast(t("pf_soon")); return; }
+      FX.openComments({
+        tmdb_id: d.item.tmdb_id, media_type: "tv", season: sn, episode: en,
+        title: d.data ? d.data.title : displayTitle(d.item)
+      });
+    });
     cr.appendChild(el("span", "", t("dt_comments")));
     var cend = el("span", "rowc");
     var chev = icon("chevron", 16);
@@ -2544,6 +2560,8 @@
     if (m && FX.openListByCode) FX.openListByCode(m[1]);
     var u = /^user-(\d{3,12})$/.exec(param);
     if (u && FX.openProfile) FX.openProfile(u[1]);
+    var cm = /^comment-(\d{1,10})$/.exec(param);
+    if (cm && FX.openCommentById) FX.openCommentById(parseInt(cm[1], 10));
     var ti = /^title-(movie|tv)-(\d{1,9})$/.exec(param);
     if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
   }
