@@ -53,7 +53,11 @@
     bell: ["M6 16V11a6 6 0 0 1 12 0v5l2 2H4z", "M10 21h4"],
     repeat: ["M17 2l4 4-4 4", "M3 11V9a3 3 0 0 1 3-3h15", "M7 22l-4-4 4-4", "M21 13v2a3 3 0 0 1-3 3H3"],
     cal: ["M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z", "M4 10h16M8 3v4M16 3v4"],
-    share: ["M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"]
+    share: ["M12 3v12", "M7 8l5-5 5 5", "M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"],
+    eye: ["M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+    pause: ["M8 5v14M16 5v14"],
+    skip: ["M5 4l10 8-10 8z", "M19 5v14"],
+    all: ["M3 12.5l4 4L15 8", "M10 16.5l1 1L21 8"]
   };
   var FILLED = { star: true, play: true };
 
@@ -977,6 +981,7 @@
   }
 
   function backDetail() {
+    if (epPage) { closeEpisode(); return; }
     detailStack.pop();
     var d = topDetail();
     if (d) {
@@ -1103,6 +1108,7 @@
 
   function renderDetail(d) {
     var page = $("detail");
+    closeEpisode();
     clear(page);
     var info = infoOf(d);
     var scroller = el("div", "page-scroll");
@@ -1146,18 +1152,25 @@
     top.appendChild(box);
     body.appendChild(top);
 
-    d.els.actions = el("div", "d-actions" + (d.item.media_type === "movie" ? " mv" : ""));
+    d.els.actions = el("div", "d-actions mv");
     body.appendChild(d.els.actions);
     renderActions(d);
 
     body.appendChild(detailRows(d));
 
-    d.els.tabs = el("div", "d-tabs");
-    body.appendChild(d.els.tabs);
-    d.els.pane = el("div", "d-pane");
-    body.appendChild(d.els.pane);
-    renderTabs(d);
-    renderPane(d);
+    if (d.item.media_type === "tv") {
+      // series: no tabs. Overview, seasons and episodes, cast and crew follow each other on one page.
+      d.els.pane = el("div", "d-pane sx-body");
+      body.appendChild(d.els.pane);
+      renderSeriesBody(d);
+    } else {
+      d.els.tabs = el("div", "d-tabs");
+      body.appendChild(d.els.tabs);
+      d.els.pane = el("div", "d-pane");
+      body.appendChild(d.els.pane);
+      renderTabs(d);
+      renderPane(d);
+    }
 
     // "More like this" stays under every tab
     if (d.data && d.data.similar && d.data.similar.length) {
@@ -1444,12 +1457,18 @@
 
     if (!watched) return;
 
+    renderMineSections(d, box);
+  }
+
+  // rating, feelings and favorite character of the title itself (movie or series marked as watched)
+  function renderMineSections(d, box) {
+    var item = d.item;
     var secs = el("div", "mv-secs");
     box.appendChild(secs);
 
     // 1) rating: five stars (stored as 2, 4, 6, 8, 10)
     var s1 = el("div", "mv-sec");
-    s1.appendChild(el("h4", "", t("dt_rate_h")));
+    s1.appendChild(el("h4", "", t(item.media_type === "tv" ? "dt_rate_h_tv" : "dt_rate_h")));
     var stars = el("div", "stars");
     s1.appendChild(stars);
     secs.appendChild(s1);
@@ -1540,79 +1559,13 @@
 
   function renderActions(d) {
     if (d.item.media_type === "movie") { renderMovieActions(d); return; }
-    var box = d.els.actions;
-    clear(box);
-    var item = d.item;
-    var m = getMine(item);
-    if (d.data && m.status !== "watched") { d.data.mood = []; d.data.fav_actor = null; }
-
-    var watch = button("abtn" + (m.status === "want" ? " on" : ""), null, function () {
-      var cur = getMine(item).status;
-      if (cur && cur !== "want") { openEditSheet(d); return; }
-      var p = cur === "want" ? removeFromLibrary(item) : setStatus(item, "want", getMine(item).rating);
-      p.then(function () { if (topDetail() === d) renderActions(d); });
-    });
-    watch.appendChild(icon(m.status === "want" ? "check" : "bookmark", 18));
-    watch.appendChild(el("span", "", m.status === "want" ? t("btn_in_watchlist") : t("btn_watchlist")));
-    box.appendChild(watch);
-
-    var canRewatch = FEATURES.rewatch && item.media_type === "movie" && m.status === "watched";
-    var seen = button("abtn" + (m.status === "watched" ? " on seen" : ""), null, function () {
-      if (canRewatch) { openEditSheet(d, { rewatch: true }); return; }
-      if (getMine(item).status === "watched") {
-        removeFromLibrary(item).then(function () { if (topDetail() === d) renderActions(d); });
-        return;
-      }
-      setStatus(item, "watched", getMine(item).rating).then(function (ok) {
-        if (topDetail() !== d) return;
-        renderActions(d);
-        if (ok) openEditSheet(d, { rate: true });
-      });
-    });
-    seen.appendChild(icon(canRewatch ? "repeat" : "check", 18));
-    seen.appendChild(el("span", "", t(canRewatch ? "rwl" : "btn_seen")));
-    box.appendChild(seen);
-
-    box.appendChild(iconButton("abtn icon-only", "sliders", t("btn_edit"), function () { openEditSheet(d); }));
-    if (FX.hooks.detailAction) FX.hooks.detailAction(d, box);
-
-    if (m.status) {
-      var line = el("div", "mine-line");
-      line.appendChild(statusBadge(m.status));
-      if (m.status === "watched") line.lastChild.appendChild(document.createTextNode(" " + t("status_watched")));
-      if (m.rating) line.appendChild(ratingBadge(m.rating));
-      if (m.status === "watched" && d.data && d.data.mood && d.data.mood.length) {
-        line.appendChild(el("span", "mine-moods", d.data.mood.join(" ")));
-      }
-      if (m.status === "watched" && d.data && d.data.fav_actor) {
-        var fa = el("span", "mine-actor");
-        if (d.data.fav_actor.photo) {
-          var faImg = el("img");
-          faImg.src = d.data.fav_actor.photo;
-          faImg.alt = "";
-          fa.appendChild(faImg);
-        }
-        fa.appendChild(document.createTextNode("♥ " + d.data.fav_actor.name));
-        line.appendChild(fa);
-      }
-      box.appendChild(line);
-    }
-
-    var my = d.data && d.data.my;
-    if (FEATURES.rewatch && item.media_type === "movie" && m.status === "watched" && my && my.watch_count > 0) {
-      var hist = el("div", "dhist");
-      hist.appendChild(icon("repeat", 17));
-      hist.appendChild(el("span", "", t("rw_times", { n: my.watch_count })));
-      if (my.last_watched_on) hist.appendChild(el("small", "", t("rw_last", { d: niceDate(my.last_watched_on) })));
-      box.appendChild(hist);
-    }
+    renderSeriesActions(d);
   }
 
   function renderTabs(d) {
     var box = d.els.tabs;
     clear(box);
     var tabs = [["overview", "tab_overview"]];
-    if (d.item.media_type === "tv") tabs.push(["episodes", "tab_episodes"]);
     tabs.push(["cast", "tab_cast"]);
     tabs.push(["crew", "tab_crew"]);
     tabs.forEach(function (pair) {
@@ -1648,10 +1601,6 @@
         facts.appendChild(s);
       }
       if (facts.firstChild) pane.appendChild(facts);
-    } else if (d.tab === "episodes") {
-      if (!d.ep) d.ep = newEpState(d);
-      renderEps(d.ep);
-      if (d.ep.status === "idle") loadEps(d.ep);
     } else {
       var people = d.tab === "crew" ? data.crew : data.cast;
       if (!people || !people.length) { pane.appendChild(msg("—")); return; }
@@ -1872,12 +1821,17 @@
     });
   }
 
-  // ---------- episodes (series) ----------
+  // ---------- series page: actions, seasons, episodes, episode page ----------
+  function num(n) {
+    try { return Number(n).toLocaleString(I18N.lang === "fa" ? "fa-IR" : undefined); } catch (e) { return String(n); }
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
   function newEpState(d) {
-    return { d: d, item: d.item, seasons: [], total: 0, watched: 0, open: null, cache: {}, busy: false, status: "idle", note: "" };
+    return { d: d, item: d.item, seasons: [], total: 0, watched: 0, open: null, cache: {}, pending: {}, next: null, nextBusy: false, busy: false, status: "idle", note: "" };
   }
 
-  function epActive(state) { return topDetail() === state.d && state.d.tab === "episodes"; }
+  function epActive(state) { return topDetail() === state.d; }
   function epRecalc(state) {
     var sum = 0;
     state.seasons.forEach(function (s) { sum += s.watched; });
@@ -1903,16 +1857,23 @@
     });
   }
 
-  function loadSeason(state, num) {
-    if (state.cache[num]) return;
-    state.cache[num] = { loading: true };
-    api(L("/api/episodes?tmdb_id=" + state.item.tmdb_id + "&season=" + num)).then(function (res) {
-      state.cache[num] = res.status === 200 ? { episodes: res.data.episodes || [] } : { error: problem(res, "err_load") };
-      if (epActive(state)) renderEps(state);
+  // Loads the episodes of one season once; gives back a promise with { episodes } or { error }.
+  function ensureSeason(state, sNum) {
+    var c = state.cache[sNum];
+    if (c && c.episodes) return Promise.resolve(c);
+    if (state.pending[sNum]) return state.pending[sNum];
+    var p = api(L("/api/episodes?tmdb_id=" + state.item.tmdb_id + "&season=" + sNum)).then(function (res) {
+      delete state.pending[sNum];
+      state.cache[sNum] = res.status === 200 ? { episodes: res.data.episodes || [] } : { error: problem(res, "err_load") };
+      return state.cache[sNum];
     }).catch(function () {
-      state.cache[num] = { error: t("err_network") };
-      if (epActive(state)) renderEps(state);
+      delete state.pending[sNum];
+      state.cache[sNum] = { error: t("err_network") };
+      return state.cache[sNum];
     });
+    state.pending[sNum] = p;
+    state.cache[sNum] = { loading: true };
+    return p;
   }
 
   function applyServer(state, data, seasonNum) {
@@ -1923,11 +1884,19 @@
         if (s.season_number === seasonNum) s.watched = Math.min(data.season_watched, s.episode_count);
       });
     }
-    var item = state.item;
+    var item = state.item, d = state.d;
     if (data.library_status && data.library_status !== getMine(item).status) {
       mine[key(item)] = { status: data.library_status, rating: getMine(item).rating };
       library.stale = true;
-      if (topDetail() === state.d) renderActions(state.d);
+    }
+    // every episode done -> the series becomes "watched"; one taken back -> back to "watching"
+    var cur = getMine(item).status;
+    if (data.complete && cur !== "watched") {
+      setStatus(item, "watched", getMine(item).rating).then(function () { if (topDetail() === d) renderActions(d); });
+    } else if (!data.complete && cur === "watched") {
+      setStatus(item, "watching", null).then(function () { if (topDetail() === d) renderActions(d); });
+    } else if (topDetail() === d) {
+      renderActions(d);
     }
   }
 
@@ -1961,10 +1930,21 @@
     return null;
   }
 
+  function seasonIndex(state, num) {
+    for (var i = 0; i < state.seasons.length; i++) if (state.seasons[i].season_number === num) return i;
+    return -1;
+  }
+
+  function markEpisodeLocal(e, value) {
+    e.watched = value;
+    e.watched_on = value ? todayStr() : null;
+    if (!value) e.my = null;
+  }
+
   function toggleEpisode(state, seasonNum, episode) {
     var value = !episode.watched;
     mutateEps(state, { tmdb_id: state.item.tmdb_id, scope: "episode", season: seasonNum, episode: episode.episode_number, watched: value }, function () {
-      episode.watched = value;
+      markEpisodeLocal(episode, value);
       var s = findSeason(state, seasonNum);
       if (s) s.watched = Math.max(0, Math.min(s.episode_count, s.watched + (value ? 1 : -1)));
       epRecalc(state);
@@ -1974,7 +1954,7 @@
   function setSeason(state, seasonNum, value) {
     mutateEps(state, { tmdb_id: state.item.tmdb_id, scope: "season", season: seasonNum, watched: value }, function () {
       var c = state.cache[seasonNum];
-      if (c && c.episodes) c.episodes.forEach(function (e) { e.watched = value; });
+      if (c && c.episodes) c.episodes.forEach(function (e) { markEpisodeLocal(e, value); });
       var s = findSeason(state, seasonNum);
       if (s) s.watched = value ? s.episode_count : 0;
       epRecalc(state);
@@ -1986,56 +1966,91 @@
       state.seasons.forEach(function (s) {
         s.watched = value ? s.episode_count : 0;
         var c = state.cache[s.season_number];
-        if (c && c.episodes) c.episodes.forEach(function (e) { e.watched = value; });
+        if (c && c.episodes) c.episodes.forEach(function (e) { markEpisodeLocal(e, value); });
       });
       epRecalc(state);
     });
   }
 
-  function markSeriesWatched(state) {
-    if (state.busy) return;
-    state.busy = true;
-    setStatus(state.item, "watched", getMine(state.item).rating).then(function (ok) {
-      state.busy = false;
-      if (epActive(state)) {
-        renderEps(state);
-        renderActions(state.d);
-        if (ok) openEditSheet(state.d, { rate: true });
+  // First episode I have not watched yet (loads that season if needed). Used for "Up next".
+  function refreshNext(state) {
+    if (state.nextBusy || state.status !== "ready") return;
+    var s = null;
+    for (var i = 0; i < state.seasons.length; i++) {
+      if (state.seasons[i].watched < state.seasons[i].episode_count) { s = state.seasons[i]; break; }
+    }
+    var d = state.d;
+    if (!s) {
+      if (state.next) { state.next = null; if (topDetail() === d) renderActions(d); }
+      return;
+    }
+    state.nextBusy = true;
+    ensureSeason(state, s.season_number).then(function (c) {
+      state.nextBusy = false;
+      var found = null;
+      if (c && c.episodes) {
+        for (var j = 0; j < c.episodes.length; j++) if (!c.episodes[j].watched) { found = c.episodes[j]; break; }
       }
+      var nk = found ? s.season_number + "-" + found.episode_number : "";
+      var ok = state.next ? state.next.s + "-" + state.next.e.episode_number : "";
+      state.next = found ? { s: s.season_number, e: found } : null;
+      if (nk !== ok && topDetail() === d) renderActions(d);
     });
   }
 
   function renderSeason(state, s) {
     var isOpen = state.open === s.season_number;
-    var box = el("div", "season" + (isOpen ? " open" : ""));
-    var head = button("season-head", null, function () {
+    var full = s.watched >= s.episode_count;
+    var box = el("div", "sx-season" + (isOpen ? " open" : ""));
+    var head = button("sx-head", null, function () {
       state.open = isOpen ? null : s.season_number;
-      if (!isOpen) loadSeason(state, s.season_number);
+      if (!isOpen) ensureSeason(state, s.season_number).then(function () { if (epActive(state)) renderEps(state); });
       renderEps(state);
     });
-    head.appendChild(el("span", "season-name", t("season_n", { n: s.season_number })));
-    var right = el("span", "season-count", s.watched + " / " + s.episode_count);
-    if (s.watched >= s.episode_count) right.classList.add("full");
+    head.appendChild(el("span", "", t("season_n", { n: num(s.season_number) })));
+    var right = el("small", full ? "full" : "");
+    right.appendChild(document.createTextNode(num(s.watched) + " / " + num(s.episode_count)));
+    right.appendChild(icon("chevron", 16));
     head.appendChild(right);
     box.appendChild(head);
+    var bar = el("div", "sx-bar");
+    var fill = el("i");
+    fill.style.width = Math.round((s.watched / Math.max(1, s.episode_count)) * 100) + "%";
+    bar.appendChild(fill);
+    box.appendChild(bar);
 
     if (isOpen) {
       var c = state.cache[s.season_number];
-      var body = el("div", "season-body");
+      var body = el("div", "sx-list");
       if (!c || c.loading) body.appendChild(msg(t("loading")));
       else if (c.error) body.appendChild(msg(c.error, true));
       else {
-        var allDone = s.watched >= s.episode_count;
-        body.appendChild(button("minibtn", t(allDone ? "unmark_season" : "mark_season"), function () { setSeason(state, s.season_number, !allDone); }));
-        c.episodes.forEach(function (e) {
-          var row = button("ep" + (e.watched ? " done" : ""), null, function () { toggleEpisode(state, s.season_number, e); });
-          var check = el("span", "check");
-          if (e.watched) check.appendChild(icon("check", 14));
-          row.appendChild(check);
-          var txt = el("span", "ep-text");
-          txt.appendChild(el("span", "ep-name", e.episode_number + ". " + (e.name || t("episode_n", { n: e.episode_number }))));
-          if (e.air_date) txt.appendChild(el("span", "ep-date", e.air_date));
-          row.appendChild(txt);
+        body.appendChild(button("sx-markall", t(full ? "unmark_season" : "mark_season"), function () { setSeason(state, s.season_number, !full); }));
+        c.episodes.forEach(function (e, i) {
+          var row = el("div", "sx-ep" + (e.watched ? " on" : ""));
+          var open = button("sx-epm", null, function () { openEpisode(state, s.season_number, e.episode_number); });
+          var th = el("span", "sx-th", String(e.episode_number));
+          th.style.background = "linear-gradient(" + (140 + i * 25) + "deg,#" + PC_COLORS[(i + s.season_number) % PC_COLORS.length] + ",#14143a)";
+          if (e.still) {
+            var im = el("img");
+            im.src = e.still;
+            im.alt = "";
+            im.loading = "lazy";
+            im.addEventListener("error", function () { im.remove(); });
+            th.appendChild(im);
+          }
+          open.appendChild(th);
+          var nm = el("span", "sx-nm");
+          nm.appendChild(el("b", "", e.name || t("episode_n", { n: e.episode_number })));
+          var sub = ["E" + pad2(e.episode_number)];
+          if (e.runtime) sub.push(formatRuntime(e.runtime));
+          nm.appendChild(el("small", "", sub.join(" · ")));
+          open.appendChild(nm);
+          row.appendChild(open);
+          var ck = button("sx-ck", null, function () { toggleEpisode(state, s.season_number, e); });
+          ck.setAttribute("aria-label", t("status_watched"));
+          ck.appendChild(icon("check", 16));
+          row.appendChild(ck);
           body.appendChild(row);
         });
       }
@@ -2046,34 +2061,416 @@
 
   function renderEps(state) {
     if (!epActive(state)) return;
-    var pane = state.d.els.pane;
+    var host = state.d.els.eps;
+    if (!host || !host.isConnected) return;
+    clear(host);
+    if (state.status === "idle" || state.status === "loading") { host.appendChild(msg(t("loading"))); return; }
+    if (state.status === "error") { host.appendChild(msg(state.note, true)); return; }
+    if (!state.seasons.length) return;
+    if (state.note) host.appendChild(msg(state.note, true));
+    state.seasons.forEach(function (s) { host.appendChild(renderSeason(state, s)); });
+    renderActions(state.d);
+    refreshNext(state);
+    if (epPage && epPage.state === state) drawEpisode(epPage);
+  }
+
+  // cast and crew rows + overview + the episodes; there are no tabs on the series page
+  function renderSeriesBody(d) {
+    var pane = d.els.pane;
     clear(pane);
-    if (state.status === "idle" || state.status === "loading") { pane.appendChild(msg(t("loading"))); return; }
-    if (state.status === "error") { pane.appendChild(msg(state.note, true)); return; }
-    if (!state.seasons.length) { pane.appendChild(msg("—")); return; }
+    if (d.error && !d.data) { pane.appendChild(msg(d.error, true)); return; }
+    if (!d.data) { pane.appendChild(msg(t("loading"))); return; }
+    var data = d.data;
+    var ov = el("div", "sx-ov");
+    if (data.tagline) ov.appendChild(el("p", "tagline", data.tagline));
+    if (data.overview) ov.appendChild(el("p", "overview", data.overview));
+    if (data.genres && data.genres.length) ov.appendChild(el("p", "gen", data.genres.join(" · ")));
+    if (ov.firstChild) pane.appendChild(ov);
 
-    var percent = state.total ? Math.round((state.watched / state.total) * 100) : 0;
-    var top = el("div", "prog-row");
-    top.appendChild(el("span", "", t("episodes_of", { w: state.watched, t: state.total })));
-    top.appendChild(el("span", "", percent + "%"));
-    pane.appendChild(top);
-    var bar = el("div", "bar");
-    var fill = el("i");
-    fill.style.width = percent + "%";
-    bar.appendChild(fill);
-    pane.appendChild(bar);
+    d.els.eps = el("div", "sx-eps");
+    pane.appendChild(d.els.eps);
+    if (!d.ep) d.ep = newEpState(d);
+    if (d.ep.status === "idle") loadEps(d.ep);
+    else renderEps(d.ep);
 
-    var complete = state.total > 0 && state.watched >= state.total;
-    pane.appendChild(button("minibtn", t(complete ? "unmark_all" : "mark_all"), function () { setAllEpisodes(state, !complete); }));
+    [["tab_cast", data.cast, "character"], ["tab_crew", data.crew, "job"]].forEach(function (g) {
+      var people = g[1];
+      if (!people || !people.length) return;
+      var sec = el("section", "sx-people");
+      sec.appendChild(el("h4", "", t(g[0])));
+      var row = el("div", "hscroll pc-row");
+      people.forEach(function (c, i) {
+        var pcard = personCard(c.name, c[g[2]], c.photo, i, "button");
+        pcard.addEventListener("click", function () { openPerson({ id: c.id, name: c.name, photo: c.photo }); });
+        row.appendChild(pcard);
+      });
+      sec.appendChild(row);
+      pane.appendChild(sec);
+    });
+  }
 
-    if (complete && getMine(state.item).status !== "watched") {
-      var banner = el("div", "banner");
-      banner.appendChild(el("p", "", t("all_done_q")));
-      banner.appendChild(button("btn primary", t("yes_watched"), function () { markSeriesWatched(state); }));
-      pane.appendChild(banner);
+  // ---------- series: the buttons under the title ----------
+  function renderSeriesActions(d) {
+    var box = d.els.actions;
+    clear(box);
+    var item = d.item;
+    var st = getMine(item).status;
+    var ep = d.ep && d.ep.status === "ready" ? d.ep : null;
+    if (d.data && st !== "watched") { d.data.mood = []; d.data.fav_actor = null; }
+
+    var row = el("div", "mv-row");
+    box.appendChild(row);
+
+    var wl = button("sq" + (st === "want" ? " on" : ""), null, function () {
+      var cur = getMine(item).status;
+      if (cur && cur !== "want") { toast(t("status_" + cur)); return; }
+      var p = cur === "want" ? removeFromLibrary(item) : setStatus(item, "want", null);
+      p.then(function () { if (topDetail() === d) renderActions(d); });
+    });
+    wl.setAttribute("aria-label", t("btn_watchlist"));
+    wl.appendChild(icon("bookmark", 22));
+    row.appendChild(wl);
+
+    var main;
+    if (!st || st === "want") {
+      main = button("seenbtn", null, function () {
+        if (main.disabled) return;
+        main.disabled = true;
+        setStatus(item, "watching", null).then(function () { if (topDetail() === d) renderActions(d); });
+      });
+      main.appendChild(icon("play", 18));
+      main.appendChild(el("span", "", t("sx_start")));
+    } else if (st === "watched") {
+      main = button("seenbtn done", null, function () { openSeriesMenu(d); });
+      var l1 = el("span", "l");
+      l1.appendChild(icon("check", 20));
+      l1.appendChild(el("span", "", t("status_watched")));
+      main.appendChild(l1);
+      if (ep) main.appendChild(el("span", "r", num(ep.total) + " / " + num(ep.total)));
+    } else {
+      main = button("seenbtn prog", null, function () { openSeriesMenu(d); });
+      if (ep && ep.total) {
+        var fill = el("i");
+        fill.style.width = Math.round((ep.watched / ep.total) * 100) + "%";
+        main.appendChild(fill);
+      }
+      var l2 = el("span", "l");
+      l2.appendChild(icon("eye", 20));
+      l2.appendChild(el("span", "", t("status_" + st)));
+      main.appendChild(l2);
+      if (ep) main.appendChild(el("span", "r", num(ep.watched) + " / " + num(ep.total)));
     }
-    if (state.note) pane.appendChild(msg(state.note, true));
-    state.seasons.forEach(function (s) { pane.appendChild(renderSeason(state, s)); });
+    row.appendChild(main);
+
+    if (FX.hooks.detailAction) FX.hooks.detailAction(d, row);
+
+    if ((st === "watching" || st === "paused") && ep && ep.next) {
+      var n = ep.next;
+      var nx = el("div", "sx-next");
+      var nb = el("span", "nb");
+      nb.appendChild(icon("play", 16));
+      nx.appendChild(nb);
+      var tx = button("nx", null, function () { openEpisode(ep, n.s, n.e.episode_number); });
+      tx.appendChild(el("small", "", t("sx_next")));
+      tx.appendChild(el("b", "", t("sx_sxex", { s: n.s, e: n.e.episode_number }) + (n.e.name ? " — " + n.e.name : "")));
+      nx.appendChild(tx);
+      nx.appendChild(button("go", t("sx_mark"), function () { toggleEpisode(ep, n.s, n.e); }));
+      box.appendChild(nx);
+    }
+
+    if (st === "watched") renderMineSections(d, box);
+  }
+
+  function menuRow(sh, cls, iconName, label, handler) {
+    var r = button("mi " + cls, null, handler);
+    r.appendChild(icon(iconName, 20));
+    r.appendChild(el("span", "", label));
+    sh.appendChild(r);
+  }
+
+  function openSeriesMenu(d) {
+    var item = d.item;
+    var st = getMine(item).status;
+    var ep = d.ep && d.ep.status === "ready" ? d.ep : null;
+    function setTo(status) {
+      closeSheet();
+      setStatus(item, status, null).then(function () { if (topDetail() === d) renderActions(d); });
+    }
+    openSheet(function (sh) {
+      if (st !== "watched") {
+        if (ep && ep.next) menuRow(sh, "", "skip", t("sx_m_next"), function () { closeSheet(); toggleEpisode(ep, ep.next.s, ep.next.e); });
+        if (ep) menuRow(sh, "", "all", t("sx_m_all"), function () { closeSheet(); setAllEpisodes(ep, true); });
+        if (st === "watching") menuRow(sh, "", "pause", t("sx_m_hold"), function () { setTo("paused"); });
+        else menuRow(sh, "", "play", t("sx_m_resume"), function () { setTo("watching"); });
+        if (st !== "dropped") menuRow(sh, "", "x", t("sx_m_drop"), function () { setTo("dropped"); });
+      }
+      menuRow(sh, "red", "x", t("sx_m_remove"), function () { closeSheet(); removeSeries(d); });
+    });
+  }
+
+  // "Remove from my shows": out of the library, and the episodes I marked are cleared too.
+  function removeSeries(d) {
+    var item = d.item, ep = d.ep;
+    removeFromLibrary(item).then(function (ok) {
+      if (!ok) return;
+      if (d.data) { d.data.mood = []; d.data.fav_actor = null; }
+      if (ep && ep.status === "ready" && ep.watched > 0) {
+        api("/api/episodes", { method: "PUT", body: { tmdb_id: item.tmdb_id, scope: "all", watched: false } });
+        ep.seasons.forEach(function (s) { s.watched = 0; });
+        Object.keys(ep.cache).forEach(function (k) {
+          if (ep.cache[k].episodes) ep.cache[k].episodes.forEach(function (e) { markEpisodeLocal(e, false); });
+        });
+        epRecalc(ep);
+        ep.next = null;
+      }
+      if (topDetail() === d) { if (ep) renderEps(ep); renderActions(d); }
+    });
+  }
+
+  // ---------- episode page (opens over the series page) ----------
+  var epPage = null;
+
+  function closeEpisode() {
+    if (!epPage) return;
+    epPage.root.remove();
+    epPage = null;
+  }
+
+  function findEpisode(state, sn, en) {
+    var c = state.cache[sn];
+    if (!c || !c.episodes) return null;
+    for (var i = 0; i < c.episodes.length; i++) if (c.episodes[i].episode_number === en) return c.episodes[i];
+    return null;
+  }
+
+  function openEpisode(state, sn, en) {
+    closeEpisode();
+    var root = el("div", "ep-page");
+    $("detail").appendChild(root);
+    var pg = { root: root, state: state, sn: sn, en: en, scroller: null };
+    epPage = pg;
+    state.open = sn;
+    drawEpisode(pg, true);
+    ensureSeason(state, sn).then(function () { if (epPage === pg) drawEpisode(pg, true); });
+  }
+
+  function goEpisode(pg, dir) {
+    var state = pg.state;
+    var c = state.cache[pg.sn];
+    var list = (c && c.episodes) || [];
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) if (list[i].episode_number === pg.en) { idx = i; break; }
+    var nxt = list[idx + dir];
+    if (idx >= 0 && nxt) { pg.en = nxt.episode_number; drawEpisode(pg, true); return; }
+    var adj = state.seasons[seasonIndex(state, pg.sn) + dir];
+    if (!adj) return;
+    ensureSeason(state, adj.season_number).then(function (cc) {
+      if (epPage !== pg || !cc.episodes || !cc.episodes.length) return;
+      pg.sn = adj.season_number;
+      pg.en = dir > 0 ? cc.episodes[0].episode_number : cc.episodes[cc.episodes.length - 1].episode_number;
+      state.open = pg.sn;
+      drawEpisode(pg, true);
+    });
+  }
+
+  function drawEpisode(pg, toTop) {
+    var state = pg.state, d = state.d, root = pg.root;
+    var keepY = pg.scroller && !toTop ? pg.scroller.scrollTop : 0;
+    clear(root);
+    var sn = pg.sn, en = pg.en;
+    var e = findEpisode(state, sn, en);
+    var scroller = el("div", "page-scroll");
+    pg.scroller = scroller;
+    root.appendChild(scroller);
+
+    var hero = el("div", "d-hero ep-hero");
+    if (e && e.still) {
+      var img = el("img", "d-hero-img");
+      img.src = e.still;
+      img.alt = "";
+      hero.appendChild(img);
+    }
+    hero.appendChild(el("div", "d-hero-shade"));
+    scroller.appendChild(hero);
+
+    var ser = el("div", "ep-ser");
+    ser.appendChild(posterNode(d.data || d.item, "ep-mp"));
+    ser.appendChild(el("span", "", d.data ? d.data.title : displayTitle(d.item)));
+    scroller.appendChild(ser);
+
+    // previous / next episode
+    var list = (state.cache[sn] && state.cache[sn].episodes) || [];
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) if (list[i].episode_number === en) { idx = i; break; }
+    var si = seasonIndex(state, sn);
+    var hasPrev = idx > 0 || si > 0;
+    var hasNext = (idx >= 0 && idx < list.length - 1) || (si >= 0 && si < state.seasons.length - 1);
+    var nav = el("div", "ep-nav");
+    var pb = iconButton("", "chevron", t("sx_prev"), function () { goEpisode(pg, -1); });
+    pb.firstChild.classList.add("flip");
+    pb.disabled = !hasPrev;
+    nav.appendChild(pb);
+    nav.appendChild(el("h2", "", "S" + pad2(sn) + " E" + pad2(en)));
+    var nb = iconButton("", "chevron", t("sx_nextep"), function () { goEpisode(pg, 1); });
+    nb.disabled = !hasNext;
+    nav.appendChild(nb);
+    scroller.appendChild(nav);
+    if (e && e.name) scroller.appendChild(el("p", "ep-title", e.name));
+
+    var back = iconButton("round-btn", "back", t("btn_close"), closeEpisode);
+    back.firstChild.classList.add("flip");
+    root.appendChild(back);
+
+    var body = el("div", "ep-body");
+    scroller.appendChild(body);
+    if (!e) {
+      var c = state.cache[sn];
+      body.appendChild(msg(c && c.error ? c.error : t("loading"), !!(c && c.error)));
+      return;
+    }
+
+    // watched button
+    var row = el("div", "mv-row");
+    body.appendChild(row);
+    var seen;
+    if (!e.watched) {
+      seen = button("seenbtn", null, function () { toggleEpisode(state, sn, e); });
+      seen.appendChild(icon("check", 20));
+      seen.appendChild(el("span", "", t("btn_seen")));
+    } else {
+      seen = button("seenbtn done", null, function () {
+        openSheet(function (sh) {
+          menuRow(sh, "red", "x", t("rw_unwatch"), function () { closeSheet(); toggleEpisode(state, sn, e); });
+        });
+      });
+      var left = el("span", "l");
+      left.appendChild(icon("check", 20));
+      left.appendChild(el("span", "", t("status_watched")));
+      seen.appendChild(left);
+      if (e.watched_on) seen.appendChild(el("span", "r", shortDate(e.watched_on)));
+    }
+    row.appendChild(seen);
+
+    if (e.watched) renderEpisodeMine(pg, e, body, sn, en);
+
+    // what others say (screens come later)
+    var com = el("div", "mv-sec");
+    com.appendChild(el("h4", "", t("sx_community")));
+    var rows = el("div", "drows");
+    var cr = button("drow", null, function () { toast(t("pf_soon")); });
+    cr.appendChild(el("span", "", t("dt_comments")));
+    var cend = el("span", "rowc");
+    var chev = icon("chevron", 16);
+    chev.classList.add("flip");
+    cend.appendChild(chev);
+    cr.appendChild(cend);
+    rows.appendChild(cr);
+    com.appendChild(rows);
+    body.appendChild(com);
+
+    // episode info
+    var info = el("div", "mv-sec ep-info");
+    info.appendChild(el("h4", "", t("sx_einfo")));
+    var meta = [];
+    if (e.runtime) meta.push(formatRuntime(e.runtime));
+    if (e.air_date) meta.push(niceDate(e.air_date));
+    if (meta.length) info.appendChild(el("small", "", meta.join(" · ")));
+    if (e.overview) info.appendChild(el("p", "overview", e.overview));
+    if (e.vote) {
+      var pill = el("span", "ep-pill");
+      var five = Math.round(e.vote / 2);
+      pill.appendChild(document.createTextNode(num((Math.round(e.vote * 5) / 10)) + " "));
+      pill.appendChild(el("span", "st", "★★★★★".slice(0, five) + "☆☆☆☆☆".slice(0, 5 - five)));
+      info.appendChild(pill);
+    }
+    body.appendChild(info);
+    scroller.scrollTop = keepY;
+  }
+
+  // my rating, feelings and favorite character for ONE episode (shown when the episode is marked watched)
+  function renderEpisodeMine(pg, e, box, sn, en) {
+    var state = pg.state, d = state.d;
+    var my = e.my || (e.my = { rating: null, mood: [], actor: null });
+    var wrap = el("div");
+    box.appendChild(wrap);
+    var cast = ((d.data && d.data.cast) || []).filter(function (c) { return c.id; });
+    var charsEl = null;
+
+    function put(patch) {
+      var prev = JSON.parse(JSON.stringify(my));
+      Object.keys(patch).forEach(function (k) { my[k] = patch[k]; });
+      draw();
+      var body = { tmdb_id: state.item.tmdb_id, season: sn, episode: en };
+      Object.keys(patch).forEach(function (k) { body[k] = patch[k]; });
+      api("/api/episode-note", { method: "PUT", body: body }).then(function (res) {
+        if (res.status !== 200) { revert(problem(res, "err_save")); return; }
+        haptic();
+      }).catch(function () { revert(t("err_network")); });
+      function revert(message) {
+        Object.keys(prev).forEach(function (k) { my[k] = prev[k]; });
+        draw();
+        toast(message, true);
+      }
+    }
+
+    function draw() {
+      var keep = charsEl ? charsEl.scrollLeft : 0;
+      clear(wrap);
+      // stars
+      var s1 = el("div", "mv-sec");
+      s1.appendChild(el("h4", "", t("sx_rate_ep")));
+      var stars = el("div", "stars");
+      var cur = my.rating ? Math.ceil(my.rating / 2) : 0;
+      for (var n = 1; n <= 5; n++) {
+        (function (num) {
+          var b = button("star" + (cur >= num ? " lit" : "") + (cur === num ? " on" : ""), null, function () {
+            put({ rating: cur === num ? null : num * 2 });
+          });
+          b.appendChild(icon("star", 22));
+          b.appendChild(el("span", "", t(STAR_KEYS[num - 1])));
+          stars.appendChild(b);
+        })(n);
+      }
+      s1.appendChild(stars);
+      wrap.appendChild(s1);
+      // feelings (up to 3)
+      var s2 = el("div", "mv-sec");
+      s2.appendChild(el("h4", "", t("dt_feel_h")));
+      var moods = el("div", "moods");
+      MOODS.forEach(function (em) {
+        var on = my.mood.indexOf(em) >= 0;
+        var b = button("mood" + (on ? " on" : ""), null, function () {
+          put({ mood: on ? my.mood.filter(function (x) { return x !== em; }) : my.mood.concat([em]).slice(-3) });
+        });
+        b.appendChild(el("span", "e", em));
+        b.appendChild(el("span", "", t(MOOD_KEYS[em])));
+        moods.appendChild(b);
+      });
+      s2.appendChild(moods);
+      wrap.appendChild(s2);
+      // favorite character
+      if (cast.length) {
+        var s3 = el("div", "mv-sec");
+        s3.appendChild(el("h4", "", t("dt_char_h")));
+        charsEl = el("div", "hscroll pc-row");
+        cast.forEach(function (c, i) {
+          var on = !!my.actor && my.actor.id === c.id;
+          var card = personCard(c.name, c.character, c.photo, i, "button");
+          if (on) card.classList.add("on");
+          var tick = el("span", "pc-tick");
+          tick.appendChild(icon("check", 13));
+          card.appendChild(tick);
+          card.addEventListener("click", function () {
+            put({ actor: on ? null : { id: c.id, name: (c.character || c.name).slice(0, 100), photo: c.photo || null } });
+          });
+          charsEl.appendChild(card);
+        });
+        s3.appendChild(charsEl);
+        wrap.appendChild(s3);
+        charsEl.scrollLeft = keep;
+      }
+    }
+    draw();
   }
 
   // ---------- bridge for extra feature files ----------
@@ -2157,41 +2554,4 @@
       showFatal(t("err_open_tg"));
       return;
     }
-    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res) {
-      if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
-      me = res.data.user;
-      goTab("home");
-      openStartParam();
-    }).catch(function () { showFatal(t("err_network")); });
-  }
-
-  function init() {
-    var saved = "en";
-    try { saved = localStorage.getItem(LS_LANG) || "en"; } catch (e) {}
-    I18N.set(saved);
-
-    try {
-      if (window.Telegram && Telegram.WebApp) {
-        tg = Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        try { tg.setHeaderColor("#07071a"); tg.setBackgroundColor("#07071a"); } catch (e) {}
-        tg.BackButton.onClick(function () {
-          if ($("sheet-root").children.length) closeSheet();
-          else if (detailStack.length) backDetail();
-          else if (FX.backStack.length) FX.backStack[FX.backStack.length - 1]();
-        });
-      }
-    } catch (e) {}
-
-    renderNav();
-    var splash = $("view-home");
-    clear(splash);
-    splash.appendChild(msg(t("logging_in")));
-    start(0);
-  }
-
-  // The Telegram script loads asynchronously: wait for the page, then start.
-  if (document.readyState === "complete") init();
-  else window.addEventListener("load", init);
-})();
+    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res
