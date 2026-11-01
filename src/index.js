@@ -25,6 +25,7 @@ import {
   handleCommentDelete,
   handleCommentLike,
   handleCommentReport,
+  handleCommentShare,
 } from "./comments.js";
 import { handleListShare } from "./share.js";
 import { handleFeed, handleLeaderboard } from "./activity.js";
@@ -139,6 +140,7 @@ export default {
         }
         if (path === "/api/comment-like" && method === "PUT") return await handleCommentLike(request, env, user);
         if (path === "/api/comment-report" && method === "POST") return await handleCommentReport(request, env, user);
+        if (path === "/api/comment-share" && method === "POST") return await handleCommentShare(request, env, user);
         if (path === "/api/lists") {
           if (method === "GET") return await handleListsGet(url, env, user);
           if (method === "POST") return await handleListCreate(request, env, user);
