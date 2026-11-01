@@ -2554,4 +2554,41 @@
       showFatal(t("err_open_tg"));
       return;
     }
-    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res
+    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res) {
+      if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
+      me = res.data.user;
+      goTab("home");
+      openStartParam();
+    }).catch(function () { showFatal(t("err_network")); });
+  }
+
+  function init() {
+    var saved = "en";
+    try { saved = localStorage.getItem(LS_LANG) || "en"; } catch (e) {}
+    I18N.set(saved);
+
+    try {
+      if (window.Telegram && Telegram.WebApp) {
+        tg = Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        try { tg.setHeaderColor("#07071a"); tg.setBackgroundColor("#07071a"); } catch (e) {}
+        tg.BackButton.onClick(function () {
+          if ($("sheet-root").children.length) closeSheet();
+          else if (detailStack.length) backDetail();
+          else if (FX.backStack.length) FX.backStack[FX.backStack.length - 1]();
+        });
+      }
+    } catch (e) {}
+
+    renderNav();
+    var splash = $("view-home");
+    clear(splash);
+    splash.appendChild(msg(t("logging_in")));
+    start(0);
+  }
+
+  // The Telegram script loads asynchronously: wait for the page, then start.
+  if (document.readyState === "complete") init();
+  else window.addEventListener("load", init);
+})();
