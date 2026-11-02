@@ -27,6 +27,7 @@ import {
   handleCommentReport,
   handleCommentShare,
 } from "./comments.js";
+import { handleNotifPrefsGet, handleNotifPrefsSet } from "./notify.js";
 import { handleListShare } from "./share.js";
 import { handleFeed, handleLeaderboard } from "./activity.js";
 import { handlePerson } from "./person.js";
@@ -140,6 +141,11 @@ export default {
         }
         if (path === "/api/comment-like" && method === "PUT") return await handleCommentLike(request, env, user);
         if (path === "/api/comment-report" && method === "POST") return await handleCommentReport(request, env, user);
+        if (path === "/api/notif-prefs") {
+          if (method === "GET") return await handleNotifPrefsGet(url, env, user);
+          if (method === "PUT") return await handleNotifPrefsSet(request, env, user);
+          return json({ error: "method_not_allowed" }, 405);
+        }
         if (path === "/api/comment-share" && method === "POST") return await handleCommentShare(request, env, user);
         if (path === "/api/lists") {
           if (method === "GET") return await handleListsGet(url, env, user);
