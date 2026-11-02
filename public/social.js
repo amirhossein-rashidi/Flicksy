@@ -22,6 +22,7 @@
       sx_lists_locked: "This profile is private. Public lists can still be opened from their share links.",
       sx_private_badge: "Private profile", sx_list_count: "{n} titles",
       sx_not_found: "Profile not found.",
+      sx_n_creply: "{name} replied to your comment", sx_n_clike: "{name} liked your comment", sx_n_clike_n: "{name} and {n} others liked your comment", sx_n_spoiler: "Spoiler",
       sx_bell: "Notifications", sx_requests: "Follow requests", sx_accept: "Accept", sx_decline: "Decline",
       sx_n_follow: "{name} started following you",
       sx_n_request: "{name} wants to follow you",
@@ -57,6 +58,7 @@
       sx_lists_locked: "این پروفایل خصوصی است. لیست‌های عمومی را هنوز می‌شود با لینک اشتراک‌شان باز کرد.",
       sx_private_badge: "پروفایل خصوصی", sx_list_count: "{n} عنوان",
       sx_not_found: "پروفایل پیدا نشد.",
+      sx_n_creply: "{name} به نظرت پاسخ داد", sx_n_clike: "{name} نظرت را پسندید", sx_n_clike_n: "{name} و {n} نفر دیگر نظرت را پسندیدند", sx_n_spoiler: "اسپویلر",
       sx_bell: "اعلان‌ها", sx_requests: "درخواست‌های دنبال کردن", sx_accept: "قبول", sx_decline: "رد",
       sx_n_follow: "{name} شروع به دنبال کردن تو کرد",
       sx_n_request: "{name} می‌خواهد تو را دنبال کند",
@@ -843,7 +845,22 @@
             var row = el("div", "sp-nrow" + (n.read ? "" : " unread"));
             row.style.cursor = "pointer";
             var text;
-            if (FX.features && FX.features.reminders && n.type === "ep" && n.title) {
+            if (n.type === "c_reply" || n.type === "c_like") {
+              // someone answered or liked a comment of mine: tapping opens that comment
+              row.appendChild(avatar(n.person));
+              var ckey = n.type === "c_reply" ? "sx_n_creply" : (n.others > 0 ? "sx_n_clike_n" : "sx_n_clike");
+              text = nameText(lt(ckey, { name: "\u0000", n: n.others }), n.person.display_name);
+              var quote = n.spoiler ? "⚠ " + lt("sx_n_spoiler") : (n.snippet ? "“" + n.snippet + "”" : "");
+              if (quote) {
+                var q = el("em", "sp-nq", quote);
+                q.setAttribute("dir", "auto");
+                text.appendChild(q);
+              }
+              row.addEventListener("click", function () {
+                FX.closeSheet();
+                if (FX.openCommentById) FX.openCommentById(n.comment_id);
+              });
+            } else if (FX.features && FX.features.reminders && n.type === "ep" && n.title) {
               // new-episode alert: a small poster instead of an avatar (switched on together with the backend)
               var po = el("div", "sp-nposter");
               if (n.poster) { var pi = el("img"); pi.src = n.poster; pi.alt = ""; po.appendChild(pi); }
