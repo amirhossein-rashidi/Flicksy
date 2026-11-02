@@ -1063,6 +1063,24 @@
   }
 
   // Three menu rows under the action buttons. Their screens come later, for now they say "coming soon".
+  // "Mark as watched and open" on the comments warning: a movie becomes watched, a series gets all its episodes marked.
+  function markTitleSeen(d) {
+    var item = d.item;
+    if (item.media_type === "movie") {
+      return setStatus(item, "watched", getMine(item).rating || null).then(function (ok) {
+        if (ok && topDetail() === d) { loadDetail(d); }
+        return ok;
+      });
+    }
+    return api("/api/episodes", { method: "PUT", body: { tmdb_id: item.tmdb_id, scope: "all", watched: true } }).then(function (res) {
+      if (res.status !== 200) { toast(problem(res, "err_save"), true); return false; }
+      haptic();
+      d.ep = null;
+      if (topDetail() === d) loadDetail(d);
+      return true;
+    }).catch(function () { toast(t("err_network"), true); return false; });
+  }
+
   function detailRows(d) {
     var box = el("div", "drows");
     function row(label, trail) {
@@ -1092,7 +1110,14 @@
     var cc = d && d.data ? d.data.comments_count : null;
     var cr0 = button("drow", null, function () {
       if (!FX.openComments) { toast(t("pf_soon")); return; }
-      FX.openComments({ tmdb_id: d.item.tmdb_id, media_type: d.item.media_type, title: d.data ? d.data.title : displayTitle(d.item) });
+      var st0 = getMine(d.item).status;
+      var isTv0 = d.item.media_type === "tv";
+      var seen0 = isTv0 ? (st0 === "watching" || st0 === "watched" || st0 === "paused" || st0 === "dropped") : st0 === "watched";
+      FX.openComments({
+        tmdb_id: d.item.tmdb_id, media_type: d.item.media_type, title: d.data ? d.data.title : displayTitle(d.item),
+        watched: seen0,
+        markSeen: function () { return markTitleSeen(d); }
+      });
     });
     cr0.appendChild(el("span", "", t("dt_comments")));
     var cend0 = el("span", "rowc");
@@ -2372,7 +2397,13 @@
       if (!FX.openComments) { toast(t("pf_soon")); return; }
       FX.openComments({
         tmdb_id: d.item.tmdb_id, media_type: "tv", season: sn, episode: en,
-        title: d.data ? d.data.title : displayTitle(d.item)
+        title: d.data ? d.data.title : displayTitle(d.item),
+        watched: !!(e && e.watched),
+        markSeen: function () {
+          var cur = findEpisode(state, sn, en);
+          if (cur && !cur.watched) toggleEpisode(state, sn, cur);
+          return Promise.resolve(true);
+        }
       });
     });
     cr.appendChild(el("span", "", t("dt_comments")));
