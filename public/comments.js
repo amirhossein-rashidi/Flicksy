@@ -410,6 +410,11 @@
     } else {
       var tx = el("p", "cm-tx", c.body);
       tx.setAttribute("dir", "auto");
+      // tapping the text opens the comment and its replies, like the comment icon
+      if (mode === "row") {
+        tx.classList.add("tap");
+        tx.addEventListener("click", function () { openThread(p, c, false); });
+      }
       cb.appendChild(tx);
     }
 
