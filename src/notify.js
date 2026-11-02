@@ -20,6 +20,7 @@ const WORDS = {
     request: "👤 <b>{name}</b> wants to follow you",
     spoiler: "⚠ Spoiler — open Flicksy to read it",
     open: "Open in Flicksy",
+    hint: "⚙ You can turn these messages off in Flicksy → Settings → Notifications.",
   },
   fa: {
     reply: "💬 <b>{name}</b> به نظرت درباره‌ی <b>{title}</b> پاسخ داد",
@@ -28,6 +29,7 @@ const WORDS = {
     request: "👤 <b>{name}</b> می‌خواهد تو را دنبال کند",
     spoiler: "⚠ اسپویلر — برای خواندن Flicksy را باز کن",
     open: "باز کردن در Flicksy",
+    hint: "⚙ این پیام‌ها را می‌توانی در Flicksy ← تنظیمات ← اعلان‌ها خاموش کنی.",
   },
 };
 
@@ -94,6 +96,8 @@ async function sendBot(env, who, kind, vars, link) {
     const lines = [rtl + w[kind].replace("{name}", esc(cut(vars.name, 40))).replace("{title}", esc(cut(vars.title, 80)))];
     if (vars.snippet) lines.push(rtl + "“" + esc(cut(vars.snippet, 200)) + "”");
     else if (vars.spoiler) lines.push(rtl + w.spoiler);
+    lines.push("");
+    lines.push(rtl + "<i>" + esc(w.hint) + "</i>");
     await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage", {
       method: "POST",
       headers: { "content-type": "application/json" },
