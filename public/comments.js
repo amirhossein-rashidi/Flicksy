@@ -15,7 +15,7 @@
       cm_title: "Comments", cm_top: "Top", cm_new: "Newest", cm_friends: "Friends",
       cm_ph: "Write a comment…", cm_ph_reply: "Write a reply…", cm_spoiler: "Contains spoilers", cm_send: "Send",
       cm_replying: "Replying to {name}", cm_editing: "Editing your comment", cm_reveal: "Spoiler · tap to reveal",
-      cm_like: "Like", cm_reply: "Reply", cm_share: "Share", cm_more: "View {n} more replies", cm_edited: "edited",
+      cm_like: "Like", cm_reply: "Reply", cm_share: "Share", cm_edited: "edited",
       cm_empty: "No comments yet. Be the first!", cm_empty_friends: "None of your friends has commented yet.",
       cm_edit: "Edit", cm_delete: "Delete", cm_report: "Report", cm_delete_ask: "Delete this comment?",
       cm_delete_yes: "Yes, delete", cm_cancel: "Cancel", cm_deleted: "This comment was deleted",
@@ -24,13 +24,15 @@
       cm_share_link: "Share link", cm_share_card: "Share as card", cm_copy: "Copy link", cm_copied: "Link copied",
       cm_preparing: "Preparing the card…", cm_load_more: "Load more", cm_you: "You",
       cm_fail: "Couldn't do that. Try again.", cm_unavail: "Comments aren't available yet.", cm_not_found: "This comment doesn't exist anymore.",
-      cm_share_text: "A comment on {name} · Flicksy"
+      cm_share_text: "A comment on {name} · Flicksy",
+      cm_warn_h: "Comments may contain spoilers", cm_warn_t: "You haven't watched this yet. Other people's comments can spoil it for you.",
+      cm_warn_mark: "Mark as watched and open", cm_warn_open: "Open anyway", cm_sent: "Reply sent", cm_thread: "Comment", cm_replies_h: "Replies"
     },
     fa: {
       cm_title: "نظرات", cm_top: "برترین", cm_new: "جدیدترین", cm_friends: "دوستان",
       cm_ph: "نظرت را بنویس…", cm_ph_reply: "پاسخت را بنویس…", cm_spoiler: "حاوی اسپویلر", cm_send: "ارسال",
       cm_replying: "پاسخ به {name}", cm_editing: "ویرایش نظر", cm_reveal: "اسپویلر · برای دیدن بزن",
-      cm_like: "پسندیدن", cm_reply: "پاسخ", cm_share: "اشتراک", cm_more: "دیدن {n} پاسخ دیگر", cm_edited: "ویرایش‌شده",
+      cm_like: "پسندیدن", cm_reply: "پاسخ", cm_share: "اشتراک", cm_edited: "ویرایش‌شده",
       cm_empty: "هنوز نظری نیست. اولین نفر باش!", cm_empty_friends: "هنوز هیچ‌کدام از دوستانت نظری ننوشته‌اند.",
       cm_edit: "ویرایش", cm_delete: "حذف", cm_report: "گزارش", cm_delete_ask: "این نظر حذف شود؟",
       cm_delete_yes: "بله، حذف شود", cm_cancel: "انصراف", cm_deleted: "این نظر حذف شده است",
@@ -39,7 +41,9 @@
       cm_share_link: "اشتراک لینک", cm_share_card: "اشتراک به‌صورت کارت", cm_copy: "کپی لینک", cm_copied: "لینک کپی شد",
       cm_preparing: "در حال ساخت کارت…", cm_load_more: "نمایش بیشتر", cm_you: "تو",
       cm_fail: "انجام نشد. دوباره تلاش کن.", cm_unavail: "نظرات هنوز فعال نشده‌اند.", cm_not_found: "این نظر دیگر وجود ندارد.",
-      cm_share_text: "یک نظر درباره‌ی {name} · Flicksy"
+      cm_share_text: "یک نظر درباره‌ی {name} · Flicksy",
+      cm_warn_h: "نظرها ممکن است اسپویل کنند", cm_warn_t: "هنوز این را ندیده‌ای. نظر بقیه ممکن است داستان را برایت لو بدهد.",
+      cm_warn_mark: "علامت‌گذاری به‌عنوان دیده‌شده و باز کردن", cm_warn_open: "در هر صورت باز کن", cm_sent: "پاسخ ارسال شد", cm_thread: "نظر", cm_replies_h: "پاسخ‌ها"
     }
   };
 
@@ -142,17 +146,52 @@
   // ref: { tmdb_id, media_type, season?, episode?, title?, focus? }
   function open(ref) {
     if (page) close();
-    var root = el("div", "page cpage");
+    var root = el("div", "page cpage" + (ref.watched === false ? " cm-gated" : ""));
     var p = {
-      ref: ref, root: root, back: close, sort: "top", items: [], count: null, more: false, offset: 0,
-      status: "loading", pinned: null, reply: null, editing: null, spoiler: false, busy: false
+      ref: ref, root: root, back: null, sort: "top", items: [], count: null, more: false, offset: 0,
+      status: "loading", stack: [], reply: null, editing: null, spoiler: false, busy: false,
+      gate: ref.watched === false
     };
+    p.back = function () { goBack(p); };
     page = p;
     document.body.appendChild(root);
     FX.pushBack(p.back);
     build(p);
+    if (!p.gate) start(p);
+  }
+
+  function start(p) {
     load(p, false);
-    if (ref.focus) loadFocus(p, ref.focus);
+    if (p.ref.focus) loadFocus(p, p.ref.focus);
+  }
+
+  function drawGate(p) {
+    var box = p.els.scroll;
+    clear(box);
+    var g = el("div", "cm-gate");
+    var ic = svgNode("warn", "cm-gi");
+    g.appendChild(ic);
+    g.appendChild(el("h3", "", ct("cm_warn_h")));
+    g.appendChild(el("p", "", ct("cm_warn_t")));
+    var mark = button("cm-g1", ct("cm_warn_mark"), function () {
+      if (mark.classList.contains("busy")) return;
+      mark.classList.add("busy");
+      var job = p.ref.markSeen ? p.ref.markSeen() : Promise.resolve(true);
+      Promise.resolve(job).then(function (ok) {
+        if (page !== p) return;
+        if (ok === false) { mark.classList.remove("busy"); FX.toast(ct("cm_fail"), true); return; }
+        p.gate = false;
+        p.els.root.classList.remove("cm-gated");
+        start(p);
+      }, function () { mark.classList.remove("busy"); FX.toast(ct("cm_fail"), true); });
+    });
+    g.appendChild(mark);
+    g.appendChild(button("cm-g2", ct("cm_warn_open"), function () {
+      p.gate = false;
+      p.root.classList.remove("cm-gated");
+      start(p);
+    }));
+    box.appendChild(g);
   }
 
   function build(p) {
@@ -160,7 +199,7 @@
     clear(root);
 
     var head = el("div", "cm-head");
-    var back = FX.iconButton("round-btn", "back", I18N.t("btn_close"), close);
+    var back = FX.iconButton("round-btn", "back", I18N.t("btn_close"), function () { goBack(p); });
     back.firstChild.classList.add("flip");
     head.appendChild(back);
     var tt = el("div", "cm-ht");
@@ -177,6 +216,7 @@
     p.els.tabs = tabs;
     root.appendChild(tabs);
 
+    p.els.root = root;
     p.els.scroll = el("div", "cm-scroll");
     root.appendChild(p.els.scroll);
 
@@ -223,55 +263,94 @@
     });
   }
 
-  // a shared link: show that one comment (with all its replies) at the top
+  // a shared link: open the thread of that comment (its parents are in the stack, so "back" goes up)
   function loadFocus(p, id) {
-    FX.api("/api/comments?id=" + id).then(function (res) {
-      if (page !== p) return;
-      if (res.status !== 200 || !res.data.comment) { FX.toast(ct("cm_not_found"), true); return; }
-      var c = res.data.comment;
-      if (c.parent_id) {
-        FX.api("/api/comments?id=" + c.parent_id).then(function (r2) {
-          if (page !== p || r2.status !== 200) return;
-          pin(p, r2.data.comment, id);
-        });
-      } else {
-        pin(p, c, id);
-      }
-    }).catch(function () {});
+    var chain = [];
+    function step(cid, n) {
+      FX.api("/api/comments?id=" + cid).then(function (res) {
+        if (page !== p) return;
+        if (res.status !== 200 || !res.data.comment) {
+          if (!chain.length) FX.toast(ct("cm_not_found"), true);
+          else finish();
+          return;
+        }
+        var c = res.data.comment;
+        chain.unshift(c);
+        if (c.parent_id && n < 8) step(c.parent_id, n + 1); else finish();
+      }).catch(function () {});
+    }
+    function finish() {
+      p.stack = chain.map(function (c) { return { c: c, replies: [], status: "idle" }; });
+      draw(p);
+    }
+    step(id, 0);
   }
 
-  function pin(p, c, focusId) {
-    FX.api("/api/comments?parent=" + c.id).then(function (res) {
+  function loadFrame(p, f) {
+    f.status = "loading";
+    FX.api("/api/comments?parent=" + f.c.id).then(function (res) {
       if (page !== p) return;
-      c.replies = res.status === 200 ? res.data.comments || [] : [];
-      p.pinned = c;
-      p.focusId = focusId;
-      draw(p);
-      setTimeout(function () {
-        var n = p.els.scroll.querySelector(".cm-focus");
-        if (n && n.scrollIntoView) n.scrollIntoView({ block: "center" });
-      }, 60);
+      if (res.status !== 200) { f.status = "error"; f.error = problemText(res); }
+      else { f.replies = res.data.comments || []; f.status = "ready"; }
+      if (p.stack[p.stack.length - 1] === f) draw(p);
+    }).catch(function () {
+      f.status = "error"; f.error = ct("cm_fail");
+      if (page === p && p.stack[p.stack.length - 1] === f) draw(p);
     });
+  }
+
+  function openThread(p, c, thenFocus) {
+    var top = p.stack[p.stack.length - 1];
+    if (top && top.c.id === c.id) { if (thenFocus) p.els.input.focus(); return; }
+    p.stack.push({ c: c, replies: [], status: "idle" });
+    p.reply = null;
+    p.editing = null;
+    p.els.input.value = "";
+    p.els.input.style.height = "auto";
+    p.spoiler = false;
+    draw(p);
+    p.els.scroll.scrollTop = 0;
+    if (thenFocus) p.els.input.focus();
+  }
+
+  function goBack(p) {
+    if (page !== p) return;
+    if (p.stack.length) {
+      p.stack.pop();
+      p.reply = null;
+      p.editing = null;
+      p.els.input.value = "";
+      p.els.input.style.height = "auto";
+      p.spoiler = false;
+      draw(p);
+      return;
+    }
+    close();
+  }
+
+  function popTo(p, index) {
+    p.stack.length = index + 1;
+    p.reply = null;
+    draw(p);
+  }
+
+  function focusComment(p) {
+    return p.stack.length ? p.stack[p.stack.length - 1].c : null;
   }
 
   // ---------- drawing ----------
   function draw(p) {
+    if (p.gate) { drawGate(p); return; }
+    p.root.classList.toggle("cm-thread", p.stack.length > 0);
+    syncComposer(p);
     var box = p.els.scroll;
+    if (p.stack.length) { drawThread(p, box); return; }
+    updateCount(p);
     clear(box);
-    if (p.pinned) {
-      var pn = renderComment(p, p.pinned, false);
-      pn.classList.add("cm-pin");
-      box.appendChild(pn);
-    }
     if (p.status === "loading") { box.appendChild(FX.msg(I18N.t("loading"))); return; }
     if (p.status === "error") { box.appendChild(FX.msg(p.error || ct("cm_fail"), true)); return; }
-    var shown = 0;
-    p.items.forEach(function (c) {
-      if (p.pinned && p.pinned.id === c.id) return;
-      box.appendChild(renderComment(p, c, false));
-      shown++;
-    });
-    if (!shown && !p.pinned) {
+    p.items.forEach(function (c) { box.appendChild(renderComment(p, c, "row")); });
+    if (!p.items.length) {
       box.appendChild(el("p", "cm-empty", ct(p.sort === "friends" ? "cm_empty_friends" : "cm_empty")));
     }
     if (p.more) {
@@ -279,9 +358,31 @@
     }
   }
 
-  function renderComment(p, c, isReply) {
-    var row = el("div", "cm" + (isReply ? " cm-r" : "") + (p.focusId === c.id ? " cm-focus" : ""));
-    row.appendChild(avatar(c.user, isReply ? "cm-av sm" : "cm-av"));
+  // One comment on top (with the comments it answers above it, joined by a line) and the replies to it below.
+  function drawThread(p, box) {
+    p.els.title.textContent = ct("cm_thread");
+    var frame = p.stack[p.stack.length - 1];
+    if (frame.status === "idle") loadFrame(p, frame);
+    clear(box);
+    for (var i = 0; i < p.stack.length - 1; i++) {
+      (function (idx) {
+        var a = renderComment(p, p.stack[idx].c, "anc");
+        a.addEventListener("click", function (e) {
+          if (e.target.closest && e.target.closest("button")) return;
+          popTo(p, idx);
+        });
+        box.appendChild(a);
+      })(i);
+    }
+    box.appendChild(renderComment(p, frame.c, "focus"));
+    if (frame.status === "loading" || frame.status === "idle") { box.appendChild(FX.msg(I18N.t("loading"))); return; }
+    if (frame.status === "error") { box.appendChild(FX.msg(frame.error || ct("cm_fail"), true)); return; }
+    frame.replies.forEach(function (r) { box.appendChild(renderComment(p, r, "row")); });
+  }
+
+  function renderComment(p, c, mode) {
+    var row = el("div", "cm" + (mode === "anc" ? " cm-anc" : "") + (mode === "focus" ? " cm-fc" : ""));
+    row.appendChild(avatar(c.user, "cm-av"));
     var cb = el("div", "cm-b");
 
     var top = el("div", "cm-top");
@@ -291,7 +392,7 @@
     if (c.rating) nm.appendChild(el("span", "cm-st", stars(c.rating)));
     nm.appendChild(el("small", "", ago(c.created_at) + (c.edited ? " · " + ct("cm_edited") : "")));
     top.appendChild(nm);
-    if (!c.deleted) {
+    if (!c.deleted && mode !== "anc") {
       var dots = button("cm-dots", null, function () { openMenu(p, c); });
       dots.setAttribute("aria-label", "menu");
       dots.appendChild(svgNode("dots", "cm-i"));
@@ -312,36 +413,23 @@
       cb.appendChild(tx);
     }
 
-    if (!c.deleted) {
+    if (!c.deleted && mode !== "anc") {
       var ac = el("div", "cm-ac");
       var like = button("cm-act" + (c.liked ? " liked" : ""), null, function () { toggleLike(p, c); });
       like.appendChild(svgNode(c.liked ? "heartFill" : "heart", "cm-i"));
       like.appendChild(el("span", "", nf(c.likes || 0)));
       ac.appendChild(like);
-      var rep = button("cm-act", null, function () { startReply(p, c, isReply ? c : c); });
-      rep.appendChild(svgNode("reply", "cm-i"));
-      rep.appendChild(el("span", "", isReply ? ct("cm_reply") : (c.reply_count ? nf(c.reply_count) : ct("cm_reply"))));
+      var cmt = button("cm-act", null, function () { openThread(p, c, false); });
+      cmt.appendChild(svgNode("reply", "cm-i"));
+      cmt.appendChild(el("span", "", nf(c.reply_count || 0)));
+      ac.appendChild(cmt);
+      var rep = button("cm-act cm-rtx", ct("cm_reply"), function () { startReply(p, c); });
       ac.appendChild(rep);
       var sh = button("cm-act", null, function () { openShare(p, c); });
+      sh.setAttribute("aria-label", ct("cm_share"));
       sh.appendChild(svgNode("share", "cm-i"));
-      sh.appendChild(el("span", "", ct("cm_share")));
       ac.appendChild(sh);
       cb.appendChild(ac);
-    }
-
-    if (!isReply && c.replies && c.replies.length) {
-      var rp = el("div", "cm-rp");
-      c.replies.forEach(function (r) { rp.appendChild(renderComment(p, r, true)); });
-      cb.appendChild(rp);
-    }
-    if (!isReply && c.reply_count > (c.replies ? c.replies.length : 0)) {
-      cb.appendChild(button("cm-more", ct("cm_more", { n: nf(c.reply_count - (c.replies ? c.replies.length : 0)) }), function () {
-        FX.api("/api/comments?parent=" + c.id).then(function (res) {
-          if (page !== p || res.status !== 200) return;
-          c.replies = res.data.comments || [];
-          draw(p);
-        });
-      }));
     }
 
     row.appendChild(cb);
@@ -366,11 +454,29 @@
     }).catch(function () {});
   }
 
+  // Reply button. On a comment of the main list it opens that comment's thread; inside a thread, replying to
+  // the top comment answers it, and replying to one of its replies starts the text with @name.
   function startReply(p, c) {
     p.editing = null;
+    var fc = focusComment(p);
+    if (!fc || (fc.id !== c.id && !isInFrame(p, c))) { openThread(p, c, true); return; }
+    if (fc.id === c.id) {
+      p.reply = null;
+      syncComposer(p);
+      p.els.input.focus();
+      return;
+    }
     p.reply = c;
+    var tag = "@" + c.user.display_name + " ";
+    if (!p.els.input.value.trim()) p.els.input.value = tag;
     syncComposer(p);
     p.els.input.focus();
+  }
+
+  function isInFrame(p, c) {
+    var f = p.stack[p.stack.length - 1];
+    if (!f) return false;
+    return f.replies.some(function (r) { return r.id === c.id; });
   }
 
   function sheetRow(sh, cls, iconName, label, handler) {
@@ -418,23 +524,25 @@
   }
 
   function removeLocal(p, c) {
-    function strip(list) {
+    var soft = c.reply_count > 0;
+    function strip(list, owner) {
       for (var i = 0; i < list.length; i++) {
         if (list[i].id === c.id) {
-          if (list[i].reply_count > 0 && !list[i].parent_id) { list[i].deleted = true; list[i].body = ""; }
-          else { list.splice(i, 1); }
-          return true;
-        }
-        if (list[i].replies && strip(list[i].replies)) {
-          list[i].reply_count = Math.max(0, (list[i].reply_count || 1) - 1);
-          return true;
+          if (soft) { list[i].deleted = true; list[i].body = ""; }
+          else {
+            list.splice(i, 1);
+            if (owner) owner.reply_count = Math.max(0, (owner.reply_count || 1) - 1);
+          }
+          return;
         }
       }
-      return false;
     }
-    strip(p.items);
-    if (p.pinned) {
-      if (p.pinned.id === c.id) p.pinned = null; else strip([p.pinned]);
+    strip(p.items, null);
+    p.stack.forEach(function (f) { strip(f.replies, f.c); });
+    if (!soft) {
+      for (var i = 0; i < p.stack.length; i++) {
+        if (p.stack[i].c.id === c.id) { p.stack.length = i; break; }
+      }
     }
     if (p.count !== null) p.count = Math.max(0, p.count - 1);
     updateCount(p);
@@ -552,6 +660,7 @@
   function syncComposer(p) {
     var ctx = p.els.ctx;
     clear(ctx);
+    var inThread = p.stack.length > 0;
     if (p.reply || p.editing) {
       ctx.classList.remove("hidden");
       var label = p.editing ? ct("cm_editing") : ct("cm_replying", { name: p.reply.user.display_name });
@@ -564,7 +673,7 @@
     } else {
       ctx.classList.add("hidden");
     }
-    p.els.input.placeholder = ct(p.reply ? "cm_ph_reply" : "cm_ph");
+    p.els.input.placeholder = ct(p.reply || inThread ? "cm_ph_reply" : "cm_ph");
     p.els.tg.classList.toggle("on", !!p.spoiler);
   }
 
@@ -601,13 +710,13 @@
     }
 
     var body = { body: text, spoiler: p.spoiler };
-    if (p.reply) body.parent_id = p.reply.parent_id || p.reply.id;
+    var target = p.reply || focusComment(p);
+    if (target) body.parent_id = target.id;
     else {
       body.tmdb_id = p.ref.tmdb_id;
       body.type = p.ref.media_type;
       if (p.ref.season) { body.season = p.ref.season; body.episode = p.ref.episode; }
     }
-    var target = p.reply;
     FX.api("/api/comments", { method: "POST", body: body }).then(function (res) {
       done();
       if (res.status !== 200 || !res.data.comment) {
@@ -617,13 +726,14 @@
       var c = res.data.comment;
       c.shown = true;
       if (target) {
-        var rootId = target.parent_id || target.id;
-        var root = findRoot(p, rootId);
-        if (root) {
-          // make sure all earlier replies are there first
-          if (!root.replies) root.replies = [];
-          root.replies.push(c);
-          root.reply_count = (root.reply_count || 0) + 1;
+        target.reply_count = (target.reply_count || 0) + 1;
+        var fr = p.stack[p.stack.length - 1];
+        if (fr && fr.c.id === target.id) {
+          // answering the comment of this thread: the answer appears in its list
+          fr.replies.push(c);
+        } else {
+          // answering one of the replies: only its number goes up (read it by tapping that reply's icon)
+          FX.toast(ct("cm_sent"));
         }
       } else {
         p.items.unshift(c);
@@ -633,13 +743,8 @@
       reset();
       draw(p);
       if (!target) p.els.scroll.scrollTop = 0;
+      else if (p.stack.length) p.els.scroll.scrollTop = p.els.scroll.scrollHeight;
     }).catch(function () { done(); FX.toast(ct("cm_fail"), true); });
-  }
-
-  function findRoot(p, id) {
-    if (p.pinned && p.pinned.id === id) return p.pinned;
-    for (var i = 0; i < p.items.length; i++) if (p.items[i].id === id) return p.items[i];
-    return null;
   }
 
   // ---------- public ----------
