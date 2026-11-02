@@ -4,6 +4,7 @@
 // ids or Telegram ids.
 
 import { json, parseTitleRef } from "./util.js";
+import { getPrefs, commentBellItems, markCommentNotifsRead, notifyFollowBot } from "./notify.js";
 import { TMDB_IMG, tmdbGet } from "./tmdb.js";
 
 const MAX_FOLLOWING = 1000;
@@ -218,6 +219,7 @@ export async function handleFollow(request, env, user) {
     )
       .bind(user.id, target.id)
       .run();
+    await notifyFollowBot(env, user, target.id, true);
     return json({ ok: true, relation: "requested" });
   }
 
@@ -229,6 +231,7 @@ export async function handleFollow(request, env, user) {
       "INSERT INTO notifications (user_id, actor_id, type) VALUES (?1, ?2, 'follow')"
     ).bind(target.id, user.id),
   ]);
+  await notifyFollowBot(env, user, target.id, false);
   return json({ ok: true, relation: "following" });
 }
 
@@ -294,6 +297,7 @@ export async function handleFollowRequest(request, env, user) {
 // GET /api/notifications
 // -> { badge, requests: [people waiting for your answer], items: [latest notifications] }
 export async function handleNotifications(url, env, user) {
+  const prefs = await getPrefs(env, user.id);
   const [req, items, unread] = await env.DB.batch([
     env.DB.prepare(
       "SELECT u.public_id, u.display_name, u.username, u.photo_url, f.created_at AS at " +
@@ -318,7 +322,7 @@ export async function handleNotifications(url, env, user) {
     at: r.at,
   }));
   const list = (items.results || [])
-    .filter((r) => r.public_id)
+    .filter((r) => r.public_id && prefs.follow_app === 1)
     .map((r) => ({
       type: r.type,
       read: r.is_read === 1,
@@ -330,9 +334,14 @@ export async function handleNotifications(url, env, user) {
         photo_url: r.photo_url || null,
       },
     }));
-  const unreadCount = (unread.results && unread.results[0] && unread.results[0].n) || 0;
+  let unreadCount = prefs.follow_app === 1 ? (unread.results && unread.results[0] && unread.results[0].n) || 0 : 0;
 
-  return json({ badge: unreadCount + requests.length, requests: requests, items: list });
+  // replies and likes on comments, mixed in by time
+  const cm = await commentBellItems(env, user.id, prefs);
+  unreadCount += cm.unread;
+  const all = list.concat(cm.items).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, 40);
+
+  return json({ badge: unreadCount + requests.length, requests: requests, items: all });
 }
 
 // POST /api/notifications-read  -> marks every notification as read
@@ -340,6 +349,7 @@ export async function handleNotificationsRead(request, env, user) {
   await env.DB.prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?1 AND is_read = 0")
     .bind(user.id)
     .run();
+  await markCommentNotifsRead(env, user.id);
   return json({ ok: true });
 }
 
