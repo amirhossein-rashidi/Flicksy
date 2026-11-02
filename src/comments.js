@@ -15,6 +15,7 @@
 
 import { json, parseTitleRef } from "./util.js";
 import { ensureTitle } from "./tmdb.js";
+import { notifyReply, notifyLike, removeLikeNotif } from "./notify.js";
 
 const EDIT_WINDOW_MS = 5 * 60 * 1000;
 const MAX_BODY = 1000;
@@ -271,6 +272,12 @@ export async function handleCommentCreate(request, env, user) {
     const list = await shape(env, user, row ? [row] : []);
     const c = list[0] || null;
     if (c) c.replies = [];
+    if (parentId && row) {
+      const par = await env.DB.prepare("SELECT id, user_id FROM comments WHERE id = ?1").bind(parentId).first();
+      await notifyReply(env, user, par, {
+        id: id, title_id: titleId, season_number: season, episode_number: episode, body: text, spoiler: spoiler,
+      });
+    }
     return json({ comment: c });
   } catch (e) {
     return unavailable();
@@ -322,6 +329,7 @@ export async function handleCommentDelete(url, env, user) {
     } else {
       await env.DB.prepare("DELETE FROM comment_likes WHERE comment_id = ?1").bind(id).run();
       await env.DB.prepare("DELETE FROM comment_reports WHERE comment_id = ?1").bind(id).run();
+      try { await env.DB.prepare("DELETE FROM comment_notifs WHERE comment_id = ?1").bind(id).run(); } catch (e) { /* table not created yet */ }
       await env.DB.prepare("DELETE FROM comments WHERE parent_id = ?1").bind(id).run();
       await env.DB.prepare("DELETE FROM comments WHERE id = ?1").bind(id).run();
     }
@@ -341,14 +349,20 @@ export async function handleCommentLike(request, env, user) {
   const id = body ? intOrNull(body.id, 2147483647) : null;
   if (!id) return json({ error: "bad_request" }, 400);
   try {
-    const c = await env.DB.prepare("SELECT id FROM comments WHERE id = ?1 AND deleted = 0").bind(id).first();
+    const c = await env.DB.prepare(
+      "SELECT id, user_id, title_id, season_number, episode_number, body, spoiler FROM comments WHERE id = ?1 AND deleted = 0"
+    )
+      .bind(id)
+      .first();
     if (!c) return json({ error: "not_found" }, 404);
     if (body.liked) {
       await env.DB.prepare("INSERT OR IGNORE INTO comment_likes (comment_id, user_id) VALUES (?1, ?2)")
         .bind(id, user.id)
         .run();
+      await notifyLike(env, user, c);
     } else {
       await env.DB.prepare("DELETE FROM comment_likes WHERE comment_id = ?1 AND user_id = ?2").bind(id, user.id).run();
+      await removeLikeNotif(env, user, id);
     }
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM comment_likes WHERE comment_id = ?1").bind(id).first();
     return json({ liked: !!body.liked, likes: n ? n.n : 0 });
