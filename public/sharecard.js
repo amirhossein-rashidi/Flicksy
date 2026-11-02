@@ -5,7 +5,7 @@
   if (!FX) return;
 
   var W = 1280, H = 720;
-  var FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Sans', Arial, sans-serif";
+  var FONT = "Manrope, Vazirmatn, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Sans', Arial, sans-serif";
 
   // TMDB pictures are loaded through our own server (/tmdb-img/...) so the browser lets us draw them.
   function viaOurServer(url) {
