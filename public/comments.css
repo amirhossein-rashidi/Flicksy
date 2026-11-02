@@ -85,3 +85,4 @@ html[dir="rtl"] .cm-send .cm-i svg { transform: scaleX(-1); }
 .nf-sw i { position: absolute; top: 3px; inset-inline-start: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: inset-inline-start .15s; }
 .nf-sw.on { background: #8b5cf6; }
 .nf-sw.on i { inset-inline-start: 21px; }
+.cm-tx.tap { cursor: pointer; }
