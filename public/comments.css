@@ -50,3 +50,24 @@ html[dir="rtl"] .cm-send .cm-i svg { transform: scaleX(-1); }
 .mi.cm-bad, .mi.cm-bad .cm-mi { color: #ff8a8a; }
 .mi.cm-off { opacity: .45; }
 .cm-head .round-btn { position: static; flex: none; }
+.cm-gated .cm-comp, .cm-gated .cm-tabs { display: none; }
+.cm-gate { text-align: center; padding: 56px 18px 20px; }
+.cm-gi { display: inline-flex; width: 56px; height: 56px; border-radius: 50%; align-items: center; justify-content: center; background: rgba(251, 191, 36, .14); color: #fbbf24; margin-bottom: 14px; }
+.cm-gi svg { width: 28px; height: 28px; }
+.cm-gate h3 { margin: 0 0 8px; font-size: 18px; }
+.cm-gate p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.cm-g1, .cm-g2 { display: block; width: 100%; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; }
+.cm-g1 { background: var(--grad); color: #fff; margin-bottom: 10px; }
+.cm-g2 { background: var(--surface); color: var(--text); }
+.cm-g1.busy { opacity: .5; pointer-events: none; }
+.cm-act.on { color: #a78bfa; }
+.cm-rtx { font-weight: 600; }
+.cm-rp.flat { padding-inline-start: 0; border-inline-start: 0; }
+/* thread view: parents above joined by a line, the comment, then its replies */
+.cm-thread .cm-tabs { display: none; }
+.cm-anc { position: relative; border-top: 0; padding-bottom: 12px; cursor: pointer; }
+.cm-anc::before { content: ""; position: absolute; inset-inline-start: 17px; top: 50px; bottom: -6px; width: 2px; background: rgba(255, 255, 255, .16); border-radius: 2px; }
+.cm-anc .cm-tx { color: var(--muted); }
+.cm-fc { border-top: 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+.cm-fc .cm-tx { font-size: 16.5px; }
+.cm-anc + .cm-anc, .cm-anc + .cm-fc { padding-top: 4px; }
