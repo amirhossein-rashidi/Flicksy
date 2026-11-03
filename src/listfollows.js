@@ -4,6 +4,7 @@
 
 import { json } from "./util.js";
 import { TMDB_IMG } from "./tmdb.js";
+import { notifyListFollow } from "./notify.js";
 
 const BOARD_SIZE = 50;
 const PAGE = 50;
@@ -98,9 +99,13 @@ export async function handleListFollow(request, url, env, user) {
     if (method === "POST") {
       if (isOwner) return json({ error: "own_list" }, 400);
       if (list.visibility !== "public") return json({ error: "not_public" }, 400);
-      await env.DB.prepare("INSERT OR IGNORE INTO list_follows (list_id, user_id) VALUES (?1, ?2)")
+      const res = await env.DB.prepare("INSERT OR IGNORE INTO list_follows (list_id, user_id) VALUES (?1, ?2)")
         .bind(list.id, user.id)
         .run();
+      // tell the owner (bell + bot) - only for a brand new follow
+      if (res.meta && res.meta.changes) {
+        await notifyListFollow(env, user, { id: list.id, title: list.title, share_code: code, owner_id: list.owner_id });
+      }
     } else if (method === "DELETE") {
       await env.DB.prepare("DELETE FROM list_follows WHERE list_id = ?1 AND user_id = ?2").bind(list.id, user.id).run();
     } else if (method !== "GET") {
