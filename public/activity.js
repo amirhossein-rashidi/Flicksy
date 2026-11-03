@@ -14,6 +14,9 @@
       ac_more: "Show more",
       ac_movies: "Movies",
       ac_episodes: "Episodes",
+      ac_lists: "Lists",
+      ac_lists_empty: "No lists on the leaderboard yet.",
+      ac_list_sub: "by {name} · {n} Followers",
       ac_you: "You",
       ac_followers: "followers",
       ac_follow: "Follow",
@@ -40,6 +43,9 @@
       ac_more: "نمایش بیشتر",
       ac_movies: "فیلم‌ها",
       ac_episodes: "قسمت‌ها",
+      ac_lists: "لیست‌ها",
+      ac_lists_empty: "هنوز لیستی در لیدربرد نیست.",
+      ac_list_sub: "از {name} · {n} دنبال‌کننده",
       ac_you: "تو",
       ac_followers: "دنبال‌کننده",
       ac_follow: "دنبال کن",
@@ -185,7 +191,7 @@
   // ---------- state ----------
   var view = document.getElementById("view-activity");
   var tab = "following";   // following | board
-  var kind = "movies";     // movies | episodes
+  var kind = "movies";     // movies | episodes | lists
   var feedCache = null;    // { at, items, next, following }
   var building = false;
   var obs = null;
@@ -265,6 +271,34 @@
     return row;
   }
 
+  // Lists tab: rank number + 3 stacked posters + name + "by X · N Followers". Tap opens the list.
+  function listBoardRow(r) {
+    var l = r.list;
+    var row = el("div", "ac-lr r" + r.rank);
+    row.appendChild(el("span", "ac-n", nf(r.rank)));
+    var stack = el("div", "mini");
+    var posters = (l.posters || []).slice(0, 3);
+    if (!posters.length) posters = [null];
+    posters.forEach(function (src) {
+      var cell = el("div", "mp");
+      if (src) {
+        var img = el("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        cell.appendChild(img);
+      }
+      stack.appendChild(cell);
+    });
+    row.appendChild(stack);
+    var nm = el("div", "ac-nm");
+    nm.appendChild(el("b", "", l.title));
+    nm.appendChild(el("small", "", t("ac_list_sub", { name: (l.owner && l.owner.display_name) || "", n: nf(l.followers) })));
+    row.appendChild(nm);
+    row.addEventListener("click", function () { if (FX.openListByCode) FX.openListByCode(l.share_code); });
+    return row;
+  }
+
   function loadBoard(holder, my) {
     clear(holder);
     holder.appendChild(FX.msg(t("loading")));
@@ -273,8 +307,8 @@
       clear(holder);
       if (res.status !== 200 || !res.data) { holder.appendChild(errorBox(function () { loadBoard(holder, my); })); return; }
       var rows = res.data.rows || [];
-      if (!rows.length) { holder.appendChild(FX.msg(t("ac_board_empty"))); return; }
-      rows.forEach(function (r) { holder.appendChild(boardRow(r)); });
+      if (!rows.length) { holder.appendChild(FX.msg(t(kind === "lists" ? "ac_lists_empty" : "ac_board_empty"))); return; }
+      rows.forEach(function (r) { holder.appendChild(kind === "lists" ? listBoardRow(r) : boardRow(r)); });
     }).catch(function () {
       if (my !== token) return;
       clear(holder);
@@ -304,7 +338,7 @@
     var holder = el("div", "ac-body");
     if (tab === "board") {
       var chips = el("div", "chips");
-      [["movies", "ac_movies"], ["episodes", "ac_episodes"]].forEach(function (pair) {
+      [["movies", "ac_movies"], ["episodes", "ac_episodes"], ["lists", "ac_lists"]].forEach(function (pair) {
         chips.appendChild(FX.button("chip" + (kind === pair[0] ? " active" : ""), t(pair[1]), function () { kind = pair[0]; build(); }));
       });
       view.appendChild(chips);
@@ -331,6 +365,13 @@
     }
     obs.observe(view, { childList: true });
   }
+
+  // "See all" on Home / Discover: open the Activity tab on Leaderboard > Lists.
+  FX.openListsBoard = function () {
+    tab = "board";
+    kind = "lists";
+    if (FX.goTab) FX.goTab("activity");
+  };
 
   watch();
 })();
