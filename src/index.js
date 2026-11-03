@@ -28,6 +28,7 @@ import {
   handleCommentShare,
 } from "./comments.js";
 import { handleNotifPrefsGet, handleNotifPrefsSet } from "./notify.js";
+import { handleFollowList } from "./followlist.js";
 import {
   handleListFollow,
   handleListFollowers,
@@ -188,6 +189,9 @@ export default {
         if (path === "/api/leaderboard" && method === "GET") {
           if (url.searchParams.get("kind") === "lists") return await handleListsLeaderboard(url, env, user);
           return await handleLeaderboard(url, env, user);
+        }
+        if (path === "/api/follow-list" && method === "GET") {
+          return await handleFollowList(url, env, user);
         }
         if (path === "/api/list-follow") {
           return await handleListFollow(request, url, env, user);
