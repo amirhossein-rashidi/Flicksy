@@ -6,6 +6,7 @@
 import { json, parseTitleRef } from "./util.js";
 import { getPrefs, commentBellItems, markCommentNotifsRead, notifyFollowBot } from "./notify.js";
 import { TMDB_IMG, tmdbGet } from "./tmdb.js";
+import { computeBadges } from "./badges.js";
 
 const MAX_FOLLOWING = 1000;
 const MAX_PENDING_ACCEPT = 200;
@@ -172,7 +173,10 @@ export async function handleProfile(url, env, user) {
     }));
   }
 
+  const badges = await computeBadges(env, target.id);
+
   return json({
+    badges: badges,
     profile: {
       public_id: target.public_id,
       display_name: target.display_name,
