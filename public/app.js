@@ -558,6 +558,7 @@
     });
 
     v.appendChild(lazyRow("sec_trending", "trending"));
+    if (FX.hooks.homeLists) FX.hooks.homeLists(v);
     v.appendChild(lazyRow("sec_popular_movies", "popular_movies"));
     v.appendChild(lazyRow("sec_popular_tv", "popular_tv"));
     v.appendChild(lazyRow("sec_top_movies", "top_movies"));
@@ -667,6 +668,7 @@
         var f = disc.filter;
         if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies", null, true)); body.appendChild(lazyRow("sec_popular_movies", "popular_movies", null, true)); }
         if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv", null, true)); body.appendChild(lazyRow("sec_popular_tv", "popular_tv", null, true)); }
+        if (f === "all" && FX.hooks.discoverLists) FX.hooks.discoverLists(body);
         return;
       }
       if (disc.status === "loading") { body.appendChild(msg(t("searching"))); return; }
@@ -2543,6 +2545,7 @@
   FX.displayTitle = displayTitle;
   FX.sectionHeader = sectionHeader;
   FX.rerender = function () { renderTab(currentTab); };
+  FX.goTab = goTab;
   FX.openSettings = openSettingsSheet;
   FX.refreshLock = function () { syncLock(); tgBack(); };
   FX.pushBack = function (fn) { FX.backStack.push(fn); FX.refreshLock(); };
