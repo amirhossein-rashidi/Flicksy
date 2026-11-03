@@ -14,6 +14,7 @@
       sx_tab_titles: "Titles", sx_tab_people: "People",
       sx_people_hint: "Type a name, a Flicksy ID (at least 3 digits) or a Telegram username.",
       sx_people_none: "Nobody found.",
+      sx_no_people_yet: "Nobody here yet.",
       sx_follow: "Follow", sx_request: "Request", sx_following: "Following", sx_requested: "Requested",
       sx_unfollow: "Unfollow", sx_cancel_req: "Cancel request", sx_cancel: "Cancel",
       sx_following_n: "Following",
@@ -50,6 +51,7 @@
       sx_tab_titles: "فیلم و سریال", sx_tab_people: "افراد",
       sx_people_hint: "یک اسم، آیدی Flicksy (حداقل ۳ رقم) یا یوزرنیم تلگرام را بنویس.",
       sx_people_none: "کسی پیدا نشد.",
+      sx_no_people_yet: "هنوز کسی اینجا نیست.",
       sx_follow: "دنبال کردن", sx_request: "درخواست", sx_following: "دنبال می‌کنی", sx_requested: "درخواست داده‌ای",
       sx_unfollow: "لغو دنبال کردن", sx_cancel_req: "لغو درخواست", sx_cancel: "انصراف",
       sx_following_n: "دنبال‌شونده",
@@ -642,16 +644,58 @@
     return d;
   }
 
-  function socLine(stats) {
+  // Your own followers / following: opens a sheet with the people.
+  function openFollowSheet(kind) {
+    var holder = el("div");
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", lt(kind === "followers" ? "sx_followers" : "sx_following_n")));
+      holder.appendChild(FX.msg(I18N.t("loading")));
+      sh.appendChild(holder);
+    });
+    FX.api("/api/follow-list?kind=" + kind).then(function (res) {
+      if (!holder.isConnected) return;
+      clear(holder);
+      if (res.status !== 200) { holder.appendChild(FX.msg(netError(res), true)); return; }
+      var items = res.data.items || [];
+      if (!items.length) { holder.appendChild(FX.msg(lt("sx_no_people_yet"))); return; }
+      var box = el("div");
+      box.style.display = "grid";
+      box.style.gap = "8px";
+      items.forEach(function (it) {
+        var person = it.person;
+        var row = el("div", "sp-row");
+        row.style.cursor = "pointer";
+        row.appendChild(avatar(person));
+        var info = el("div", "sp-info");
+        info.appendChild(el("div", "sp-name", person.display_name || ""));
+        var sub = [];
+        if (person.username) sub.push("@" + person.username);
+        sub.push(person.public_id);
+        info.appendChild(el("div", "sp-sub", sub.join(" · ")));
+        row.appendChild(info);
+        row.addEventListener("click", function () { FX.closeSheet(); openProfile(person.public_id); });
+        box.appendChild(row);
+      });
+      holder.appendChild(box);
+    }).catch(function () {
+      if (holder.isConnected) { clear(holder); holder.appendChild(FX.msg(I18N.t("err_generic"), true)); }
+    });
+  }
+
+  function socLine(stats, tappable) {
     var soc = el("div", "pf-soc");
-    function part(n, label) {
+    function part(n, label, kind) {
       var sp = el("span");
       sp.appendChild(el("b", "", String(n || 0)));
       sp.appendChild(document.createTextNode(" " + label));
+      if (tappable) {
+        sp.style.cursor = "pointer";
+        sp.addEventListener("click", function () { openFollowSheet(kind); });
+      }
       return sp;
     }
-    soc.appendChild(part(stats && stats.followers, lt("sx_followers")));
-    soc.appendChild(part(stats && stats.following, lt("sx_following_n")));
+    soc.appendChild(part(stats && stats.followers, lt("sx_followers"), "followers"));
+    soc.appendChild(part(stats && stats.following, lt("sx_following_n"), "following"));
     return soc;
   }
 
@@ -1169,7 +1213,7 @@
       sMovies.firstChild.textContent = String(st.movies || 0);
       sEps.firstChild.textContent = String(st.episodes || 0);
       clear(socHolder);
-      socHolder.appendChild(socLine(st));
+      socHolder.appendChild(socLine(st, true));
     }).catch(function () {});
     FX.api("/api/lists").then(function (res) {
       if (res.status !== 200 || !head.isConnected) return;
