@@ -96,7 +96,13 @@ export async function handleLibraryList(url, env, user) {
   // pages: ?limit=500&offset=0 (the app loads big libraries page by page)
   const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "100", 10) || 100, 1), 500);
   const offset = Math.min(Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0), 100000);
-  sql += " ORDER BY ut.updated_at DESC, ut.id DESC LIMIT " + limit + " OFFSET " + offset;
+  // Order by when the user actually watched (latest episode for series, watch date for movies,
+  // then finished/started/added). Rating or editing a title does not move it to the top.
+  sql +=
+    " ORDER BY COALESCE(" +
+    "(SELECT MAX(ep.watched_at) FROM episode_progress ep WHERE ep.user_id = ut.user_id AND ep.title_id = ut.title_id), " +
+    "(SELECT MAX(wl.watched_on) FROM watch_log wl WHERE wl.user_id = ut.user_id AND wl.title_id = ut.title_id), " +
+    "ut.finished_at, ut.started_at, ut.created_at) DESC, ut.id DESC LIMIT " + limit + " OFFSET " + offset;
 
   const rows = await env.DB.prepare(sql).bind(...binds).all();
   const countRows = await env.DB.prepare(
