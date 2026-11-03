@@ -18,6 +18,10 @@
       pick_hint: "Tap a title to add it or remove it.",
       list_none: "No lists yet. Create one to group your favorites.",
       list_count: "Titles: {n}", list_by: "by {name}", list_remove_mode: "Remove titles", list_done: "Done",
+      list_follow: "Follow list", list_following: "Following", list_followers_n: "{n} followers",
+      list_followed: "List followed — it is in your Library", list_unfollowed: "Unfollowed",
+      list_followers_title: "List followers", list_no_followers: "No followers yet.", list_more: "Show more",
+      lists_followed: "Followed lists", lists_followed_empty: "Lists you follow show up here.",
       list_added: "Added to “{name}”", list_removed: "Removed from “{name}”",
       list_created: "List created", list_saved: "Saved", list_deleted: "List deleted",
       list_full: "This list is full (200 titles).", list_too_many: "You've reached the limit of 50 lists.",
@@ -36,6 +40,10 @@
       pick_hint: "روی عنوان بزن تا اضافه یا حذف شود.",
       list_none: "هنوز لیستی نساخته‌ای. یکی بساز و مورد علاقه‌هایت را دسته‌بندی کن.",
       list_count: "{n} عنوان", list_by: "از {name}", list_remove_mode: "حذف عنوان‌ها", list_done: "تمام",
+      list_follow: "دنبال کردن لیست", list_following: "دنبال می‌کنی", list_followers_n: "{n} دنبال‌کننده",
+      list_followed: "لیست دنبال شد — در کتابخانه‌ات است", list_unfollowed: "دیگر دنبال نمی‌کنی",
+      list_followers_title: "دنبال‌کننده‌های لیست", list_no_followers: "هنوز دنبال‌کننده‌ای نیست.", list_more: "نمایش بیشتر",
+      lists_followed: "لیست‌های دنبال‌شده", lists_followed_empty: "لیست‌هایی که دنبال می‌کنی اینجا می‌آیند.",
       list_added: "به «{name}» اضافه شد", list_removed: "از «{name}» حذف شد",
       list_created: "لیست ساخته شد", list_saved: "ذخیره شد", list_deleted: "لیست حذف شد",
       list_full: "این لیست پر است (۲۰۰ عنوان).", list_too_many: "به سقف ۵۰ لیست رسیده‌ای.",
@@ -168,7 +176,7 @@
   }
 
   // ---------- helpers ----------
-  var cache = { lists: null };
+  var cache = { lists: null, followed: null };
   var page = null;     // the list page that is open right now (or null)
 
   function visLabel(v) { return lt("vis_" + v); }
@@ -542,6 +550,7 @@
     p.root.remove();
     FX.popBack(p.back);
     cache.lists = null;
+    cache.followed = null;
     FX.rerender();
   }
 
@@ -695,6 +704,112 @@
     });
   }
 
+  // ---------- following a list ----------
+  // Only public lists can be followed. p.follow = { followers, following } once it has loaded.
+  function loadFollow(p) {
+    var l = p.list;
+    if (!l || l.visibility !== "public" || !l.share_code) return;
+    FX.api("/api/list-follow?code=" + encodeURIComponent(l.share_code)).then(function (res) {
+      if (page !== p || res.status !== 200) return;
+      p.follow = { followers: res.data.followers || 0, following: !!res.data.following };
+      draw(p);
+    }).catch(function () {});
+  }
+
+  function followButton(p) {
+    var code = p.list.share_code;
+    var busy = false;
+    var b = button("btn", null, null);
+    function paint() {
+      clear(b);
+      var on = p.follow.following;
+      b.className = "btn " + (on ? "glass" : "primary");
+      if (on) b.appendChild(icon("check", 14));
+      b.appendChild(document.createTextNode((on ? " " : "") + lt(on ? "list_following" : "list_follow")));
+    }
+    b.addEventListener("click", function () {
+      if (busy) return;
+      busy = true;
+      var on = p.follow.following;
+      var req = on
+        ? FX.api("/api/list-follow?code=" + encodeURIComponent(code), { method: "DELETE" })
+        : FX.api("/api/list-follow", { method: "POST", body: { code: code } });
+      req.then(function (res) {
+        busy = false;
+        if (res.status !== 200) { FX.toast(FX.problem(res, "err_save"), true); return; }
+        p.follow = { followers: res.data.followers || 0, following: !!res.data.following };
+        cache.followed = null;
+        FX.toast(lt(p.follow.following ? "list_followed" : "list_unfollowed"));
+        if (page === p) draw(p);
+      }).catch(function () { busy = false; offline(); });
+    });
+    paint();
+    return b;
+  }
+
+  function personAvatar(person) {
+    if (person && person.photo_url) {
+      var img = el("img", "sp-av");
+      img.src = person.photo_url;
+      img.alt = "";
+      return img;
+    }
+    return el("div", "sp-av", ((person && person.display_name) || "F").charAt(0).toUpperCase());
+  }
+
+  // Only the owner of a list can open this: who follows the list.
+  function openFollowers(l) {
+    var holder = el("div");
+    var box = el("div");
+    box.style.display = "grid";
+    box.style.gap = "8px";
+    var moreWrap = el("div");
+    moreWrap.style.marginTop = "10px";
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("h3", "sheet-title", lt("list_followers_title")));
+      holder.appendChild(FX.msg(I18N.t("loading")));
+      sh.appendChild(holder);
+    });
+
+    function load(before) {
+      var path = "/api/list-followers?code=" + encodeURIComponent(l.share_code) + (before ? "&before=" + before : "");
+      FX.api(path).then(function (res) {
+        if (!holder.isConnected) return;
+        if (res.status !== 200) { clear(holder); holder.appendChild(FX.msg(FX.problem(res, "err_load"), true)); return; }
+        var items = res.data.items || [];
+        if (!before) {
+          clear(holder);
+          if (!items.length) { holder.appendChild(FX.msg(lt("list_no_followers"))); return; }
+          holder.appendChild(box);
+          holder.appendChild(moreWrap);
+        }
+        items.forEach(function (it) {
+          var person = it.person;
+          var row = el("div", "sp-row");
+          row.style.cursor = "pointer";
+          row.appendChild(personAvatar(person));
+          var info = el("div", "sp-info");
+          info.appendChild(el("div", "sp-name", person.display_name || ""));
+          var sub = [];
+          if (person.username) sub.push("@" + person.username);
+          sub.push(person.public_id);
+          info.appendChild(el("div", "sp-sub", sub.join(" · ")));
+          row.appendChild(info);
+          row.addEventListener("click", function () {
+            FX.closeSheet();
+            if (FX.openProfile) FX.openProfile(person.public_id);
+          });
+          box.appendChild(row);
+        });
+        clear(moreWrap);
+        if (res.data.next) moreWrap.appendChild(button("btn glass block", lt("list_more"), function () { load(res.data.next); }));
+      }).catch(function () {
+        if (holder.isConnected && !before) { clear(holder); holder.appendChild(FX.msg(I18N.t("err_network"), true)); }
+      });
+    }
+    load(0);
+  }
+
   function draw(p) {
     var root = p.root;
     clear(root);
@@ -720,6 +835,16 @@
     meta.appendChild(el("span", "tag", visLabel(l.visibility)));
     meta.appendChild(el("span", "", lt("list_count", { n: l.items.length })));
     if (!l.is_owner && l.owner_name) meta.appendChild(el("span", "", lt("list_by", { name: l.owner_name })));
+    if (l.visibility === "public" && p.follow) {
+      var fs = el("span", "", lt("list_followers_n", { n: p.follow.followers }));
+      if (l.is_owner) {
+        fs.style.cursor = "pointer";
+        fs.style.color = "#c4b5fd";
+        fs.style.textDecoration = "underline dotted";
+        fs.addEventListener("click", function () { openFollowers(l); });
+      }
+      meta.appendChild(fs);
+    }
     body.appendChild(meta);
 
     if (l.is_owner) {
@@ -733,7 +858,9 @@
             l.title = nl.title;
             l.description = nl.description;
             l.visibility = nl.visibility;
+            p.follow = null;
             if (page === p) draw(p);
+            loadFollow(p);
           },
           onDeleted: closeListPage
         });
@@ -747,7 +874,12 @@
       body.appendChild(acts);
     } else {
       var sacts = el("div", "l-actions");
-      sacts.appendChild(button("btn primary", lt("list_share"), function () { shareList(l); }));
+      if (l.visibility === "public" && p.follow) {
+        sacts.appendChild(followButton(p));
+        sacts.appendChild(button("btn glass", lt("list_share"), function () { shareList(l); }));
+      } else {
+        sacts.appendChild(button("btn primary", lt("list_share"), function () { shareList(l); }));
+      }
       body.appendChild(sacts);
     }
 
@@ -779,6 +911,7 @@
       if (res.status !== 200) p.error = res.status === 404 ? lt("list_not_found") : FX.problem(res, "err_load");
       else { p.list = res.data.list; FX.ingest(p.list.items); }
       draw(p);
+      loadFollow(p);
     }).catch(function () {
       if (page !== p) return;
       p.error = I18N.t("err_network");
@@ -788,8 +921,8 @@
 
   // ---------- plug into the app ----------
   // Library: rows of (small poster stack + name + count), 3 per column, scrolling sideways.
-  function listRow(l) {
-    var row = button("pl", null, function () { openListPage({ id: l.id }); });
+  function listRow(l, opener, sub) {
+    var row = button("pl", null, opener || function () { openListPage({ id: l.id }); });
     var stack = el("div", "mini");
     var posters = (l.posters || []).slice(0, 3);
     if (!posters.length) posters = [null];
@@ -807,7 +940,7 @@
     row.appendChild(stack);
     var info = el("div", "t");
     info.appendChild(el("b", "", l.title));
-    info.appendChild(el("small", "", lt("list_count", { n: l.count })));
+    info.appendChild(el("small", "", sub || lt("list_count", { n: l.count })));
     row.appendChild(info);
     return row;
   }
@@ -842,6 +975,37 @@
     fetchLists().then(function (lists) {
       if (lists && sec.isConnected) drawGrid(lists);
     });
+
+    // Followed lists (lists of other people that you follow)
+    var fsec = el("section", "lists-sec");
+    fsec.appendChild(el("div", "sec", lt("lists_followed")));
+    var fbody = el("div");
+    fsec.appendChild(fbody);
+    holder.appendChild(fsec);
+
+    function drawFollowed(items) {
+      clear(fbody);
+      if (items === null) return;
+      if (!items.length) { fbody.appendChild(FX.msg(lt("lists_followed_empty"))); return; }
+      var grid = el("div", "lgrid");
+      items.forEach(function (it) {
+        var x = it.list;
+        var who = x.owner && x.owner.display_name ? lt("list_by", { name: x.owner.display_name }) + " · " : "";
+        grid.appendChild(listRow(
+          { title: x.title, posters: x.posters, count: x.count },
+          function () { openListPage({ code: x.share_code }); },
+          who + lt("list_count", { n: x.count })
+        ));
+      });
+      fbody.appendChild(grid);
+    }
+
+    drawFollowed(cache.followed);
+    FX.api("/api/lists-followed").then(function (res) {
+      if (res.status !== 200) return;
+      cache.followed = res.data.items || [];
+      if (fsec.isConnected) drawFollowed(cache.followed);
+    }).catch(function () {});
   };
 
   // Own profile: the lists row (all your lists, plus a "New list" card).
