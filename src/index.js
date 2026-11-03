@@ -28,6 +28,13 @@ import {
   handleCommentShare,
 } from "./comments.js";
 import { handleNotifPrefsGet, handleNotifPrefsSet } from "./notify.js";
+import {
+  handleListFollow,
+  handleListFollowers,
+  handleListsLeaderboard,
+  handleListsWeekly,
+  handleListsFollowed,
+} from "./listfollows.js";
 import { handleListShare } from "./share.js";
 import { handleFeed, handleLeaderboard } from "./activity.js";
 import { handlePerson } from "./person.js";
@@ -179,7 +186,20 @@ export default {
           return await handleFeed(url, env, user);
         }
         if (path === "/api/leaderboard" && method === "GET") {
+          if (url.searchParams.get("kind") === "lists") return await handleListsLeaderboard(url, env, user);
           return await handleLeaderboard(url, env, user);
+        }
+        if (path === "/api/list-follow") {
+          return await handleListFollow(request, url, env, user);
+        }
+        if (path === "/api/list-followers" && method === "GET") {
+          return await handleListFollowers(url, env, user);
+        }
+        if (path === "/api/lists-weekly" && method === "GET") {
+          return await handleListsWeekly(url, env, user);
+        }
+        if (path === "/api/lists-followed" && method === "GET") {
+          return await handleListsFollowed(url, env, user);
         }
         if (path === "/api/profile" && method === "GET") {
           return await handleProfile(url, env, user);
