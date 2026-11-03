@@ -13,6 +13,7 @@
       nf_reply: "Replies", nf_reply_s: "Someone answers your comment",
       nf_like: "Likes", nf_like_s: "Someone likes your comment",
       nf_follow: "New followers", nf_follow_s: "Follows and follow requests",
+      nf_list_follow: "List followers", nf_list_follow_s: "Someone follows your list",
       nf_bot_h: "Bot messages", nf_bot_all: "Send notifications to the bot chat", nf_bot_all_s: "Turn off to stop all bot messages",
       nf_fail: "Couldn't save. Try again.", nf_unavail: "Notification settings aren't available yet."
     },
@@ -21,6 +22,7 @@
       nf_reply: "پاسخ‌ها", nf_reply_s: "کسی به نظرت پاسخ می‌دهد",
       nf_like: "لایک‌ها", nf_like_s: "کسی نظرت را می‌پسندد",
       nf_follow: "دنبال‌کننده‌ی جدید", nf_follow_s: "دنبال‌کردن و درخواست دنبال‌کردن",
+      nf_list_follow: "دنبال‌کننده‌ی لیست", nf_list_follow_s: "کسی لیستت را دنبال می‌کند",
       nf_bot_h: "پیام‌های ربات", nf_bot_all: "ارسال اعلان‌ها به چت ربات", nf_bot_all_s: "خاموش کنی هیچ پیامی به ربات نمی‌آید",
       nf_fail: "ذخیره نشد. دوباره تلاش کن.", nf_unavail: "تنظیمات اعلان هنوز فعال نشده است."
     }
@@ -33,7 +35,7 @@
     return text === undefined ? key : text;
   }
 
-  var ROWS = [["reply", "nf_reply", "nf_reply_s"], ["like", "nf_like", "nf_like_s"], ["follow", "nf_follow", "nf_follow_s"]];
+  var ROWS = [["reply", "nf_reply", "nf_reply_s"], ["like", "nf_like", "nf_like_s"], ["follow", "nf_follow", "nf_follow_s"], ["list_follow", "nf_list_follow", "nf_list_follow_s"]];
 
   function sw(on, handler) {
     var b = button("nf-sw" + (on ? " on" : ""), null, function () {
