@@ -15,6 +15,7 @@
       sx_people_hint: "Type a name, a Flicksy ID (at least 3 digits) or a Telegram username.",
       sx_people_none: "Nobody found.",
       sx_no_people_yet: "Nobody here yet.",
+      sx_search_people: "Search…",
       sx_follow: "Follow", sx_request: "Request", sx_following: "Following", sx_requested: "Requested",
       sx_unfollow: "Unfollow", sx_cancel_req: "Cancel request", sx_cancel: "Cancel",
       sx_following_n: "Following",
@@ -53,6 +54,7 @@
       sx_people_hint: "یک اسم، آیدی Flicksy (حداقل ۳ رقم) یا یوزرنیم تلگرام را بنویس.",
       sx_people_none: "کسی پیدا نشد.",
       sx_no_people_yet: "هنوز کسی اینجا نیست.",
+      sx_search_people: "جستجو…",
       sx_follow: "دنبال کردن", sx_request: "درخواست", sx_following: "دنبال می‌کنی", sx_requested: "درخواست داده‌ای",
       sx_unfollow: "لغو دنبال کردن", sx_cancel_req: "لغو درخواست", sx_cancel: "انصراف",
       sx_following_n: "دنبال‌شونده",
@@ -646,20 +648,43 @@
     return d;
   }
 
-  // Your own followers / following: opens a sheet with the people.
+  // Your own followers / following: one sheet with a switch (Followers | Following) and a search box.
   function openFollowSheet(kind) {
+    var cur = kind, q = "", data = {};
+    var seg = el("div", "segment");
+    var sbox = el("div", "searchbox");
+    sbox.style.marginTop = "12px";
+    sbox.appendChild(FX.icon("search", 18));
+    var input = el("input", "searchinput");
+    input.type = "search";
+    input.setAttribute("autocomplete", "off");
+    input.placeholder = lt("sx_search_people");
+    sbox.appendChild(input);
     var holder = el("div");
-    FX.openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", lt(kind === "followers" ? "sx_followers" : "sx_following_n")));
-      holder.appendChild(FX.msg(I18N.t("loading")));
-      sh.appendChild(holder);
-    });
-    FX.api("/api/follow-list?kind=" + kind).then(function (res) {
-      if (!holder.isConnected) return;
+    holder.style.marginTop = "12px";
+
+    function drawSeg() {
+      clear(seg);
+      [["followers", "sx_followers"], ["following", "sx_following_n"]].forEach(function (pair) {
+        seg.appendChild(button("seg-btn" + (cur === pair[0] ? " active" : ""), lt(pair[1]), function () {
+          if (cur === pair[0]) return;
+          cur = pair[0];
+          drawSeg();
+          show();
+        }));
+      });
+    }
+
+    function render() {
       clear(holder);
-      if (res.status !== 200) { holder.appendChild(FX.msg(netError(res), true)); return; }
-      var items = res.data.items || [];
-      if (!items.length) { holder.appendChild(FX.msg(lt("sx_no_people_yet"))); return; }
+      var all = data[cur] || [];
+      if (!all.length) { holder.appendChild(FX.msg(lt("sx_no_people_yet"))); return; }
+      var items = all.filter(function (it) {
+        if (!q) return true;
+        var p = it.person;
+        return ((p.display_name || "") + " " + (p.username || "") + " " + (p.public_id || "")).toLowerCase().indexOf(q) !== -1;
+      });
+      if (!items.length) { holder.appendChild(FX.msg(lt("sx_people_none"))); return; }
       var box = el("div");
       box.style.display = "grid";
       box.style.gap = "8px";
@@ -673,15 +698,41 @@
         var sub = [];
         if (person.username) sub.push("@" + person.username);
         sub.push(person.public_id);
-        info.appendChild(el("div", "sp-sub", sub.join(" · ")));
+        info.appendChild(el("div", "sp-sub", sub.join(" \u00b7 ")));
         row.appendChild(info);
         row.addEventListener("click", function () { FX.closeSheet(); openProfile(person.public_id); });
         box.appendChild(row);
       });
       holder.appendChild(box);
-    }).catch(function () {
-      if (holder.isConnected) { clear(holder); holder.appendChild(FX.msg(I18N.t("err_generic"), true)); }
+    }
+
+    function show() {
+      if (data[cur]) { render(); return; }
+      var asked = cur;
+      clear(holder);
+      holder.appendChild(FX.msg(I18N.t("loading")));
+      FX.api("/api/follow-list?kind=" + asked).then(function (res) {
+        if (!holder.isConnected || cur !== asked) return;
+        if (res.status !== 200) { clear(holder); holder.appendChild(FX.msg(netError(res), true)); return; }
+        data[asked] = res.data.items || [];
+        render();
+      }).catch(function () {
+        if (holder.isConnected && cur === asked) { clear(holder); holder.appendChild(FX.msg(I18N.t("err_generic"), true)); }
+      });
+    }
+
+    input.addEventListener("input", function () {
+      q = input.value.trim().toLowerCase();
+      if (data[cur]) render();
     });
+
+    FX.openSheet(function (sh) {
+      sh.appendChild(seg);
+      sh.appendChild(sbox);
+      sh.appendChild(holder);
+    });
+    drawSeg();
+    show();
   }
 
   function socLine(stats, tappable) {
