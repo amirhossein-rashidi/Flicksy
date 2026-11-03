@@ -22,6 +22,8 @@
       list_followed: "List followed — it is in your Library", list_unfollowed: "Unfollowed",
       list_followers_title: "List followers", list_no_followers: "No followers yet.", list_more: "Show more",
       lists_followed: "Followed lists", lists_followed_empty: "Lists you follow show up here.",
+      lists_popular: "Popular lists", lists_popular_week: "Popular lists this week", lists_see_all: "See all",
+      list_by_followers: "by {name} · {n} Followers", list_weekly: "+{n} this week",
       list_added: "Added to “{name}”", list_removed: "Removed from “{name}”",
       list_created: "List created", list_saved: "Saved", list_deleted: "List deleted",
       list_full: "This list is full (200 titles).", list_too_many: "You've reached the limit of 50 lists.",
@@ -44,6 +46,8 @@
       list_followed: "لیست دنبال شد — در کتابخانه‌ات است", list_unfollowed: "دیگر دنبال نمی‌کنی",
       list_followers_title: "دنبال‌کننده‌های لیست", list_no_followers: "هنوز دنبال‌کننده‌ای نیست.", list_more: "نمایش بیشتر",
       lists_followed: "لیست‌های دنبال‌شده", lists_followed_empty: "لیست‌هایی که دنبال می‌کنی اینجا می‌آیند.",
+      lists_popular: "لیست‌های محبوب", lists_popular_week: "لیست‌های محبوب این هفته", lists_see_all: "همه",
+      list_by_followers: "از {name} · {n} دنبال‌کننده", list_weekly: "+{n} در این هفته",
       list_added: "به «{name}» اضافه شد", list_removed: "از «{name}» حذف شد",
       list_created: "لیست ساخته شد", list_saved: "ذخیره شد", list_deleted: "لیست حذف شد",
       list_full: "این لیست پر است (۲۰۰ عنوان).", list_too_many: "به سقف ۵۰ لیست رسیده‌ای.",
@@ -1005,6 +1009,74 @@
       if (res.status !== 200) return;
       cache.followed = res.data.items || [];
       if (fsec.isConnected) drawFollowed(cache.followed);
+    }).catch(function () {});
+  };
+
+  // ---------- popular lists: Discover (bottom) and Home (after Trending) ----------
+  function seeAllLink() {
+    var a = el("span", "", lt("lists_see_all"));
+    a.style.cssText = "margin-inline-start:auto;order:1;font-size:12.5px;font-weight:600;color:#a78bfa;cursor:pointer";
+    a.addEventListener("click", function () { if (FX.openListsBoard) FX.openListsBoard(); });
+    return a;
+  }
+
+  // Discover: the 3 lists with the most followers (rows: stacked posters + name + "by X · N Followers").
+  FX.hooks.discoverLists = function (body) {
+    var wrap = el("div");
+    var head = el("h2", "sec", lt("lists_popular"));
+    head.appendChild(seeAllLink());
+    wrap.appendChild(head);
+    var rows = el("div");
+    wrap.appendChild(rows);
+    // Discover redraws its body often: only the newest call may add the section
+    body._popTok = (body._popTok || 0) + 1;
+    var tok = body._popTok;
+    FX.api("/api/leaderboard?kind=lists&limit=3").then(function (res) {
+      if (res.status !== 200 || !body.isConnected || body._popTok !== tok) return;
+      var list = (res.data && res.data.rows) || [];
+      if (!list.length) return;
+      list.forEach(function (r) {
+        var x = r.list;
+        var who = x.owner && x.owner.display_name ? x.owner.display_name : "";
+        rows.appendChild(listRow(
+          { title: x.title, posters: x.posters, count: x.count },
+          function () { openListPage({ code: x.share_code }); },
+          lt("list_by_followers", { name: who, n: x.followers })
+        ));
+      });
+      body.appendChild(wrap);
+    }).catch(function () {});
+  };
+
+  // Home: horizontal cards (mosaic cover + name + by X + "+N this week"). Hidden until there is something to show.
+  FX.hooks.homeLists = function (v) {
+    var sec = el("section", "section hidden");
+    var head = el("div");
+    head.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;gap:10px";
+    head.appendChild(FX.sectionHeader(lt("lists_popular_week")));
+    var link = seeAllLink();
+    link.style.order = "0";
+    head.appendChild(link);
+    sec.appendChild(head);
+    var row = el("div", "hscroll");
+    sec.appendChild(row);
+    v.appendChild(sec);
+    FX.api("/api/lists-weekly").then(function (res) {
+      if (res.status !== 200 || !sec.isConnected) return;
+      var items = (res.data && res.data.items) || [];
+      if (!items.length) return;
+      items.forEach(function (it) {
+        var x = it.list;
+        var card = button("lcard", null, function () { openListPage({ code: x.share_code }); });
+        card.appendChild(mosaic(x.posters || []));
+        card.appendChild(el("div", "ptitle", x.title));
+        card.appendChild(el("div", "psub", lt("list_by", { name: (x.owner && x.owner.display_name) || "" })));
+        var wk = el("div", "psub", lt("list_weekly", { n: it.weekly }));
+        wk.style.cssText = "color:#a78bfa;font-weight:700";
+        card.appendChild(wk);
+        row.appendChild(card);
+      });
+      sec.classList.remove("hidden");
     }).catch(function () {});
   };
 
