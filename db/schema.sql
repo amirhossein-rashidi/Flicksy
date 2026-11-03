@@ -168,3 +168,133 @@ INSERT INTO schema_version (version) SELECT 6 WHERE NOT EXISTS (SELECT 1 FROM sc
 ALTER TABLE users ADD COLUMN app_lang TEXT;
 
 INSERT INTO schema_version (version) SELECT 7 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 7);
+
+-- ===== Migration 8: watch log (dates of watching, rewatches) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است.
+CREATE TABLE IF NOT EXISTS watch_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title_id INTEGER NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  watched_on TEXT NOT NULL,
+  is_rewatch INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_watch_log_user_title ON watch_log (user_id, title_id, id);
+
+INSERT INTO schema_version (version) SELECT 8 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 8);
+
+-- ===== Migration 9: per-episode rating, mood, favorite actor =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است.
+CREATE TABLE IF NOT EXISTS episode_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title_id INTEGER NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  season_number INTEGER NOT NULL,
+  episode_number INTEGER NOT NULL,
+  rating INTEGER,
+  mood TEXT,
+  fav_actor_id INTEGER,
+  fav_actor_name TEXT,
+  fav_actor_photo TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_id, title_id, season_number, episode_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_episode_notes_user_title ON episode_notes (user_id, title_id);
+
+INSERT INTO schema_version (version) SELECT 9 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 9);
+
+-- ===== Migration 10: comments (replies, likes, reports) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است.
+CREATE TABLE IF NOT EXISTS comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title_id INTEGER NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  season_number INTEGER,
+  episode_number INTEGER,
+  parent_id INTEGER,
+  body TEXT NOT NULL,
+  spoiler INTEGER NOT NULL DEFAULT 0,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  edited_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_scope ON comments (title_id, season_number, episode_number, parent_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments (parent_id);
+
+CREATE TABLE IF NOT EXISTS comment_likes (
+  comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (comment_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS comment_reports (
+  comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (comment_id, user_id)
+);
+
+INSERT INTO schema_version (version) SELECT 10 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 10);
+
+-- ===== Migration 11: comment notifications + notification settings =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است.
+CREATE TABLE IF NOT EXISTS comment_notifs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (comment_id, actor_id, kind)
+);
+
+CREATE INDEX IF NOT EXISTS idx_comment_notifs_user ON comment_notifs (user_id, is_read, id DESC);
+
+CREATE TABLE IF NOT EXISTS notif_prefs (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  reply_app INTEGER,
+  reply_bot INTEGER,
+  like_app INTEGER,
+  like_bot INTEGER,
+  follow_app INTEGER,
+  follow_bot INTEGER,
+  bot_all INTEGER
+);
+
+INSERT INTO schema_version (version) SELECT 11 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 11);
+
+-- ===== Migration 12: list follows (+ notifications for the list owner) =====
+-- توجه: این مایگریشن قبلاً در D1 اجرا شده است. فقط یک بار اجرا شود (ALTER TABLE دوباره‌اجرا خطا می‌دهد).
+-- فالوها با private/unlisted شدن لیست پاک نمی‌شوند؛ فقط تا وقتی لیست public نیست نمایش داده نمی‌شوند.
+CREATE TABLE IF NOT EXISTS list_follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (list_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_list_follows_list ON list_follows (list_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_list_follows_user ON list_follows (user_id, created_at);
+
+ALTER TABLE notif_prefs ADD COLUMN list_follow_app INTEGER;
+ALTER TABLE notif_prefs ADD COLUMN list_follow_bot INTEGER;
+
+CREATE TABLE IF NOT EXISTS list_follow_notifs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (list_id, actor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_list_follow_notifs_user ON list_follow_notifs (user_id, is_read, id DESC);
+
+INSERT INTO schema_version (version) SELECT 12 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 12);
