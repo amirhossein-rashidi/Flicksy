@@ -26,6 +26,7 @@
       sx_n_creply: "{name} replied to your comment", sx_n_clike: "{name} liked your comment", sx_n_clike_n: "{name} and {n} others liked your comment", sx_n_spoiler: "Spoiler",
       sx_bell: "Notifications", sx_requests: "Follow requests", sx_accept: "Accept", sx_decline: "Decline",
       sx_n_follow: "{name} started following you",
+      sx_n_lfollow: "{name} followed your list {list}",
       sx_n_request: "{name} wants to follow you",
       sx_n_accepted: "{name} accepted your follow request",
       sx_n_empty: "Nothing new.",
@@ -63,6 +64,7 @@
       sx_n_creply: "{name} به نظرت پاسخ داد", sx_n_clike: "{name} نظرت را پسندید", sx_n_clike_n: "{name} و {n} نفر دیگر نظرت را پسندیدند", sx_n_spoiler: "اسپویلر",
       sx_bell: "اعلان‌ها", sx_requests: "درخواست‌های دنبال کردن", sx_accept: "قبول", sx_decline: "رد",
       sx_n_follow: "{name} شروع به دنبال کردن تو کرد",
+      sx_n_lfollow: "{name} لیست {list} تو را دنبال کرد",
       sx_n_request: "{name} می‌خواهد تو را دنبال کند",
       sx_n_accepted: "{name} درخواست دنبال کردنت را قبول کرد",
       sx_n_empty: "خبر تازه‌ای نیست.",
@@ -903,6 +905,14 @@
               row.addEventListener("click", function () {
                 FX.closeSheet();
                 if (FX.openCommentById) FX.openCommentById(n.comment_id);
+              });
+            } else if (n.type === "l_follow" && n.list) {
+              // someone followed one of my lists: tapping opens the list
+              row.appendChild(avatar(n.person));
+              text = nameText(lt("sx_n_lfollow", { name: "\u0000", list: "“" + (n.list.title || "") + "”" }), n.person.display_name);
+              row.addEventListener("click", function () {
+                FX.closeSheet();
+                if (FX.openListByCode) FX.openListByCode(n.list.share_code);
               });
             } else if (FX.features && FX.features.reminders && n.type === "ep" && n.title) {
               // new-episode alert: a small poster instead of an avatar (switched on together with the backend)
