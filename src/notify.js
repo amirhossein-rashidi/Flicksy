@@ -1,6 +1,6 @@
 // Notifications for comments (replies, likes) and the settings for them.
 //
-//   GET /api/notif-prefs   -> { reply_app, reply_bot, like_app, like_bot, follow_app, follow_bot, bot_all }  (booleans)
+//   GET /api/notif-prefs   -> { reply_app, reply_bot, like_app, like_bot, follow_app, follow_bot, list_follow_app, list_follow_bot, bot_all }  (booleans)
 //   PUT /api/notif-prefs   -> same keys, send any of them
 //
 // "app" = the bell on Home, "bot" = a message in the bot chat. Tables come from migration 11 (db/schema.sql);
@@ -9,7 +9,7 @@
 import { json } from "./util.js";
 
 const BOT_USERNAME = "flicksyrobot";
-const DEFAULTS = { reply_app: 1, reply_bot: 1, like_app: 1, like_bot: 0, follow_app: 1, follow_bot: 1, bot_all: 1 };
+const DEFAULTS = { reply_app: 1, reply_bot: 1, like_app: 1, like_bot: 0, follow_app: 1, follow_bot: 1, list_follow_app: 1, list_follow_bot: 1, bot_all: 1 };
 const KEYS = Object.keys(DEFAULTS);
 
 const WORDS = {
@@ -18,6 +18,7 @@ const WORDS = {
     like: "♥ <b>{name}</b> liked your comment on <b>{title}</b>",
     follow: "👤 <b>{name}</b> started following you",
     request: "👤 <b>{name}</b> wants to follow you",
+    list_follow: "📋 <b>{name}</b> followed your list <b>{title}</b>",
     spoiler: "⚠ Spoiler — open Flicksy to read it",
     open: "Open in Flicksy",
     hint: "⚙ You can turn these messages off in Flicksy → Settings → Notifications.",
@@ -27,6 +28,7 @@ const WORDS = {
     like: "♥ <b>{name}</b> نظرت درباره‌ی <b>{title}</b> را پسندید",
     follow: "👤 <b>{name}</b> شروع به دنبال‌کردنت کرد",
     request: "👤 <b>{name}</b> می‌خواهد تو را دنبال کند",
+    list_follow: "📋 <b>{name}</b> لیست <b>{title}</b> تو را دنبال کرد",
     spoiler: "⚠ اسپویلر — برای خواندن Flicksy را باز کن",
     open: "باز کردن در Flicksy",
     hint: "⚙ این پیام‌ها را می‌توانی در Flicksy ← تنظیمات ← اعلان‌ها خاموش کنی.",
@@ -197,6 +199,54 @@ export async function notifyFollowBot(env, actor, targetUserId, isRequest) {
   }
 }
 
+// someone followed your list. list: { id, title, share_code, owner_id }. Needs migration 12 (list_follow_notifs).
+export async function notifyListFollow(env, actor, list) {
+  try {
+    if (!list || list.owner_id === actor.id) return;
+    const res = await env.DB.prepare("INSERT OR IGNORE INTO list_follow_notifs (user_id, actor_id, list_id) VALUES (?1, ?2, ?3)")
+      .bind(list.owner_id, actor.id, list.id)
+      .run();
+    // follow, unfollow, follow again: only the first time sends a message
+    if (!res.meta || !res.meta.changes) return;
+    const prefs = await getPrefs(env, list.owner_id);
+    if (prefs.list_follow_bot !== 1 || prefs.bot_all !== 1) return;
+    const who = await recipient(env, list.owner_id);
+    await sendBot(env, who, "list_follow", { name: actor.display_name, title: list.title }, "https://t.me/" + BOT_USERNAME + "?startapp=list-" + list.share_code);
+  } catch (e) {
+    // ignore
+  }
+}
+
+// bell rows "X followed your list": only while X still follows it and the list is public
+async function listFollowBellItems(env, userId, prefs) {
+  const items = [];
+  let unread = 0;
+  if (prefs.list_follow_app !== 1) return { items: items, unread: unread };
+  try {
+    const rs = await env.DB.prepare(
+      "SELECT n.is_read, n.created_at AS at, u.public_id, u.display_name, u.username, u.photo_url, l.title, l.share_code " +
+        "FROM list_follow_notifs n JOIN users u ON u.id = n.actor_id JOIN lists l ON l.id = n.list_id " +
+        "JOIN list_follows lf ON lf.list_id = n.list_id AND lf.user_id = n.actor_id " +
+        "WHERE n.user_id = ?1 AND l.visibility = 'public' ORDER BY n.id DESC LIMIT 30"
+    )
+      .bind(userId)
+      .all();
+    (rs.results || []).forEach((r) => {
+      items.push({
+        type: "l_follow",
+        read: r.is_read === 1,
+        at: r.at,
+        list: { title: r.title, share_code: r.share_code },
+        person: { public_id: r.public_id, display_name: r.display_name, username: r.username || null, photo_url: r.photo_url || null },
+      });
+      if (r.is_read !== 1) unread += 1;
+    });
+  } catch (e) {
+    // tables not created yet
+  }
+  return { items: items, unread: unread };
+}
+
 // What the bell shows for comments: replies (one row each) and likes (one row per comment: "X and 3 others").
 // Returns { items, unread }. Empty when the tables don't exist yet.
 export async function commentBellItems(env, userId, prefs) {
@@ -260,6 +310,9 @@ export async function commentBellItems(env, userId, prefs) {
   } catch (e) {
     return { items: [], unread: 0 };
   }
+  const lf = await listFollowBellItems(env, userId, prefs);
+  lf.items.forEach((x) => items.push(x));
+  unread += lf.unread;
   return { items: items, unread: unread };
 }
 
@@ -268,5 +321,10 @@ export async function markCommentNotifsRead(env, userId) {
     await env.DB.prepare("UPDATE comment_notifs SET is_read = 1 WHERE user_id = ?1 AND is_read = 0").bind(userId).run();
   } catch (e) {
     // ignore
+  }
+  try {
+    await env.DB.prepare("UPDATE list_follow_notifs SET is_read = 1 WHERE user_id = ?1 AND is_read = 0").bind(userId).run();
+  } catch (e) {
+    // table not created yet
   }
 }
