@@ -174,15 +174,6 @@ export async function handleListUpdate(request, env, user) {
     .bind(title, description || null, visibility, ranked, body.id, user.id)
     .run();
 
-  // a list that is no longer public cannot be followed: drop its followers
-  if (visibility !== "public") {
-    try {
-      await env.DB.prepare("DELETE FROM list_follows WHERE list_id = ?1").bind(body.id).run();
-    } catch (e) {
-      // the list_follows table is added by migration 12
-    }
-  }
-
   return json({
     ok: true,
     list: { id: body.id, title: title, description: description || "", visibility: visibility, share_code: current.share_code, is_ranked: ranked === 1 },
