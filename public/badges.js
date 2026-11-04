@@ -118,10 +118,10 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
 
   // ---------- app glue ----------
   var TXT = {
-    fa: { next: "نشان بعدی", max: "به بالاترین سطح رسیدی", earned: "نشان‌های گرفته‌شده", locked: "در راه", special: "نشان ویژه", empty: "هنوز نشانی نگرفته‌ای.",
+    fa: { pin: "بذار کنار اسمم", unpin: "برداشتن از کنار اسمم", lock: "قفل", pinned: "نشان کنار اسمت گذاشته شد", auto: "به حالت خودکار برگشت", fail: "ذخیره نشد، دوباره امتحان کن", next: "نشان بعدی", max: "به بالاترین سطح رسیدی", earned: "نشان‌های گرفته‌شده", locked: "در راه", special: "نشان ویژه", empty: "هنوز نشانی نگرفته‌ای.",
       m: "فیلم تماشا شده", e: "قسمت تماشا شده", l: "لیست ساخته‌شده", f: "دنبال‌کننده", c: "نظر نوشته‌شده", cur: "دنبال‌کنندهٔ پرطرفدارترین لیست",
       d_founder: "جزو ۱۰۰ نفر اول Flicksy بودی.", d_early: "جزو ۱۰۰۰ نفر اول Flicksy بودی.", d_beta: "در تست بتا کمک کردی.", d_verified: "این حساب تأییدشده است.", d_team: "عضو تیم Flicksy.", d_supporter: "از Flicksy حمایت کرده‌ای." },
-    en: { next: "Next badge", max: "Top level reached", earned: "Earned badges", locked: "Coming up", special: "Special badge", empty: "No badges yet.",
+    en: { pin: "Pin next to my name", unpin: "Remove from my name", lock: "Locked", pinned: "Badge pinned next to your name", auto: "Back to automatic", fail: "Could not save, try again", next: "Next badge", max: "Top level reached", earned: "Earned badges", locked: "Coming up", special: "Special badge", empty: "No badges yet.",
       m: "movies watched", e: "episodes watched", l: "lists created", f: "followers", c: "comments written", cur: "followers on your top list",
       d_founder: "You were among the first 100 people on Flicksy.", d_early: "You were among the first 1,000 people on Flicksy.", d_beta: "You helped test the beta.", d_verified: "This account is verified.", d_team: "Part of the Flicksy team.", d_supporter: "You supported Flicksy." }
   };
@@ -159,9 +159,16 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       ".bs-pl { display: flex; justify-content: space-between; color: var(--muted); font-size: 12.5px; font-weight: 600; }" +
       ".bs-nx { color: var(--muted); font-size: 12.5px; margin-top: 6px; }" +
       ".bs-sec { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); font-weight: 700; }" +
-      ".bs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 12px; justify-items: center; }" +
-      ".bs-grid button { background: none; border: 0; padding: 0; line-height: 0; cursor: pointer; border-radius: 12px; }" +
-      ".bs-grid button.sel { outline: 2px solid #a855f7; outline-offset: 3px; }" +
+      ".bs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 6px; margin-top: 14px; justify-items: center; }" +
+      ".bs-nm { font-size: 11.5px; font-weight: 700; text-align: center; line-height: 1.4; color: #e6e6f8; }" +
+      ".bs-nm.dim { color: var(--muted); font-weight: 600; }" +
+      ".bs-pin { margin-top: 20px; width: 100%; border: 0; border-radius: 16px; padding: 14px; font-size: 15px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#a855f7,#6366f1); display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }" +
+      ".bs-pin.off { background: rgba(255,255,255,.1); }" +
+      ".bs-pin:disabled { background: rgba(255,255,255,.08); color: var(--muted); cursor: not-allowed; }" +
+      ".bs-grid button { background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; color: inherit; font: inherit; }" +
+      ".bs-grid button svg { display: block; }" +
+      ".bs-grid button.sel .bs-ic { outline: 2px solid #a855f7; outline-offset: 3px; border-radius: 14px; }" +
+      ".bs-ic { line-height: 0; }" +
       ".bs-lock { display: inline-block; filter: grayscale(1); opacity: .28; line-height: 0; }" +
       ".bs-top.lk svg { opacity: .55; filter: grayscale(.6); }" +
       ".bs-sec-plain { margin-top: 18px; padding: 0; height: 0; }";
@@ -214,7 +221,9 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     return "";
   }
 
-  function sheetBody(sh, data, id) {
+  var LOCKSVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+  function sheetBody(sh, data, id, opts) {
     setLang();
     var t = TXT[lang], h = HOW[lang], counts = data.counts || {}, earned = data.earned || [];
     var it = ALL[id];
@@ -256,27 +265,44 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     if (!got && !ACTIVE.test(id)) status = h.not + " · " + h.soon;
 
     var html = '<div class="bs-top' + (got ? "" : " lk") + '">' + bd(it, 104) + "<h4>" + it.lab() + "</h4><p>" + desc + "</p>" + (status ? '<div class="bs-nx">' + status + "</div>" : "") + "</div>" + prog;
+    var own = !!(opts && opts.own), mode = "";
+    if (own) {
+      if (!got) { html += '<button type="button" class="bs-pin" disabled>' + LOCKSVG + t.lock + "</button>"; }
+      else if (data.pinned === id) { mode = "unpin"; html += '<button type="button" class="bs-pin off" data-a="unpin">' + t.unpin + "</button>"; }
+      else { mode = "pin"; html += '<button type="button" class="bs-pin" data-a="pin">' + t.pin + "</button>"; }
+    }
     var mine = [], rest = [];
     CATS.forEach(function (c) { c.items.forEach(function (i) { (have[i.id] ? mine : rest).push(i.id); }); });
-    function btn(x, lock) { return '<button type="button" data-id="' + x + '"' + (x === id ? ' class="sel"' : "") + ">" + (lock ? '<span class="bs-lock">' + bd(ALL[x], 44) + "</span>" : bd(ALL[x], 44)) + "</button>"; }
+    function btn(x, lock) { return '<button type="button" data-id="' + x + '"' + (x === id ? ' class="sel"' : "") + '><span class="bs-ic">' + (lock ? '<span class="bs-lock">' + bd(ALL[x], 56) + "</span>" : bd(ALL[x], 56)) + '</span><span class="bs-nm' + (lock ? " dim" : "") + '">' + ALL[x].lab() + "</span></button>"; }
     if (mine.length) html += '<div class="bs-sec">' + t.earned + '</div><div class="bs-grid">' + mine.map(function (x) { return btn(x, false); }).join("") + "</div>";
     if (rest.length) html += '<div class="bs-sec bs-sec-plain"></div><div class="bs-grid">' + rest.map(function (x) { return btn(x, true); }).join("") + "</div>";
     var box = el("div");
     box.innerHTML = html;
     sh.appendChild(box);
     Array.prototype.forEach.call(box.querySelectorAll(".bs-grid button"), function (b) {
-      b.addEventListener("click", function () { sheetBody(sh, data, b.getAttribute("data-id")); });
+      b.addEventListener("click", function () { sheetBody(sh, data, b.getAttribute("data-id"), opts); });
+    });
+    var pb = box.querySelector(".bs-pin[data-a]");
+    if (pb) pb.addEventListener("click", function () {
+      pb.disabled = true;
+      FX.api("/api/badge-pin", { method: "PUT", body: { badge_id: mode === "pin" ? id : null } }).then(function (res) {
+        if (res.status !== 200 || !res.data || !res.data.badges) { pb.disabled = false; FX.toast(t.fail, true); return; }
+        if (opts && opts.onChange) opts.onChange(res.data.badges);
+        FX.toast(mode === "pin" ? t.pinned : t.auto);
+        sheetBody(sh, data, id, opts);
+      }).catch(function () { pb.disabled = false; FX.toast(t.fail, true); });
     });
   }
 
-  FX.badgeSheet = function (data, startId) {
+  FX.badgeSheet = function (data, startId, opts) {
     if (!data) return;
     mountDefs();
     css();
-    FX.openSheet(function (sh) { sheetBody(sh, data, startId || data.primary); });
+    FX.openSheet(function (sh) { sheetBody(sh, data, startId || data.primary, opts); });
   };
 
-  FX.badgeAttach = function (nameEl, data) {
+  // opts.own = true on your own profile: the sheet then has the "pin next to my name" button
+  FX.badgeAttach = function (nameEl, data, opts) {
     if (!nameEl || !data || !data.primary || !ALL[data.primary]) return;
     setLang();
     mountDefs();
@@ -286,7 +312,11 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     var b = el("button", "bdg");
     b.type = "button";
     b.innerHTML = bd(ALL[data.primary], 28);
-    b.addEventListener("click", function () { FX.badgeSheet(data); });
+    var so = { own: !!(opts && opts.own), onChange: function (nb) {
+      data.counts = nb.counts; data.earned = nb.earned; data.primary = nb.primary; data.pinned = nb.pinned; data.auto = nb.auto;
+      FX.badgeAttach(nameEl, data, opts);
+    } };
+    b.addEventListener("click", function () { FX.badgeSheet(data, null, so); });
     nameEl.appendChild(b);
   };
 })();
