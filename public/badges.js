@@ -162,7 +162,9 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       ".bs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 12px; justify-items: center; }" +
       ".bs-grid button { background: none; border: 0; padding: 0; line-height: 0; cursor: pointer; border-radius: 12px; }" +
       ".bs-grid button.sel { outline: 2px solid #a855f7; outline-offset: 3px; }" +
-      ".bs-lock { filter: grayscale(1); opacity: .28; line-height: 0; }";
+      ".bs-lock { display: inline-block; filter: grayscale(1); opacity: .28; line-height: 0; }" +
+      ".bs-top.lk svg { opacity: .55; filter: grayscale(.6); }" +
+      ".bs-sec-plain { margin-top: 18px; padding: 0; height: 0; }";
     document.head.appendChild(st);
   }
 
@@ -181,38 +183,84 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     return holder(bd(it, size || 28));
   };
 
+  // how to get each badge (shown when it is not earned yet)
+  var ACTIVE = /^(m|e|l|f|c)\d+$|^(cur100|cur1000|founder|early|team|verified|beta|supporter)$/;
+  var HOW = {
+    fa: { m: "{n} فیلم را «دیده‌شده» علامت بزن.", e: "{n} قسمت را «دیده‌شده» علامت بزن.", l: "{n} لیست بساز.", f: "{n} نفر دنبالت کنند.", c: "{n} کامنت بنویس.", h: "{n} ساعت فیلم و سریال تماشا کن.", s: "{n} روز پشت‌سرهم چیزی تماشا کن.",
+      cur100: "لیستی عمومی بساز که ۱۰۰ نفر دنبالش کنند.", cur1000: "لیستی عمومی بساز که ۱۰۰۰ نفر دنبالش کنند.",
+      founder: "فقط ۱۰۰ نفر اول Flicksy این نشان را دارند.", early: "فقط ۱۰۰۰ نفر اول Flicksy این نشان را دارند.", beta: "تیم Flicksy این نشان را به تست‌کننده‌های بتا می‌دهد.", verified: "حساب‌های تأییدشده را تیم Flicksy مشخص می‌کند.", team: "ویژه‌ی اعضای تیم Flicksy.", supporter: "تیم Flicksy این نشان را به حامیان می‌دهد.",
+      genre: "تعداد زیادی فیلم و سریال از همین ژانر تماشا کن.", lb: "در جدول ماهانه‌ی برترها به این رتبه برس.",
+      rewatch: "یک فیلم یا سریال را دوباره تماشا کن.", spoiler: "کامنت‌هایت را همیشه با برچسب اسپویلر بنویس.", marathon: "در یک روز ۱۰ قسمت تماشا کن.", night: "دیروقت شب تماشا کن.", finisher: "سریالی با ۵ فصل یا بیشتر را تا آخر ببین.",
+      yalda: "فقط در شب یلدا قابل دریافت است.", nowruz: "فقط در نوروز قابل دریافت است.", oscar: "فقط در شب اسکار قابل دریافت است.", hallo: "فقط در هالووین قابل دریافت است.",
+      not: "هنوز نگرفته‌ای", soon: "این نشان هنوز فعال نشده و به‌زودی اضافه می‌شود.", left: "{n} {u} دیگه مونده" },
+    en: { m: "Mark {n} movies as Watched.", e: "Mark {n} episodes as Watched.", l: "Create {n} lists.", f: "Get {n} followers.", c: "Write {n} comments.", h: "Watch {n} hours of movies and series.", s: "Watch something {n} days in a row.",
+      cur100: "Make a public list that 100 people follow.", cur1000: "Make a public list that 1,000 people follow.",
+      founder: "Only the first 100 people on Flicksy have this.", early: "Only the first 1,000 people on Flicksy have this.", beta: "The Flicksy team gives this to beta testers.", verified: "The Flicksy team decides which accounts are verified.", team: "For members of the Flicksy team.", supporter: "The Flicksy team gives this to supporters.",
+      genre: "Watch lots of titles in this genre.", lb: "Reach this rank on the monthly leaderboard.",
+      rewatch: "Watch a movie or series again.", spoiler: "Always tag your comments as spoilers when needed.", marathon: "Watch 10 episodes in one day.", night: "Watch late at night.", finisher: "Finish a series with 5 or more seasons.",
+      yalda: "Only available on Yalda night.", nowruz: "Only available during Nowruz.", oscar: "Only available on Oscar night.", hallo: "Only available on Halloween.",
+      not: "Not earned yet", soon: "This badge isn't active yet and will be added soon.", left: "{n} more {u} to go" }
+  };
+  var GENRES = { horror: 1, scifi: 1, comedy: 1, drama: 1, thriller: 1, anim: 1, doc: 1, romance: 1 };
+  var LB = { lb10: 1, lb3: 1, lb1: 1 };
+
+  function howText(id, m) {
+    var h = HOW[lang];
+    if (!m) m = /^([hs])(\d+)$/.exec(id);
+    if (m) return h[m[1]].replace("{n}", nf(+m[2]));
+    if (h[id]) return h[id];
+    if (GENRES[id]) return h.genre;
+    if (LB[id]) return h.lb;
+    return "";
+  }
+
   function sheetBody(sh, data, id) {
     setLang();
-    var t = TXT[lang], counts = data.counts || {}, earned = data.earned || [];
+    var t = TXT[lang], h = HOW[lang], counts = data.counts || {}, earned = data.earned || [];
     var it = ALL[id];
     while (sh.childNodes.length > 1) sh.removeChild(sh.lastChild);
     if (!it) { sh.appendChild(el("div", "bs-nx", t.empty)); return; }
-    var desc = t.special, prog = "";
-    var m = /^([melfc])(\d+)$/.exec(id);
-    if (m) {
-      var k = m[1], v = +m[2], lv = LADDERS[k], have = counts[COUNT_OF[k]] || 0, nx = lv[lv.indexOf(v) + 1];
-      desc = nf(have) + " " + t[k];
-      if (nx) prog = '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * (have - v) / (nx - v)))) + '%"></i></div><div class="bs-pl"><span>' + nf(v) + "</span><span>" + nf(nx) + '</span></div><div class="bs-nx">' + t.next + ": " + nf(nx) + " " + U[UNIT[k]][lang === "fa" ? 0 : 1] + "</div>";
-      else prog = '<div class="bs-nx">' + t.max + "</div>";
-    } else if (id === "cur100" || id === "cur1000") {
-      var lf = counts.list_followers || 0;
-      desc = nf(lf) + " " + t.cur;
-      if (id === "cur100") prog = '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * (lf - 100) / 900))) + '%"></i></div><div class="bs-pl"><span>' + nf(100) + "</span><span>" + nf(1000) + '</span></div><div class="bs-nx">' + t.next + ": " + nf(1000) + "</div>";
-      else prog = '<div class="bs-nx">' + t.max + "</div>";
-    } else if (t["d_" + id]) desc = t["d_" + id];
-
-    var html = '<div class="bs-top">' + bd(it, 104) + "<h4>" + it.lab() + "</h4><p>" + desc + "</p></div>" + prog;
     var have = {};
     earned.forEach(function (x) { have[x] = 1; });
-    var mine = [];
-    CATS.forEach(function (c) { c.items.forEach(function (i) { if (have[i.id]) mine.push(i.id); }); });
-    html += '<div class="bs-sec">' + t.earned + '</div><div class="bs-grid">' + mine.map(function (x) { return '<button type="button" data-id="' + x + '"' + (x === id ? ' class="sel"' : "") + ">" + bd(ALL[x], 44) + "</button>"; }).join("") + "</div>";
-    var locked = [];
-    Object.keys(LADDERS).forEach(function (k) {
-      var n = LADDERS[k].find(function (v) { return (counts[COUNT_OF[k]] || 0) < v; });
-      if (n) locked.push(k + n);
-    });
-    if (locked.length) html += '<div class="bs-sec">' + t.locked + '</div><div class="bs-grid">' + locked.map(function (x) { return '<span class="bs-lock">' + bd(ALL[x], 44) + "</span>"; }).join("") + "</div>";
+    var got = !!have[id];
+    var desc = got ? t.special : "", prog = "", status = "";
+    var m = /^([melfc])(\d+)$/.exec(id);
+    if (m) {
+      var k = m[1], v = +m[2], lv = LADDERS[k], cnt = counts[COUNT_OF[k]] || 0, unit = U[UNIT[k]][lang === "fa" ? 0 : 1];
+      if (got) {
+        var nx = lv[lv.indexOf(v) + 1];
+        desc = nf(cnt) + " " + t[k];
+        if (nx) prog = '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * (cnt - v) / (nx - v)))) + '%"></i></div><div class="bs-pl"><span>' + nf(v) + "</span><span>" + nf(nx) + '</span></div><div class="bs-nx">' + t.next + ": " + nf(nx) + " " + unit + "</div>";
+        else prog = '<div class="bs-nx">' + t.max + "</div>";
+      } else {
+        desc = howText(id, m);
+        status = h.not;
+        prog = '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * cnt / v))) + '%"></i></div><div class="bs-pl"><span>' + nf(cnt) + "</span><span>" + nf(v) + '</span></div><div class="bs-nx">' + h.left.replace("{n}", nf(Math.max(0, v - cnt))).replace("{u}", unit) + "</div>";
+      }
+    } else if (id === "cur100" || id === "cur1000") {
+      var lf = counts.list_followers || 0, goal = id === "cur100" ? 100 : 1000;
+      if (got) {
+        desc = nf(lf) + " " + t.cur;
+        prog = id === "cur100" ? '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * (lf - 100) / 900))) + '%"></i></div><div class="bs-pl"><span>' + nf(100) + "</span><span>" + nf(1000) + '</span></div><div class="bs-nx">' + t.next + ": " + nf(1000) + "</div>" : '<div class="bs-nx">' + t.max + "</div>";
+      } else {
+        desc = howText(id, null);
+        status = h.not;
+        prog = '<div class="bs-prog"><i style="width:' + Math.max(0, Math.min(100, Math.round(100 * lf / goal))) + '%"></i></div><div class="bs-pl"><span>' + nf(lf) + "</span><span>" + nf(goal) + '</span></div><div class="bs-nx">' + h.left.replace("{n}", nf(Math.max(0, goal - lf))).replace("{u}", lang === "fa" ? "دنبال‌کننده" : "followers") + "</div>";
+      }
+    } else if (got) {
+      desc = t["d_" + id] || t.special;
+    } else {
+      desc = howText(id, null);
+      status = h.not;
+    }
+    if (!got && !ACTIVE.test(id)) status = h.not + " · " + h.soon;
+
+    var html = '<div class="bs-top' + (got ? "" : " lk") + '">' + bd(it, 104) + "<h4>" + it.lab() + "</h4><p>" + desc + "</p>" + (status ? '<div class="bs-nx">' + status + "</div>" : "") + "</div>" + prog;
+    var mine = [], rest = [];
+    CATS.forEach(function (c) { c.items.forEach(function (i) { (have[i.id] ? mine : rest).push(i.id); }); });
+    function btn(x, lock) { return '<button type="button" data-id="' + x + '"' + (x === id ? ' class="sel"' : "") + ">" + (lock ? '<span class="bs-lock">' + bd(ALL[x], 44) + "</span>" : bd(ALL[x], 44)) + "</button>"; }
+    if (mine.length) html += '<div class="bs-sec">' + t.earned + '</div><div class="bs-grid">' + mine.map(function (x) { return btn(x, false); }).join("") + "</div>";
+    if (rest.length) html += '<div class="bs-sec bs-sec-plain"></div><div class="bs-grid">' + rest.map(function (x) { return btn(x, true); }).join("") + "</div>";
     var box = el("div");
     box.innerHTML = html;
     sh.appendChild(box);
