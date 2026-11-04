@@ -118,10 +118,10 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
 
   // ---------- app glue ----------
   var TXT = {
-    fa: { pin: "بذار کنار اسمم", unpin: "برداشتن از کنار اسمم", lock: "قفل", pinned: "نشان کنار اسمت گذاشته شد", auto: "به حالت خودکار برگشت", fail: "ذخیره نشد، دوباره امتحان کن", next: "نشان بعدی", max: "به بالاترین سطح رسیدی", earned: "نشان‌های گرفته‌شده", locked: "در راه", special: "نشان ویژه", empty: "هنوز نشانی نگرفته‌ای.",
+    fa: { title: "نشان‌ها", of: "از", back: "بستن", pin: "بذار کنار اسمم", unpin: "برداشتن از کنار اسمم", lock: "قفل", pinned: "نشان کنار اسمت گذاشته شد", auto: "به حالت خودکار برگشت", fail: "ذخیره نشد، دوباره امتحان کن", next: "نشان بعدی", max: "به بالاترین سطح رسیدی", earned: "نشان‌های گرفته‌شده", locked: "در راه", special: "نشان ویژه", empty: "هنوز نشانی نگرفته‌ای.",
       m: "فیلم تماشا شده", e: "قسمت تماشا شده", l: "لیست ساخته‌شده", f: "دنبال‌کننده", c: "نظر نوشته‌شده", cur: "دنبال‌کنندهٔ پرطرفدارترین لیست",
       d_founder: "جزو ۱۰۰ نفر اول Flicksy بودی.", d_early: "جزو ۱۰۰۰ نفر اول Flicksy بودی.", d_beta: "در تست بتا کمک کردی.", d_verified: "این حساب تأییدشده است.", d_team: "عضو تیم Flicksy.", d_supporter: "از Flicksy حمایت کرده‌ای." },
-    en: { pin: "Pin next to my name", unpin: "Remove from my name", lock: "Locked", pinned: "Badge pinned next to your name", auto: "Back to automatic", fail: "Could not save, try again", next: "Next badge", max: "Top level reached", earned: "Earned badges", locked: "Coming up", special: "Special badge", empty: "No badges yet.",
+    en: { title: "Badges", of: "of", back: "Close", pin: "Pin next to my name", unpin: "Remove from my name", lock: "Locked", pinned: "Badge pinned next to your name", auto: "Back to automatic", fail: "Could not save, try again", next: "Next badge", max: "Top level reached", earned: "Earned badges", locked: "Coming up", special: "Special badge", empty: "No badges yet.",
       m: "movies watched", e: "episodes watched", l: "lists created", f: "followers", c: "comments written", cur: "followers on your top list",
       d_founder: "You were among the first 100 people on Flicksy.", d_early: "You were among the first 1,000 people on Flicksy.", d_beta: "You helped test the beta.", d_verified: "This account is verified.", d_team: "Part of the Flicksy team.", d_supporter: "You supported Flicksy." }
   };
@@ -169,6 +169,11 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       ".bs-grid button svg { display: block; }" +
       ".bs-grid button.sel .bs-ic { outline: 2px solid #a855f7; outline-offset: 3px; border-radius: 14px; }" +
       ".bs-ic { line-height: 0; }" +
+      ".bpage { z-index: 30; }" +
+      ".bp-in { padding: calc(72px + env(safe-area-inset-top)) 18px 0; }" +
+      ".bp-in h1 { font-size: 26px; font-weight: 800; letter-spacing: -.3px; }" +
+      ".bp-in .bp-sub { color: var(--muted); font-size: 13px; font-weight: 600; margin-top: 4px; }" +
+      ".bpage .bs-grid { margin-top: 22px; }" +
       ".bs-lock { display: inline-block; filter: grayscale(1); opacity: .28; line-height: 0; }" +
       ".bs-top.lk svg { opacity: .55; filter: grayscale(.6); }" +
       ".bs-sec-plain { margin-top: 18px; padding: 0; height: 0; }";
@@ -271,17 +276,9 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       else if (data.pinned === id) { mode = "unpin"; html += '<button type="button" class="bs-pin off" data-a="unpin">' + t.unpin + "</button>"; }
       else { mode = "pin"; html += '<button type="button" class="bs-pin" data-a="pin">' + t.pin + "</button>"; }
     }
-    var mine = [], rest = [];
-    CATS.forEach(function (c) { c.items.forEach(function (i) { (have[i.id] ? mine : rest).push(i.id); }); });
-    function btn(x, lock) { return '<button type="button" data-id="' + x + '"' + (x === id ? ' class="sel"' : "") + '><span class="bs-ic">' + (lock ? '<span class="bs-lock">' + bd(ALL[x], 56) + "</span>" : bd(ALL[x], 56)) + '</span><span class="bs-nm' + (lock ? " dim" : "") + '">' + ALL[x].lab() + "</span></button>"; }
-    if (mine.length) html += '<div class="bs-sec">' + t.earned + '</div><div class="bs-grid">' + mine.map(function (x) { return btn(x, false); }).join("") + "</div>";
-    if (rest.length) html += '<div class="bs-sec bs-sec-plain"></div><div class="bs-grid">' + rest.map(function (x) { return btn(x, true); }).join("") + "</div>";
     var box = el("div");
     box.innerHTML = html;
     sh.appendChild(box);
-    Array.prototype.forEach.call(box.querySelectorAll(".bs-grid button"), function (b) {
-      b.addEventListener("click", function () { sheetBody(sh, data, b.getAttribute("data-id"), opts); });
-    });
     var pb = box.querySelector(".bs-pin[data-a]");
     if (pb) pb.addEventListener("click", function () {
       pb.disabled = true;
@@ -301,6 +298,50 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     FX.openSheet(function (sh) { sheetBody(sh, data, startId || data.primary, opts); });
   };
 
+  // the full page with every badge: earned first, the rest dimmed; tap one to open its sheet
+  var bpage = null;
+
+  function closeBadgePage() {
+    if (!bpage) return;
+    bpage.root.remove();
+    FX.popBack(bpage.back);
+    bpage = null;
+  }
+
+  FX.badgePage = function (data, opts) {
+    if (!data) return;
+    setLang();
+    mountDefs();
+    css();
+    if (bpage) closeBadgePage();
+    var t = TXT[lang];
+    var have = {};
+    (data.earned || []).forEach(function (x) { have[x] = 1; });
+    var mine = [], rest = [];
+    CATS.forEach(function (c) { c.items.forEach(function (i) { (have[i.id] ? mine : rest).push(i.id); }); });
+    function cell(x, lock) {
+      return '<button type="button" data-id="' + x + '"><span class="bs-ic">' + (lock ? '<span class="bs-lock">' + bd(ALL[x], 60) + "</span>" : bd(ALL[x], 60)) + '</span><span class="bs-nm' + (lock ? " dim" : "") + '">' + ALL[x].lab() + "</span></button>";
+    }
+    var root = el("div", "page bpage");
+    var back = FX.iconButton("round-btn", "back", t.back, closeBadgePage);
+    back.firstChild.classList.add("flip");
+    root.appendChild(back);
+    var scroller = el("div", "page-scroll");
+    var inner = el("div", "bp-in");
+    var html = "<h1>" + t.title + '</h1><div class="bp-sub">' + nf(mine.length) + " " + t.of + " " + nf(mine.length + rest.length) + "</div>";
+    if (mine.length) html += '<div class="bs-grid">' + mine.map(function (x) { return cell(x, false); }).join("") + "</div>";
+    if (rest.length) html += '<div class="bs-sec bs-sec-plain"></div><div class="bs-grid">' + rest.map(function (x) { return cell(x, true); }).join("") + "</div>";
+    inner.innerHTML = html;
+    scroller.appendChild(inner);
+    root.appendChild(scroller);
+    Array.prototype.forEach.call(inner.querySelectorAll(".bs-grid button"), function (b) {
+      b.addEventListener("click", function () { FX.badgeSheet(data, b.getAttribute("data-id"), opts); });
+    });
+    bpage = { root: root, back: closeBadgePage };
+    document.body.appendChild(root);
+    FX.pushBack(closeBadgePage);
+  };
+
   // opts.own = true on your own profile: the sheet then has the "pin next to my name" button
   FX.badgeAttach = function (nameEl, data, opts) {
     if (!nameEl || !data || !data.primary || !ALL[data.primary]) return;
@@ -316,7 +357,7 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       data.counts = nb.counts; data.earned = nb.earned; data.primary = nb.primary; data.pinned = nb.pinned; data.auto = nb.auto;
       FX.badgeAttach(nameEl, data, opts);
     } };
-    b.addEventListener("click", function () { FX.badgeSheet(data, null, so); });
+    b.addEventListener("click", function () { FX.badgePage(data, so); });
     nameEl.appendChild(b);
   };
 })();
