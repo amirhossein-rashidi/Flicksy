@@ -782,7 +782,9 @@
     scroller.appendChild(body);
 
     body.appendChild(avatar(pr, "pf-av"));
-    body.appendChild(el("div", "pf-name", pr.display_name || ""));
+    var pName = el("div", "pf-name", pr.display_name || "");
+    body.appendChild(pName);
+    if (FX.badgeAttach) FX.badgeAttach(pName, d.badges);
     var sub = [];
     if (pr.username) sub.push("@" + pr.username);
     sub.push(pr.public_id);
@@ -1246,7 +1248,8 @@
 
     var fg = el("div", "pf-fg");
     fg.appendChild(avatar(me, "pf-av"));
-    fg.appendChild(el("div", "pf-name", me.display_name || ""));
+    var myName = el("div", "pf-name", me.display_name || "");
+    fg.appendChild(myName);
     if (me.public_id) {
       var idParts = [];
       if (me.username) idParts.push("@" + me.username);
@@ -1273,6 +1276,7 @@
       var st = res.data.stats || {};
       sMovies.firstChild.textContent = String(st.movies || 0);
       sEps.firstChild.textContent = String(st.episodes || 0);
+      if (FX.badgeAttach) FX.badgeAttach(myName, res.data.badges);
       clear(socHolder);
       socHolder.appendChild(socLine(st, true));
     }).catch(function () {});
