@@ -1,6 +1,6 @@
 // Badges, worked out on the fly from data that already exists (nothing is stored per badge).
 // The look (frames, glyphs, colours, texts) lives in public/badges.js; here only the rules.
-//   computeBadges(env, userId) -> { counts, earned: [badge ids], primary: badge id | null }
+//   computeBadges(env, userId) -> { counts, earned: [badge ids], primary: badge id | null, pinned, auto }
 //
 // Rules in this first version:
 //   movies / episodes watched, lists created, followers, comments  (ladders)
@@ -8,6 +8,8 @@
 //   founder (first 100 users), early (first 1,000 users)           (by sign-up order)
 //   team, verified, beta, supporter                                (set by hand in the user_badges table)
 // Not yet: hours, streaks, genre masters, leaderboard, behavior, seasonal.
+
+import { json } from "./util.js";
 
 export const LADDERS = {
   m: [10, 50, 100, 250, 500, 1000, 2500, 5000],
@@ -99,15 +101,46 @@ export async function computeBadges(env, userId) {
   if (counts.list_followers >= 100) { earned.push("cur100"); best.push({ id: "cur100", tier: 3 }); }
   if (counts.list_followers >= 1000) { earned.push("cur1000"); best.push({ id: "cur1000", tier: 4 }); }
 
-  // primary badge: a special one first, otherwise the ladder badge with the highest colour level
-  let primary = null;
+  // automatic primary badge: a special one first, otherwise the ladder badge with the highest colour level
+  let auto = null;
   for (const id of SPECIAL_ORDER) {
-    if (earned.indexOf(id) !== -1) { primary = id; break; }
+    if (earned.indexOf(id) !== -1) { auto = id; break; }
   }
-  if (!primary && best.length) {
+  if (!auto && best.length) {
     let pick = best[0];
     best.forEach((b) => { if (b.tier > pick.tier) pick = b; });
-    primary = pick.id;
+    auto = pick.id;
   }
-  return { counts: counts, earned: earned, primary: primary };
+
+  // the badge the person pinned next to their name (used only while it is still earned)
+  let pinned = null;
+  try {
+    const r = await env.DB.prepare("SELECT primary_badge FROM users WHERE id = ?1").bind(userId).first();
+    if (r && r.primary_badge && earned.indexOf(r.primary_badge) !== -1) pinned = r.primary_badge;
+  } catch (e) {
+    // users.primary_badge is added by migration 14
+  }
+  return { counts: counts, earned: earned, primary: pinned || auto, pinned: pinned, auto: auto };
+}
+
+// PUT /api/badge-pin  { badge_id: "m100" | null }   null goes back to the automatic badge
+export async function handleBadgePin(request, env, user) {
+  let body = null;
+  try {
+    body = await request.json();
+  } catch (e) {
+    body = null;
+  }
+  if (!body || typeof body !== "object" || body.badge_id === undefined) return json({ error: "bad_request" }, 400);
+  const badges = await computeBadges(env, user.id);
+  let value = body.badge_id;
+  if (value !== null) {
+    if (typeof value !== "string" || badges.earned.indexOf(value) === -1) return json({ error: "not_earned" }, 400);
+  }
+  try {
+    await env.DB.prepare("UPDATE users SET primary_badge = ?1 WHERE id = ?2").bind(value, user.id).run();
+  } catch (e) {
+    return json({ error: "server_error" }, 500);
+  }
+  return json({ ok: true, badges: await computeBadges(env, user.id) });
 }
