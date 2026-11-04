@@ -29,6 +29,7 @@ import {
 } from "./comments.js";
 import { handleNotifPrefsGet, handleNotifPrefsSet } from "./notify.js";
 import { handleFollowList } from "./followlist.js";
+import { handleBadgePin } from "./badges.js";
 import {
   handleListFollow,
   handleListFollowers,
@@ -229,6 +230,9 @@ export default {
         }
         if (path === "/api/profile-header" && method === "PUT") {
           return await handleHeaderSet(request, env, user);
+        }
+        if (path === "/api/badge-pin" && method === "PUT") {
+          return await handleBadgePin(request, env, user);
         }
         if (path === "/api/header-options" && method === "GET") {
           return await handleHeaderOptions(url, env, user);
