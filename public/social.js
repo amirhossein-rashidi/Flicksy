@@ -1276,7 +1276,7 @@
       var st = res.data.stats || {};
       sMovies.firstChild.textContent = String(st.movies || 0);
       sEps.firstChild.textContent = String(st.episodes || 0);
-      if (FX.badgeAttach) FX.badgeAttach(myName, res.data.badges);
+      if (FX.badgeAttach) FX.badgeAttach(myName, res.data.badges, { own: true });
       clear(socHolder);
       socHolder.appendChild(socLine(st, true));
     }).catch(function () {});
