@@ -298,3 +298,13 @@ CREATE TABLE IF NOT EXISTS list_follow_notifs (
 CREATE INDEX IF NOT EXISTS idx_list_follow_notifs_user ON list_follow_notifs (user_id, is_read, id DESC);
 
 INSERT INTO schema_version (version) SELECT 12 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 12);
+
+-- Migration 13: badges given by hand (team, verified, beta, supporter)
+CREATE TABLE IF NOT EXISTS user_badges (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, badge_id)
+);
+
+INSERT INTO schema_version (version) SELECT 13 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 13);
