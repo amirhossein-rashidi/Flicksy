@@ -308,3 +308,8 @@ CREATE TABLE IF NOT EXISTS user_badges (
 );
 
 INSERT INTO schema_version (version) SELECT 13 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 13);
+
+-- Migration 14: the badge a person pinned next to their name (empty = automatic)
+ALTER TABLE users ADD COLUMN primary_badge TEXT;
+
+INSERT INTO schema_version (version) SELECT 14 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 14);
