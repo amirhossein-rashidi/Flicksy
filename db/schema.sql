@@ -313,3 +313,15 @@ INSERT INTO schema_version (version) SELECT 13 WHERE NOT EXISTS (SELECT 1 FROM s
 ALTER TABLE users ADD COLUMN primary_badge TEXT;
 
 INSERT INTO schema_version (version) SELECT 14 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 14);
+
+-- Migration 15: share-card pictures for stories and Twitter (random address, cleaned up automatically)
+CREATE TABLE IF NOT EXISTS card_images (
+  id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_card_images_user ON card_images (user_id, created_at DESC);
+
+INSERT INTO schema_version (version) SELECT 15 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 15);
