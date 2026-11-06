@@ -390,10 +390,12 @@
       ".pf-head { position: relative; }" +
       "#view-profile { padding-top: 0; }" +
       ".pf-cover { position: relative; margin: 0 -16px; height: 250px; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }" +
-      ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; filter: saturate(1.35) contrast(1.1) brightness(1.06); }" +
+      ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; filter: blur(1.5px) saturate(1.1) brightness(.78); transform: scale(1.04); }" +
       ".pf-cover .sp-banner::after, .spage .pf-cover .sp-banner::after { background: linear-gradient(180deg, rgba(7,7,26,.28), rgba(7,7,26,0) 40%); }" +
       ".pf-more { position: absolute; top: 16px; right: 0; z-index: 3; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(7,7,26,.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); color: #fff; }" +
       ".pf-more .ic { stroke-width: 3.4; }" +
+      ".pf-share { right: 52px; }" +
+      ".pf-share .ic { stroke-width: 2.2; }" +
       ".pf-mov { position: fixed; inset: 0; z-index: 35; }" +
       ".pf-menu { position: absolute; z-index: 36; top: 66px; right: 0; min-width: 215px; padding: 6px; border-radius: 18px; background: rgba(26,26,58,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); box-shadow: 0 20px 40px -10px #000; animation: rise .18s ease both; }" +
       ".pf-menu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; font-weight: 600; }" +
@@ -1226,7 +1228,6 @@
       b.appendChild(document.createTextNode(label));
       menu.appendChild(b);
     }
-    item(SHARE, I18N.t("pf_share"), function () { shareProfile(me); });
     item(PEN, lt("sx_header_change"), function () { openHeaderPicker(me); });
     item(SPARK, I18N.t("pf_yir"), function () { if (FX.share && FX.share.recap && FX.cards) FX.share.recap(me); else FX.toast(I18N.t("pf_soon")); });
     item(["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"], I18N.t("settings"), function () { if (FX.openSettings) FX.openSettings(); });
@@ -1247,6 +1248,11 @@
     more.setAttribute("aria-label", I18N.t("settings"));
     more.appendChild(svg(MORE, 22));
     head.appendChild(more);
+
+    var shareBtn = button("pf-more pf-share", null, function () { shareProfile(me); });
+    shareBtn.setAttribute("aria-label", I18N.t("pf_share"));
+    shareBtn.appendChild(svg(SHARE, 20));
+    head.appendChild(shareBtn);
 
     var fg = el("div", "pf-fg");
     fg.appendChild(avatar(me, "pf-av"));
