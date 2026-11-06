@@ -1016,7 +1016,12 @@
   function infoOf(d) { return d.data || d.item; }
 
   // Share a movie or series: opens Telegram's chat picker with a link that opens this title (the text is only the title).
-  function shareTitle(item, name) {
+  function shareTitle(item, name, data) {
+    // pictures + share sheet (sharesheet.js); the plain Telegram link below is the backup
+    if (FX.share && FX.cards && item && item.tmdb_id) {
+      FX.share.title({ item: item, data: data || { title: name }, name: me && me.display_name });
+      return;
+    }
     var link = "https://t.me/flicksyrobot?startapp=title-" + (item.media_type === "tv" ? "tv" : "movie") + "-" + item.tmdb_id;
     var url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(name || displayTitle(item));
     try {
@@ -1168,7 +1173,7 @@
       // new-episode reminder: the look is ready, it switches on with the backend
       tools.appendChild(iconButton("round-btn d-bell", "bell", t("dt_reminder"), function () { toast(t("pf_soon")); }));
     }
-    tools.appendChild(iconButton("round-btn", "share", t("dt_share"), function () { shareTitle(d.item, d.data && d.data.title); }));
+    tools.appendChild(iconButton("round-btn", "share", t("dt_share"), function () { shareTitle(d.item, d.data && d.data.title, d.data); }));
     hero.appendChild(tools);
     scroller.appendChild(hero);
 
