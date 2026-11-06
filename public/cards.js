@@ -145,6 +145,16 @@
     return chars.join("").replace(/\s+$/, "") + "…";
   }
 
+  // a one-line text that has to fit maxW: the letters get smaller (down to 40%) and only
+  // an extremely long text is cut with "…". returns { t, size }
+  function shrink(g, str, weight, size, maxW) {
+    str = String(str === undefined || str === null ? "" : str);
+    var w = textWidth(g, str, weight, size);
+    if (w <= maxW) return { t: str, size: size };
+    var sz = Math.max(size * 0.4, (size * maxW) / w);
+    return { t: fitText(g, str, weight, sz, maxW), size: sz };
+  }
+
   function wrap(g, str, weight, size, maxW, maxLines) {
     var words = String(str).split(/\s+/), lines = [], cur = "";
     for (var i = 0; i < words.length; i++) {
@@ -348,7 +358,8 @@
     text(g, (d.owner || "?").charAt(0), avC[0], avY, avD, { weight: 800, size: 24, fill: "#fff", align: "center", dir: "ltr" });
     var ox = rtl ? avX - 16 : avX + avD + 16;
     text(g, d.by, ox, y, box.small, { weight: 600, size: 17, fill: "#a3a3c4", align: align });
-    text(g, fitText(g, d.owner, 800, 25, 340), ox, y + box.small + box.bOff, box.b, { weight: 800, size: 25, fill: "#f1f1fb", align: align });
+    var ow = shrink(g, d.owner, 800, 25, 340);
+    text(g, ow.t, ox, y + box.small + box.bOff, box.b, { weight: 800, size: ow.size, fill: "#f1f1fb", align: align });
     y += box.own + 24;
 
     // stat pills
@@ -451,7 +462,8 @@
     text(g, (d.owner || "?").charAt(0), c[0], avY, avD, { weight: 800, size: 36, fill: "#fff", align: "center", dir: "ltr" });
     var ox = rtl ? avX - 22 : avX + avD + 22;
     text(g, d.by, ox, y + box.smallTop, box.small, { weight: 600, size: 24, fill: "#a3a3c4", align: align });
-    text(g, fitText(g, d.owner, 800, 36, 700), ox, y + box.bTop, box.b, { weight: 800, size: 36, fill: "#f1f1fb", align: align });
+    var ow = shrink(g, d.owner, 800, 36, 700);
+    text(g, ow.t, ox, y + box.bTop, box.b, { weight: 800, size: ow.size, fill: "#f1f1fb", align: align });
     y += box.own + gap;
 
     // stat pills, centred as a group
@@ -498,7 +510,7 @@
 
   // name followed by the mark; startEdge = inline-start edge (physical x). returns total width
   function nameRow(g, name, startEdge, top, h, size, gap, mk, rtl, dy, maxW) {
-    if (maxW) name = fitText(g, name, 800, size, maxW - gap - mk);
+    if (maxW) { var sh = shrink(g, name, 800, size, maxW - gap - mk); name = sh.t; size = sh.size; }
     var nw = textWidth(g, name, 800, size);
     var tx = startEdge;
     text(g, name, tx, top, h, { weight: 800, size: size, fill: "#f1f1fb", align: rtl ? "right" : "left", fixed: true, dy: dy || 0 });
@@ -606,9 +618,9 @@
     var nmH = 50 * 1.15, unH = lineH(g, 600, 24, false), blockH = nmH + 6 + unH;
     var nTop = y + (avD - blockH) / 2;
     var rowW = nameRow(g, d.name, textEdge, nTop, nmH, 50, 12, 40, rtl, -1, 440);
-    d = Object.assign({}, d, { un: fitText(g, d.un, 600, 24, 440) });
-    var unW = textWidth(g, d.un, 600, 24), blockW = Math.max(rowW, unW);
-    text(g, d.un, rtl ? textEdge - blockW : textEdge, nTop + nmH + 6, unH, { weight: 600, size: 24, fill: "#a3a3c4", align: "left", dir: "ltr" });
+    var us = shrink(g, d.un, 600, 24, 440);
+    var unW = textWidth(g, us.t, 600, us.size), blockW = Math.max(rowW, unW);
+    text(g, us.t, rtl ? textEdge - blockW : textEdge, nTop + nmH + 6, unH, { weight: 600, size: us.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
     y += avD + 26;
     // bio
     var bl = lines(g, d.bio, 500, 25, 600), tl = 25 * 1.55;
@@ -632,11 +644,12 @@
     var y = 370;
     avatarBig(g, cx, y + 120, 240, 8, d.ini, 104);
     y += 240 + 34;
-    var nmH = 80 * 1.15, nm80 = fitText(g, d.name, 800, 80, 920 - 18 - 62), nw = textWidth(g, nm80, 800, 80), rowW = nw + 18 + 62;
-    nameRow(g, nm80, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, 80, 18, 62, rtl, -1);
+    var nmH = 80 * 1.15, sh80 = shrink(g, d.name, 800, 80, 920 - 18 - 62), nw = textWidth(g, sh80.t, 800, sh80.size), rowW = nw + 18 + 62;
+    nameRow(g, sh80.t, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, sh80.size, 18, 62, rtl, -1);
     y += nmH + 12;
     var unH = lineH(g, 600, 34, false);
-    text(g, fitText(g, d.un, 600, 34, 920), cx, y, unH, { weight: 600, size: 34, fill: "#a3a3c4", align: "center", dir: "ltr" });
+    var us34 = shrink(g, d.un, 600, 34, 920);
+    text(g, us34.t, cx, y, unH, { weight: 600, size: us34.size, fill: "#a3a3c4", align: "center", dir: "ltr" });
     y += unH + 14;
     var bl = lines(g, d.bio, 500, 32, 820), tl = 32 * 1.55;
     bl.forEach(function (ln, k) {
@@ -668,7 +681,8 @@
     y += 150 + 10 + 22;
     nameRow(g, d.name, edge, y, nmH, 60, 14, 48, rtl, 0, 600);
     y += nmH + 22;
-    text(g, fitText(g, d.un, 600, 27, 600), colL, y, unH, { weight: 600, size: 27, fill: "#a3a3c4", align: "left", dir: "ltr" });
+    var us27 = shrink(g, d.un, 600, 27, 600);
+    text(g, us27.t, colL, y, unH, { weight: 600, size: us27.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
     y += unH + 22;
     bl.forEach(function (ln, k) {
       text(g, ln, edge, y + k * tl, tl, { weight: 500, size: 27, fill: "#d6d6ee", align: rtl ? "right" : "left", fixed: true });
@@ -888,16 +902,16 @@
   // avatar + name (with mark) + @username. pos: {edge} or {cx}. returns row height
   function whoRow(g, d, y, c, pos, rtl) {
     var maxBlock = (pos.cx !== undefined ? 920 : c.av === 80 ? 640 : 560) - c.av - c.gap;
-    d = Object.assign({}, d, { name: fitText(g, d.name, 800, c.nm, maxBlock - c.nmGap - c.mk), un: fitText(g, d.un, 600, c.un, maxBlock) });
+    var nsh = shrink(g, d.name, 800, c.nm, maxBlock - c.nmGap - c.mk), ush = shrink(g, d.un, 600, c.un, maxBlock);
     var nmH = c.nm * 1.15, unH = lineH(g, 600, c.un, false), blockH = nmH + c.unMt + unH;
-    var nameW = textWidth(g, d.name, 800, c.nm) + c.nmGap + c.mk, unW = textWidth(g, d.un, 600, c.un);
+    var nameW = textWidth(g, nsh.t, 800, nsh.size) + c.nmGap + c.mk, unW = textWidth(g, ush.t, 600, ush.size);
     var blockW = Math.max(nameW, unW), rowW = c.av + c.gap + blockW, rowH = Math.max(c.av, blockH);
     var edge = pos.cx !== undefined ? (rtl ? pos.cx + rowW / 2 : pos.cx - rowW / 2) : pos.edge;
     var avX = rtl ? edge - c.av : edge;
     avatarBig(g, avX + c.av / 2, y + rowH / 2, c.av, c.r, d.ini, c.avFs, true);
     var tEdge = rtl ? avX - c.gap : avX + c.av + c.gap, top = y + (rowH - blockH) / 2;
-    nameRow(g, d.name, tEdge, top, nmH, c.nm, c.nmGap, c.mk, rtl, c.dy || 0);
-    text(g, d.un, rtl ? tEdge - blockW : tEdge, top + nmH + c.unMt, unH, { weight: 600, size: c.un, fill: "#a3a3c4", align: "left", dir: "ltr" });
+    nameRow(g, nsh.t, tEdge, top, nmH, nsh.size, c.nmGap, c.mk, rtl, c.dy || 0);
+    text(g, ush.t, rtl ? tEdge - blockW : tEdge, top + nmH + c.unMt, unH, { weight: 600, size: ush.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
     return rowH;
   }
 
@@ -961,7 +975,8 @@
     // poster
     var pw = 230, ph = 345, left = rtl ? 96 : W - 96 - pw;
     drawPoster(g, (d.posters || [])[0] || { h: 265 }, left + pw / 2, 132 + ph / 2, pw, ph, (5 * Math.PI) / 180, 1, rtl, 20, { letter: 92, tkH: 28, tkInset: 10 });
-    text(g, fitText(g, d.cap, 700, 19, 266), rtl ? 78 + 133 : W - 78 - 133, 500, lineH(g, 700, 19, fa), { weight: 700, size: 19, fill: "#cfcfe8", align: "center" });
+    var cp = shrink(g, d.cap, 700, 19, 266);
+    text(g, cp.t, rtl ? 78 + 133 : W - 78 - 133, 500, lineH(g, 700, 19, fa), { weight: 700, size: cp.size, fill: "#cfcfe8", align: "center" });
     // text column
     var rowH = whoRow(g, d, y, { av: 80, r: 4, avFs: 34, nm: 36, nmGap: 10, mk: 30, un: 20, unMt: 4, gap: 20, dy: 0 }, { edge: edge }, rtl);
     y += rowH + 30;
@@ -992,7 +1007,8 @@
     y += lh + 30;
     y += tilesRow(g, d.tiles.slice(0, 3), 80, y, 920, 18, rtl, 22, 30, 62, 24, 8, fa) + 30;
     var ch = lineH(g, 700, 28, fa);
-    text(g, fitText(g, d.capStory, 700, 28, 920), cx, y, ch, { weight: 700, size: 28, fill: "#cfcfe8", align: "center" });
+    var cps = shrink(g, d.capStory, 700, 28, 920);
+    text(g, cps.t, cx, y, ch, { weight: 700, size: cps.size, fill: "#cfcfe8", align: "center" });
     y += ch + 14;
     var ps = d.posters || [], order = [1, 0, 2];
     [0, 1, 2].forEach(function (i) {
