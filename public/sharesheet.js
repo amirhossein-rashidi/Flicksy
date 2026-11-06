@@ -414,6 +414,13 @@
   }
 
   // ---------- lists ----------
+  // the picture shown when the list is sent from @flicksyrobot (inline) follows the new look; only the owner can set it
+  function refreshInline(l, canvas) {
+    try {
+      FX.api("/api/list-share-image", { method: "POST", body: { code: l.share_code, image: canvas.toDataURL("image/jpeg", 0.85) } }).catch(function () {});
+    } catch (e) {}
+  }
+
   // l = the list (title, share_code, owner_name, items[], visibility). Private lists are not shared (checked by the caller).
   function listShare(l, shareText) {
     if (!l || !l.share_code) return;
@@ -422,7 +429,7 @@
     var link = "https://t.me/flicksyrobot?startapp=" + param;
     var text = shareText || l.title;
     var items = l.items || [];
-    var cache = null;
+    var cache = null, refreshed = false;
 
     function load() {
       if (cache) return cache;
@@ -457,7 +464,12 @@
       text: text,
       name: l.title,
       formats: ["chat", "story"],
-      make: function (fmt) { return load().then(function (d) { return FX.cards.render("list", d, fmt); }); }
+      make: function (fmt) {
+        return load().then(function (d) { return FX.cards.render("list", d, fmt); }).then(function (canvas) {
+          if (fmt === "chat" && !refreshed) { refreshed = true; refreshInline(l, canvas); }
+          return canvas;
+        });
+      }
     });
   }
 
