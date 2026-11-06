@@ -136,6 +136,15 @@
     return g.measureText(str).width;
   }
 
+  // one line that fits maxW; a long text ends with "…"
+  function fitText(g, str, weight, size, maxW) {
+    str = String(str === undefined || str === null ? "" : str);
+    if (textWidth(g, str, weight, size) <= maxW) return str;
+    var chars = Array.from(str);
+    while (chars.length > 1 && textWidth(g, chars.join("").replace(/\s+$/, "") + "…", weight, size) > maxW) chars.pop();
+    return chars.join("").replace(/\s+$/, "") + "…";
+  }
+
   function wrap(g, str, weight, size, maxW, maxLines) {
     var words = String(str).split(/\s+/), lines = [], cur = "";
     for (var i = 0; i < words.length; i++) {
@@ -339,7 +348,7 @@
     text(g, (d.owner || "?").charAt(0), avC[0], avY, avD, { weight: 800, size: 24, fill: "#fff", align: "center", dir: "ltr" });
     var ox = rtl ? avX - 16 : avX + avD + 16;
     text(g, d.by, ox, y, box.small, { weight: 600, size: 17, fill: "#a3a3c4", align: align });
-    text(g, d.owner, ox, y + box.small + box.bOff, box.b, { weight: 800, size: 25, fill: "#f1f1fb", align: align });
+    text(g, fitText(g, d.owner, 800, 25, 340), ox, y + box.small + box.bOff, box.b, { weight: 800, size: 25, fill: "#f1f1fb", align: align });
     y += box.own + 24;
 
     // stat pills
@@ -442,7 +451,7 @@
     text(g, (d.owner || "?").charAt(0), c[0], avY, avD, { weight: 800, size: 36, fill: "#fff", align: "center", dir: "ltr" });
     var ox = rtl ? avX - 22 : avX + avD + 22;
     text(g, d.by, ox, y + box.smallTop, box.small, { weight: 600, size: 24, fill: "#a3a3c4", align: align });
-    text(g, d.owner, ox, y + box.bTop, box.b, { weight: 800, size: 36, fill: "#f1f1fb", align: align });
+    text(g, fitText(g, d.owner, 800, 36, 700), ox, y + box.bTop, box.b, { weight: 800, size: 36, fill: "#f1f1fb", align: align });
     y += box.own + gap;
 
     // stat pills, centred as a group
@@ -488,7 +497,8 @@
   }
 
   // name followed by the mark; startEdge = inline-start edge (physical x). returns total width
-  function nameRow(g, name, startEdge, top, h, size, gap, mk, rtl, dy) {
+  function nameRow(g, name, startEdge, top, h, size, gap, mk, rtl, dy, maxW) {
+    if (maxW) name = fitText(g, name, 800, size, maxW - gap - mk);
     var nw = textWidth(g, name, 800, size);
     var tx = startEdge;
     text(g, name, tx, top, h, { weight: 800, size: size, fill: "#f1f1fb", align: rtl ? "right" : "left", fixed: true, dy: dy || 0 });
@@ -595,7 +605,8 @@
     var textEdge = rtl ? avX - 30 : avX + avD + 30;
     var nmH = 50 * 1.15, unH = lineH(g, 600, 24, false), blockH = nmH + 6 + unH;
     var nTop = y + (avD - blockH) / 2;
-    var rowW = nameRow(g, d.name, textEdge, nTop, nmH, 50, 12, 40, rtl, -1);
+    var rowW = nameRow(g, d.name, textEdge, nTop, nmH, 50, 12, 40, rtl, -1, 440);
+    d = Object.assign({}, d, { un: fitText(g, d.un, 600, 24, 440) });
     var unW = textWidth(g, d.un, 600, 24), blockW = Math.max(rowW, unW);
     text(g, d.un, rtl ? textEdge - blockW : textEdge, nTop + nmH + 6, unH, { weight: 600, size: 24, fill: "#a3a3c4", align: "left", dir: "ltr" });
     y += avD + 26;
@@ -621,11 +632,11 @@
     var y = 370;
     avatarBig(g, cx, y + 120, 240, 8, d.ini, 104);
     y += 240 + 34;
-    var nmH = 80 * 1.15, nw = textWidth(g, d.name, 800, 80), rowW = nw + 18 + 62;
-    nameRow(g, d.name, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, 80, 18, 62, rtl, -1);
+    var nmH = 80 * 1.15, nm80 = fitText(g, d.name, 800, 80, 920 - 18 - 62), nw = textWidth(g, nm80, 800, 80), rowW = nw + 18 + 62;
+    nameRow(g, nm80, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, 80, 18, 62, rtl, -1);
     y += nmH + 12;
     var unH = lineH(g, 600, 34, false);
-    text(g, d.un, cx, y, unH, { weight: 600, size: 34, fill: "#a3a3c4", align: "center", dir: "ltr" });
+    text(g, fitText(g, d.un, 600, 34, 920), cx, y, unH, { weight: 600, size: 34, fill: "#a3a3c4", align: "center", dir: "ltr" });
     y += unH + 14;
     var bl = lines(g, d.bio, 500, 32, 820), tl = 32 * 1.55;
     bl.forEach(function (ln, k) {
@@ -655,9 +666,9 @@
     var y = (H - total) / 2;
     avatarBig(g, rtl ? edge - 75 : edge + 75, y + 75, 150, 6, d.ini, 64);
     y += 150 + 10 + 22;
-    nameRow(g, d.name, edge, y, nmH, 60, 14, 48, rtl);
+    nameRow(g, d.name, edge, y, nmH, 60, 14, 48, rtl, 0, 600);
     y += nmH + 22;
-    text(g, d.un, colL, y, unH, { weight: 600, size: 27, fill: "#a3a3c4", align: "left", dir: "ltr" });
+    text(g, fitText(g, d.un, 600, 27, 600), colL, y, unH, { weight: 600, size: 27, fill: "#a3a3c4", align: "left", dir: "ltr" });
     y += unH + 22;
     bl.forEach(function (ln, k) {
       text(g, ln, edge, y + k * tl, tl, { weight: 500, size: 27, fill: "#d6d6ee", align: rtl ? "right" : "left", fixed: true });
@@ -876,6 +887,8 @@
 
   // avatar + name (with mark) + @username. pos: {edge} or {cx}. returns row height
   function whoRow(g, d, y, c, pos, rtl) {
+    var maxBlock = (pos.cx !== undefined ? 920 : c.av === 80 ? 640 : 560) - c.av - c.gap;
+    d = Object.assign({}, d, { name: fitText(g, d.name, 800, c.nm, maxBlock - c.nmGap - c.mk), un: fitText(g, d.un, 600, c.un, maxBlock) });
     var nmH = c.nm * 1.15, unH = lineH(g, 600, c.un, false), blockH = nmH + c.unMt + unH;
     var nameW = textWidth(g, d.name, 800, c.nm) + c.nmGap + c.mk, unW = textWidth(g, d.un, 600, c.un);
     var blockW = Math.max(nameW, unW), rowW = c.av + c.gap + blockW, rowH = Math.max(c.av, blockH);
@@ -948,7 +961,7 @@
     // poster
     var pw = 230, ph = 345, left = rtl ? 96 : W - 96 - pw;
     drawPoster(g, (d.posters || [])[0] || { h: 265 }, left + pw / 2, 132 + ph / 2, pw, ph, (5 * Math.PI) / 180, 1, rtl, 20, { letter: 92, tkH: 28, tkInset: 10 });
-    text(g, d.cap, rtl ? 78 + 133 : W - 78 - 133, 500, lineH(g, 700, 19, fa), { weight: 700, size: 19, fill: "#cfcfe8", align: "center" });
+    text(g, fitText(g, d.cap, 700, 19, 266), rtl ? 78 + 133 : W - 78 - 133, 500, lineH(g, 700, 19, fa), { weight: 700, size: 19, fill: "#cfcfe8", align: "center" });
     // text column
     var rowH = whoRow(g, d, y, { av: 80, r: 4, avFs: 34, nm: 36, nmGap: 10, mk: 30, un: 20, unMt: 4, gap: 20, dy: 0 }, { edge: edge }, rtl);
     y += rowH + 30;
@@ -979,7 +992,7 @@
     y += lh + 30;
     y += tilesRow(g, d.tiles.slice(0, 3), 80, y, 920, 18, rtl, 22, 30, 62, 24, 8, fa) + 30;
     var ch = lineH(g, 700, 28, fa);
-    text(g, d.capStory, cx, y, ch, { weight: 700, size: 28, fill: "#cfcfe8", align: "center" });
+    text(g, fitText(g, d.capStory, 700, 28, 920), cx, y, ch, { weight: 700, size: 28, fill: "#cfcfe8", align: "center" });
     y += ch + 14;
     var ps = d.posters || [], order = [1, 0, 2];
     [0, 1, 2].forEach(function (i) {
