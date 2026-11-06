@@ -687,6 +687,8 @@
       FX.toast(lt("share_private", { vis: lt("vis_unlisted") }), true);
       return;
     }
+    // pictures + share sheet (sharesheet.js); the older flow below is the backup
+    if (FX.share && FX.cards && l.items && l.items.length) { FX.share.list(l, lt("share_text", { name: l.title })); return; }
     var tg = window.Telegram && Telegram.WebApp;
     var canCard = false;
     try { canCard = !!(tg && tg.shareMessage && tg.isVersionAtLeast && tg.isVersionAtLeast("8.0")); } catch (e) {}
