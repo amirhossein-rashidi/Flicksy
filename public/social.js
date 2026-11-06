@@ -1228,7 +1228,7 @@
     }
     item(SHARE, I18N.t("pf_share"), function () { shareProfile(me); });
     item(PEN, lt("sx_header_change"), function () { openHeaderPicker(me); });
-    item(SPARK, I18N.t("pf_yir"), function () { FX.toast(I18N.t("pf_soon")); });
+    item(SPARK, I18N.t("pf_yir"), function () { if (FX.share && FX.share.recap && FX.cards) FX.share.recap(me); else FX.toast(I18N.t("pf_soon")); });
     item(["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"], I18N.t("settings"), function () { if (FX.openSettings) FX.openSettings(); });
     ov.addEventListener("click", close);
     head.appendChild(ov);
