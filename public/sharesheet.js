@@ -4,6 +4,7 @@
 //
 //   FX.share.profile(me)   - share my profile
 //   FX.share.list(list, text) - share a public / unlisted list
+//   FX.share.recap(me)     - share my month / year recap
 //   FX.share.title(ctx)    - share a movie or series: { item, data, name }
 //   FX.share.open(opts)    - generic: { make(fmt) -> Promise<canvas>, link, text, name, param, formats }   fmt = "chat" | "story" | "tw"
 (function () {
@@ -13,14 +14,14 @@
   if (!FX) return;
 
   var TXT = {
-    fa: { lkind: "لیست", lby: "ساخته‌شده توسط", ltitles: "{n} عنوان", lfollowers: "{n} دنبال‌کننده", rated: "{n} داد", outof: "از ۱۰", fchat: "چت", fstory: "استوری", ftw: "توییتر و پست", open: "باز کردن در Flicksy", preparing: "در حال آماده‌سازی تصویر...", title: "اشتراک‌گذاری", chat: "ارسال در چت تلگرام", story: "استوری تلگرام", x: "توییتر (X)", save: "ذخیره تصویر", copy: "کپی لینک", copied: "لینک کپی شد", fail: "ارسال نشد، دوباره امتحان کن", bio: "فیلم‌ها و سریال‌هام توی Flicksy", tag: "فیلم و سریال‌هات رو با دوستات دنبال کن", movies: "فیلم", episodes: "قسمت", lists: "لیست", followers: "دنبال‌کننده", thousand: "هزار" },
-    en: { lkind: "LIST", lby: "by", ltitles: "{n} titles", lfollowers: "{n} followers", rated: "rated it {n}", outof: "/ 10", fchat: "Chat", fstory: "Story", ftw: "Twitter & posts", open: "Open in Flicksy", preparing: "Preparing the picture...", title: "Share", chat: "Send in a Telegram chat", story: "Telegram story", x: "X (Twitter)", save: "Save picture", copy: "Copy link", copied: "Link copied", fail: "Could not share, try again", bio: "My movies & series on Flicksy", tag: "Track movies & series with friends in Telegram", movies: "Movies", episodes: "Episodes", lists: "Lists", followers: "Followers" },
-    ar: { lkind: "قائمة", lby: "بواسطة", ltitles: "{n} عنوان", lfollowers: "{n} متابع", rated: "قيّمه {n}", outof: "من 10", fchat: "محادثة", fstory: "قصة", ftw: "تويتر والمنشورات", open: "افتح في Flicksy", preparing: "جارٍ تجهيز الصورة...", title: "مشاركة", chat: "إرسال في محادثة تيليجرام", story: "قصة تيليجرام", x: "إكس (تويتر)", save: "حفظ الصورة", copy: "نسخ الرابط", copied: "تم نسخ الرابط", fail: "تعذّرت المشاركة، حاول مرة أخرى", bio: "أفلامي ومسلسلاتي على Flicksy", tag: "تابع الأفلام والمسلسلات مع أصدقائك على تيليجرام", movies: "أفلام", episodes: "حلقات", lists: "قوائم", followers: "متابعون", thousand: "ألف" },
-    tr: { lkind: "LİSTE", lby: "hazırlayan", ltitles: "{n} yapım", lfollowers: "{n} takipçi", rated: "{n} verdi", outof: "/ 10", fchat: "Sohbet", fstory: "Hikâye", ftw: "Twitter ve gönderi", open: "Flicksy’de aç", preparing: "Görsel hazırlanıyor...", title: "Paylaş", chat: "Telegram sohbetinde gönder", story: "Telegram hikâyesi", x: "X (Twitter)", save: "Görseli kaydet", copy: "Bağlantıyı kopyala", copied: "Bağlantı kopyalandı", fail: "Paylaşılamadı, tekrar dene", bio: "Flicksy'deki filmlerim ve dizilerim", tag: "Telegram'da arkadaşlarınla film ve dizi takip et", movies: "Film", episodes: "Bölüm", lists: "Liste", followers: "Takipçi" },
-    ru: { lkind: "СПИСОК", lby: "автор", ltitles: "{n} тайтлов", lfollowers: "{n} подписчиков", rated: "поставил(а) {n}", outof: "из 10", fchat: "Чат", fstory: "История", ftw: "Twitter и посты", open: "Открыть во Flicksy", preparing: "Готовим картинку...", title: "Поделиться", chat: "Отправить в чат Telegram", story: "История Telegram", x: "X (Twitter)", save: "Сохранить картинку", copy: "Копировать ссылку", copied: "Ссылка скопирована", fail: "Не удалось поделиться, попробуй ещё раз", bio: "Мои фильмы и сериалы на Flicksy", tag: "Следи за фильмами и сериалами вместе с друзьями в Telegram", movies: "Фильмы", episodes: "Серии", lists: "Списки", followers: "Подписчики" },
-    es: { lkind: "LISTA", lby: "por", ltitles: "{n} títulos", lfollowers: "{n} seguidores", rated: "le dio {n}", outof: "/ 10", fchat: "Chat", fstory: "Historia", ftw: "Twitter y publicaciones", open: "Abrir en Flicksy", preparing: "Preparando la imagen...", title: "Compartir", chat: "Enviar en un chat de Telegram", story: "Historia de Telegram", x: "X (Twitter)", save: "Guardar imagen", copy: "Copiar enlace", copied: "Enlace copiado", fail: "No se pudo compartir, inténtalo de nuevo", bio: "Mis películas y series en Flicksy", tag: "Sigue películas y series con tus amigos en Telegram", movies: "Películas", episodes: "Episodios", lists: "Listas", followers: "Seguidores" },
-    fr: { lkind: "LISTE", lby: "par", ltitles: "{n} titres", lfollowers: "{n} abonnés", rated: "a mis {n}", outof: "/ 10", fchat: "Discussion", fstory: "Story", ftw: "Twitter et publications", open: "Ouvrir dans Flicksy", preparing: "Préparation de l'image...", title: "Partager", chat: "Envoyer dans une discussion Telegram", story: "Story Telegram", x: "X (Twitter)", save: "Enregistrer l'image", copy: "Copier le lien", copied: "Lien copié", fail: "Partage impossible, réessaie", bio: "Mes films et séries sur Flicksy", tag: "Suis des films et séries avec tes amis sur Telegram", movies: "Films", episodes: "Épisodes", lists: "Listes", followers: "Abonnés" },
-    de: { lkind: "LISTE", lby: "von", ltitles: "{n} Titel", lfollowers: "{n} Follower", rated: "gab {n}", outof: "/ 10", fchat: "Chat", fstory: "Story", ftw: "Twitter & Beiträge", open: "In Flicksy öffnen", preparing: "Bild wird vorbereitet...", title: "Teilen", chat: "In einem Telegram-Chat senden", story: "Telegram-Story", x: "X (Twitter)", save: "Bild speichern", copy: "Link kopieren", copied: "Link kopiert", fail: "Teilen nicht möglich, versuch es nochmal", bio: "Meine Filme und Serien auf Flicksy", tag: "Verfolge Filme und Serien mit Freunden in Telegram", movies: "Filme", episodes: "Folgen", lists: "Listen", followers: "Follower" }
+    fa: { rmonth: "این ماه", ryear: "امسال تا امروز", rempty: "در این بازه چیزی تماشا نکردی", runit: "ساعت", rlbl: "ساعت تماشا", rmov: "فیلم", repi: "قسمت", rstreak: "روز پیاپی", rgenre: "ژانر اول", rtop: "پربیننده‌ترین: {t}", rtops: "پربیننده‌ترین‌ها", lkind: "لیست", lby: "ساخته‌شده توسط", ltitles: "{n} عنوان", lfollowers: "{n} دنبال‌کننده", rated: "{n} داد", outof: "از ۱۰", fchat: "چت", fstory: "استوری", ftw: "توییتر و پست", open: "باز کردن در Flicksy", preparing: "در حال آماده‌سازی تصویر...", title: "اشتراک‌گذاری", chat: "ارسال در چت تلگرام", story: "استوری تلگرام", x: "توییتر (X)", save: "ذخیره تصویر", copy: "کپی لینک", copied: "لینک کپی شد", fail: "ارسال نشد، دوباره امتحان کن", bio: "فیلم‌ها و سریال‌هام توی Flicksy", tag: "فیلم و سریال‌هات رو با دوستات دنبال کن", movies: "فیلم", episodes: "قسمت", lists: "لیست", followers: "دنبال‌کننده", thousand: "هزار" },
+    en: { rmonth: "This month", ryear: "This year so far", rempty: "Nothing watched in this period", runit: "h", rlbl: "hours watched", rmov: "Movies", repi: "Episodes", rstreak: "Day streak", rgenre: "Top genre", rtop: "Most watched: {t}", rtops: "Most watched", lkind: "LIST", lby: "by", ltitles: "{n} titles", lfollowers: "{n} followers", rated: "rated it {n}", outof: "/ 10", fchat: "Chat", fstory: "Story", ftw: "Twitter & posts", open: "Open in Flicksy", preparing: "Preparing the picture...", title: "Share", chat: "Send in a Telegram chat", story: "Telegram story", x: "X (Twitter)", save: "Save picture", copy: "Copy link", copied: "Link copied", fail: "Could not share, try again", bio: "My movies & series on Flicksy", tag: "Track movies & series with friends in Telegram", movies: "Movies", episodes: "Episodes", lists: "Lists", followers: "Followers" },
+    ar: { rmonth: "هذا الشهر", ryear: "هذه السنة حتى اليوم", rempty: "لا شيء تمت مشاهدته في هذه الفترة", runit: "س", rlbl: "ساعة مشاهدة", rmov: "أفلام", repi: "حلقات", rstreak: "أيام متتالية", rgenre: "النوع الأول", rtop: "الأكثر مشاهدة: {t}", rtops: "الأكثر مشاهدة", lkind: "قائمة", lby: "بواسطة", ltitles: "{n} عنوان", lfollowers: "{n} متابع", rated: "قيّمه {n}", outof: "من 10", fchat: "محادثة", fstory: "قصة", ftw: "تويتر والمنشورات", open: "افتح في Flicksy", preparing: "جارٍ تجهيز الصورة...", title: "مشاركة", chat: "إرسال في محادثة تيليجرام", story: "قصة تيليجرام", x: "إكس (تويتر)", save: "حفظ الصورة", copy: "نسخ الرابط", copied: "تم نسخ الرابط", fail: "تعذّرت المشاركة، حاول مرة أخرى", bio: "أفلامي ومسلسلاتي على Flicksy", tag: "تابع الأفلام والمسلسلات مع أصدقائك على تيليجرام", movies: "أفلام", episodes: "حلقات", lists: "قوائم", followers: "متابعون", thousand: "ألف" },
+    tr: { rmonth: "Bu ay", ryear: "Bu yıl bugüne kadar", rempty: "Bu dönemde izlenen bir şey yok", runit: "sa", rlbl: "izlenen saat", rmov: "Film", repi: "Bölüm", rstreak: "Günlük seri", rgenre: "En çok tür", rtop: "En çok izlenen: {t}", rtops: "En çok izlenenler", lkind: "LİSTE", lby: "hazırlayan", ltitles: "{n} yapım", lfollowers: "{n} takipçi", rated: "{n} verdi", outof: "/ 10", fchat: "Sohbet", fstory: "Hikâye", ftw: "Twitter ve gönderi", open: "Flicksy’de aç", preparing: "Görsel hazırlanıyor...", title: "Paylaş", chat: "Telegram sohbetinde gönder", story: "Telegram hikâyesi", x: "X (Twitter)", save: "Görseli kaydet", copy: "Bağlantıyı kopyala", copied: "Bağlantı kopyalandı", fail: "Paylaşılamadı, tekrar dene", bio: "Flicksy'deki filmlerim ve dizilerim", tag: "Telegram'da arkadaşlarınla film ve dizi takip et", movies: "Film", episodes: "Bölüm", lists: "Liste", followers: "Takipçi" },
+    ru: { rmonth: "Этот месяц", ryear: "Этот год на сегодня", rempty: "За этот период ничего не просмотрено", runit: "ч", rlbl: "часов просмотра", rmov: "Фильмы", repi: "Серии", rstreak: "Дней подряд", rgenre: "Топ жанр", rtop: "Больше всего: {t}", rtops: "Больше всего смотрели", lkind: "СПИСОК", lby: "автор", ltitles: "{n} тайтлов", lfollowers: "{n} подписчиков", rated: "поставил(а) {n}", outof: "из 10", fchat: "Чат", fstory: "История", ftw: "Twitter и посты", open: "Открыть во Flicksy", preparing: "Готовим картинку...", title: "Поделиться", chat: "Отправить в чат Telegram", story: "История Telegram", x: "X (Twitter)", save: "Сохранить картинку", copy: "Копировать ссылку", copied: "Ссылка скопирована", fail: "Не удалось поделиться, попробуй ещё раз", bio: "Мои фильмы и сериалы на Flicksy", tag: "Следи за фильмами и сериалами вместе с друзьями в Telegram", movies: "Фильмы", episodes: "Серии", lists: "Списки", followers: "Подписчики" },
+    es: { rmonth: "Este mes", ryear: "Este año hasta hoy", rempty: "Nada visto en este período", runit: "h", rlbl: "horas vistas", rmov: "Películas", repi: "Episodios", rstreak: "Racha de días", rgenre: "Género favorito", rtop: "Más visto: {t}", rtops: "Lo más visto", lkind: "LISTA", lby: "por", ltitles: "{n} títulos", lfollowers: "{n} seguidores", rated: "le dio {n}", outof: "/ 10", fchat: "Chat", fstory: "Historia", ftw: "Twitter y publicaciones", open: "Abrir en Flicksy", preparing: "Preparando la imagen...", title: "Compartir", chat: "Enviar en un chat de Telegram", story: "Historia de Telegram", x: "X (Twitter)", save: "Guardar imagen", copy: "Copiar enlace", copied: "Enlace copiado", fail: "No se pudo compartir, inténtalo de nuevo", bio: "Mis películas y series en Flicksy", tag: "Sigue películas y series con tus amigos en Telegram", movies: "Películas", episodes: "Episodios", lists: "Listas", followers: "Seguidores" },
+    fr: { rmonth: "Ce mois-ci", ryear: "Cette année jusqu'à aujourd'hui", rempty: "Rien vu sur cette période", runit: "h", rlbl: "heures regardées", rmov: "Films", repi: "Épisodes", rstreak: "Jours d'affilée", rgenre: "Genre préféré", rtop: "Le plus regardé : {t}", rtops: "Les plus regardés", lkind: "LISTE", lby: "par", ltitles: "{n} titres", lfollowers: "{n} abonnés", rated: "a mis {n}", outof: "/ 10", fchat: "Discussion", fstory: "Story", ftw: "Twitter et publications", open: "Ouvrir dans Flicksy", preparing: "Préparation de l'image...", title: "Partager", chat: "Envoyer dans une discussion Telegram", story: "Story Telegram", x: "X (Twitter)", save: "Enregistrer l'image", copy: "Copier le lien", copied: "Lien copié", fail: "Partage impossible, réessaie", bio: "Mes films et séries sur Flicksy", tag: "Suis des films et séries avec tes amis sur Telegram", movies: "Films", episodes: "Épisodes", lists: "Listes", followers: "Abonnés" },
+    de: { rmonth: "Dieser Monat", ryear: "Dieses Jahr bis heute", rempty: "In diesem Zeitraum nichts gesehen", runit: "Std", rlbl: "Stunden geschaut", rmov: "Filme", repi: "Folgen", rstreak: "Tage in Folge", rgenre: "Top-Genre", rtop: "Meistgesehen: {t}", rtops: "Meistgesehen", lkind: "LISTE", lby: "von", ltitles: "{n} Titel", lfollowers: "{n} Follower", rated: "gab {n}", outof: "/ 10", fchat: "Chat", fstory: "Story", ftw: "Twitter & Beiträge", open: "In Flicksy öffnen", preparing: "Bild wird vorbereitet...", title: "Teilen", chat: "In einem Telegram-Chat senden", story: "Telegram-Story", x: "X (Twitter)", save: "Bild speichern", copy: "Link kopieren", copied: "Link kopiert", fail: "Teilen nicht möglich, versuch es nochmal", bio: "Meine Filme und Serien auf Flicksy", tag: "Verfolge Filme und Serien mit Freunden in Telegram", movies: "Filme", episodes: "Folgen", lists: "Listen", followers: "Follower" }
   };
 
   function lang() { return (window.I18N && I18N.lang) || "en"; }
@@ -460,5 +461,108 @@
     });
   }
 
-  FX.share = { open: open, profile: profile, title: titleShare, list: listShare };
+  // ---------- recap (this month / this year) ----------
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+
+  // Persian calendar for fa / ar, Gregorian for the others
+  function persianParts(d) {
+    var p = new Intl.DateTimeFormat("en-u-ca-persian-nu-latn", { year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d);
+    var o = {};
+    p.forEach(function (x) { if (x.type === "year" || x.type === "month" || x.type === "day") o[x.type] = parseInt(x.value, 10); });
+    return o;
+  }
+
+  function periodOf(kind) {
+    var l = lang(), jal = l === "fa" || l === "ar", now = new Date(), from;
+    var loc = l === "fa" ? "fa-IR-u-ca-persian" : l === "ar" ? "ar-u-ca-persian" : l + "-u-ca-gregory";
+    if (jal) {
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (kind === "month") {
+        from.setDate(from.getDate() - (persianParts(now).day - 1));
+      } else {
+        for (var i = 0; i < 372; i++) {
+          var p = persianParts(from);
+          if (p.month === 1 && p.day === 1) break;
+          from.setDate(from.getDate() - 1);
+        }
+      }
+    } else {
+      from = kind === "month" ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(now.getFullYear(), 0, 1);
+    }
+    var label;
+    try {
+      label = new Intl.DateTimeFormat(loc, kind === "month" ? { month: "long", year: "numeric" } : { year: "numeric" }).format(now);
+    } catch (e) { label = String(now.getFullYear()); }
+    return { from: ymd(from), to: ymd(now), label: label };
+  }
+
+  function recapShare(me) {
+    if (!me || !me.public_id) return;
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("div", "sheet-title", I18N.t("pf_yir")));
+      var list = el("div", "settings");
+      list.style.marginTop = "10px";
+      [["month", "rmonth"], ["year", "ryear"]].forEach(function (k) {
+        list.appendChild(row(IC.story, T(k[1]), function () { recapStart(me, k[0]); }));
+      });
+      sh.appendChild(list);
+    });
+  }
+
+  function recapStart(me, kind) {
+    var per = periodOf(kind), l = lang(), cl = cardLang();
+    var loc = l === "fa" ? "fa-IR" : l === "ar" ? "ar-EG" : "en-US";
+    FX.closeSheet();
+    FX.toast(T("preparing"));
+    FX.api("/api/recap?from=" + per.from + "&to=" + per.to + "&lang=" + cl).then(function (res) {
+      if (res.status !== 200 || !res.data) throw new Error("recap");
+      var r = res.data;
+      if (!r.movies && !r.episodes) { FX.toast(T("rempty")); return; }
+      function num(n, max) { return Number(n).toLocaleString(loc, { maximumFractionDigits: max || 0 }); }
+      var hrs = r.minutes / 60;
+      var name = me.display_name || "Flicksy";
+      var cache = null;
+
+      function load() {
+        if (cache) return cache;
+        var top = r.top || [];
+        cache = Promise.all([0, 1, 2].map(function (i) { return loadImage(top[i] && top[i].poster); })).then(function (imgs) {
+          var posters = [];
+          for (var k = 0; k < 3; k++) posters.push(imgs[k] || { h: HUES[k], letter: String((top[k] && top[k].title) || String.fromCharCode(65 + k)).charAt(0).toUpperCase() });
+          return {
+            lang: cl,
+            period: per.label,
+            name: name,
+            un: me.username ? "@" + me.username : String(me.public_id || ""),
+            ini: (Array.from(name)[0] || "F").toUpperCase(),
+            hours: num(hrs, hrs >= 10 ? 0 : 1),
+            unit: T("runit"),
+            lbl: T("rlbl"),
+            tiles: [
+              { v: num(r.movies), l: T("rmov") },
+              { v: num(r.episodes), l: T("repi") },
+              { v: num(r.streak), l: T("rstreak") }
+            ],
+            genre: { v: r.genre || "—", l: T("rgenre") },
+            cap: top[0] ? T("rtop").replace("{t}", top[0].title) : T("rtops"),
+            capStory: T("rtops"),
+            tagline: T("tag"),
+            posters: posters
+          };
+        });
+        return cache;
+      }
+
+      open({
+        param: "user-" + me.public_id,
+        link: "https://t.me/flicksyrobot?startapp=user-" + me.public_id,
+        text: I18N.t("pf_share_text", { name: name }),
+        name: name,
+        make: function (fmt) { return load().then(function (d) { return FX.cards.render("recap", d, fmt); }); }
+      });
+    }).catch(function () { FX.toast(T("fail"), true); });
+  }
+
+  FX.share = { open: open, profile: profile, title: titleShare, list: listShare, recap: recapShare };
 })();
