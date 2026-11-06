@@ -1204,6 +1204,8 @@
   var SPARK = ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"];
 
   function shareProfile(me) {
+    // pictures + the phone's own share menu (sharesheet.js); the old Telegram-only share is the backup
+    if (FX.share && FX.cards && me && me.public_id) { FX.share.profile(me); return; }
     var link = "https://t.me/flicksyrobot?startapp=user-" + me.public_id;
     var text = I18N.t("pf_share_text", { name: me.display_name || "Flicksy" });
     var url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text);
