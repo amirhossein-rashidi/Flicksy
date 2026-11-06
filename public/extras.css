@@ -30,7 +30,7 @@
 .sheet.tall { min-height: 72vh; }
 .pick-search { margin-top: 12px; }
 .pick-hint { font-size: 12px; color: var(--dim); margin: 10px 2px 0; }
-.pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 12px; margin-top: 14px; }
+.pick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px; margin-top: 14px; }
 .pick-grid .pcard { width: auto; }
 .lchk { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(99, 60, 220, .55); color: #fff; }
 .pcard.inlist .lchk { display: flex; }
