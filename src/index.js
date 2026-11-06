@@ -42,7 +42,7 @@ import { handleFeed, handleLeaderboard } from "./activity.js";
 import { handlePerson } from "./person.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
-import { handleCardUpload, handleCardGet } from "./cardimg.js";
+import { handleCardUpload, handleCardGet, handleCardShare, handleCardPage } from "./cardimg.js";
 import { handleImportBatch, handleImportListItems, handleImportSync, handleBackupExport, handleBackupSend } from "./backup.js";
 import {
   handlePeopleSearch,
@@ -92,6 +92,9 @@ export default {
 
       if (path.startsWith("/card/") && method === "GET") {
         return await handleCardGet(url, env);
+      }
+      if (path.startsWith("/s/") && method === "GET") {
+        return await handleCardPage(url, env);
       }
 
       if (path.startsWith("/api/")) {
@@ -179,6 +182,9 @@ export default {
         }
         if (path === "/api/card-upload" && method === "POST") {
           return await handleCardUpload(request, env, user);
+        }
+        if (path === "/api/card-share" && method === "POST") {
+          return await handleCardShare(request, env, user);
         }
         if (path === "/api/list-share-image" && method === "POST") {
           return await handleShareImageSet(request, env, user);
