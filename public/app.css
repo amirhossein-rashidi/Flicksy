@@ -105,7 +105,7 @@ html[dir="rtl"] .greet { direction: rtl; }
 /* rows and posters */
 .hscroll { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: none; scroll-snap-type: x proximity; }
 .hscroll::-webkit-scrollbar { display: none; }
-.pcard { flex: none; width: 118px; display: block; text-align: start; scroll-snap-align: start; transition: transform .15s; }
+.pcard { flex: none; width: 118px; display: block; align-self: flex-start; text-align: start; scroll-snap-align: start; transition: transform .15s; }
 .pcard:active { transform: scale(.97); }
 .pimg { position: relative; width: 100%; aspect-ratio: 2 / 3; border-radius: 14px; overflow: hidden; background: #15152f; border: 1px solid var(--line); box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .8); }
 .pimg.skel { background: linear-gradient(110deg, #14142b 30%, #1d1d3d 50%, #14142b 70%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
@@ -119,7 +119,7 @@ html[dir="rtl"] .greet { direction: rtl; }
 .badge-status.s-want { background: rgba(139, 92, 246, .92); }
 .badge-status.s-dropped { background: rgba(120, 120, 150, .9); }
 .mine-line .badge-status { position: static; }
-.ptitle { margin-top: 8px; font-size: 13px; font-weight: 700; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ptitle { margin-top: 8px; font-size: 13px; font-weight: 700; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .psub { margin-top: 2px; font-size: 11px; color: var(--muted); }
 .skel-line { height: 12px; border-radius: 6px; background: #1a1a38; margin-top: 10px; width: 80%; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 12px; margin-top: 6px; }
@@ -225,4 +225,3 @@ html[dir="rtl"] .greet { direction: rtl; }
 .drow { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 18px 2px; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 700; }
 .rowc { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .yti { width: 38px; height: 27px; border-radius: 9px; display: grid; place-items: center; background: rgba(255, 255, 255, .22); color: #0b0b1f; }
-
