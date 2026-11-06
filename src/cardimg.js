@@ -1,7 +1,11 @@
-// Share-card pictures for stories and Twitter.
+// Share-card pictures for stories, chats and Twitter.
 // The Mini App draws the card (profile, movie, recap, list) and uploads it here.
-// Telegram's story sharing needs a public address for the picture, so each upload gets a
-// random, unguessable address: /card/<id>.jpg. Old pictures are cleaned up automatically.
+// Each upload gets a random, unguessable address: /card/<id>.jpg (Telegram stories need a public address).
+// Old pictures are cleaned up automatically.
+//   POST /api/card-upload   upload a picture
+//   GET  /card/<id>.jpg     the picture (public)
+//   POST /api/card-share    a ready-made chat message: the picture + text + an "Open" button
+//   GET  /s/<id>?u=..&t=..  small page whose preview shows the picture (for X / Twitter and other apps), then opens the bot
 
 import { json } from "./util.js";
 
@@ -88,6 +92,126 @@ export async function handleCardGet(url, env) {
     headers: {
       "content-type": "image/jpeg",
       "cache-control": "public, max-age=3600",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
+const BOT_USERNAME = "flicksyrobot";
+
+function esc(text) {
+  return String(text === undefined || text === null ? "" : text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function cut(text, max) {
+  const s = String(text || "");
+  return s.length > max ? s.slice(0, max - 1) + "…" : s;
+}
+
+// the part after ?startapp= : like user-12345678 or list-abcd2345
+function validParam(p) {
+  return typeof p === "string" && /^[a-z]{1,12}-[A-Za-z0-9_-]{1,80}$/.test(p);
+}
+
+// POST /api/card-share  { card_id, param, caption, button }  -> { ok, id }  (id goes to Telegram.WebApp.shareMessage)
+export async function handleCardShare(request, env, user) {
+  const body = await readBody(request);
+  if (!body) return json({ error: "bad_request" }, 400);
+  if (typeof body.card_id !== "string" || !/^[a-f0-9]{16}$/.test(body.card_id)) return json({ error: "bad_request" }, 400);
+  if (!validParam(body.param)) return json({ error: "bad_request" }, 400);
+
+  // only a picture this person uploaded
+  const row = await env.DB.prepare("SELECT id FROM card_images WHERE id = ?1 AND user_id = ?2").bind(body.card_id, user.id).first();
+  if (!row) return json({ error: "not_found" }, 404);
+
+  if (!env.BOT_TOKEN || !user.telegram_id) return json({ error: "share_failed" }, 502);
+
+  const origin = new URL(request.url).origin;
+  const photo = origin + "/card/" + body.card_id + ".jpg";
+  const link = "https://t.me/" + BOT_USERNAME + "?startapp=" + body.param;
+  const caption = cut(typeof body.caption === "string" ? body.caption : "", 900);
+  const button = cut(typeof body.button === "string" && body.button ? body.button : "Open in Flicksy", 60);
+
+  const result = {
+    type: "photo",
+    id: "c" + body.card_id,
+    photo_url: photo,
+    thumbnail_url: photo,
+    caption: caption,
+    reply_markup: { inline_keyboard: [[{ text: button, url: link }]] },
+  };
+
+  let reply;
+  try {
+    const res = await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/savePreparedInlineMessage", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.telegram_id,
+        result: result,
+        allow_user_chats: true,
+        allow_bot_chats: false,
+        allow_group_chats: true,
+        allow_channel_chats: true,
+      }),
+    });
+    reply = await res.json();
+  } catch (e) {
+    return json({ error: "share_failed" }, 502);
+  }
+  if (!reply || !reply.ok || !reply.result || !reply.result.id) return json({ error: "share_failed" }, 502);
+  return json({ ok: true, id: reply.result.id });
+}
+
+// GET /s/<id>?u=<startapp param>&t=<text>  (public)
+// X (Twitter), WhatsApp and similar apps read this page to build the link preview (big picture),
+// and a person who opens it is sent straight on to the bot.
+export async function handleCardPage(url, env) {
+  const m = /^\/s\/([a-f0-9]{16})$/.exec(url.pathname);
+  const param = url.searchParams.get("u");
+  if (!m || !validParam(param)) return json({ error: "not_found" }, 404);
+
+  const row = await env.DB.prepare("SELECT id FROM card_images WHERE id = ?1").bind(m[1]).first();
+  const target = "https://t.me/" + BOT_USERNAME + "?startapp=" + param;
+  const text = cut(url.searchParams.get("t") || "Flicksy", 100);
+  const image = row ? url.origin + "/card/" + m[1] + ".jpg" : "";
+
+  const tags = [
+    '<meta property="og:site_name" content="Flicksy">',
+    '<meta property="og:type" content="website">',
+    '<meta property="og:title" content="' + esc(text) + '">',
+    '<meta property="og:description" content="Flicksy · t.me/' + BOT_USERNAME + '">',
+    '<meta property="og:url" content="' + esc(target) + '">',
+    '<meta name="twitter:title" content="' + esc(text) + '">',
+    '<meta name="twitter:description" content="Flicksy · t.me/' + BOT_USERNAME + '">',
+  ];
+  if (image) {
+    tags.push('<meta property="og:image" content="' + esc(image) + '">');
+    tags.push('<meta property="og:image:type" content="image/jpeg">');
+    tags.push('<meta name="twitter:card" content="summary_large_image">');
+    tags.push('<meta name="twitter:image" content="' + esc(image) + '">');
+  } else {
+    tags.push('<meta name="twitter:card" content="summary">');
+  }
+
+  const html =
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    "<title>" + esc(text) + "</title>" +
+    tags.join("") +
+    '<meta http-equiv="refresh" content="0;url=' + esc(target) + '">' +
+    '<style>body{margin:0;background:#07071a;color:#f1f1fb;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}a{color:#b794ff}</style>' +
+    '</head><body><p><a href="' + esc(target) + '">Flicksy</a></p>' +
+    "<script>location.replace(" + JSON.stringify(target) + ");</script></body></html>";
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=300",
       "x-content-type-options": "nosniff",
     },
   });
