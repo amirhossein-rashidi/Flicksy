@@ -30,6 +30,7 @@ import {
 import { handleNotifPrefsGet, handleNotifPrefsSet } from "./notify.js";
 import { handleFollowList } from "./followlist.js";
 import { handleBadgePin } from "./badges.js";
+import { handleRecap } from "./recap.js";
 import {
   handleListFollow,
   handleListFollowers,
@@ -216,6 +217,9 @@ export default {
         }
         if (path === "/api/lists-followed" && method === "GET") {
           return await handleListsFollowed(url, env, user);
+        }
+        if (path === "/api/recap" && method === "GET") {
+          return await handleRecap(url, env, user);
         }
         if (path === "/api/profile" && method === "GET") {
           return await handleProfile(url, env, user);
