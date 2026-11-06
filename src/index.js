@@ -42,7 +42,7 @@ import { handleFeed, handleLeaderboard } from "./activity.js";
 import { handlePerson } from "./person.js";
 import { handleBotSetup, handleBotWebhook, handleInlineSettings } from "./bot.js";
 import { handleShareImageSet, handleShareImageGet, handleImageProxy } from "./shareimg.js";
-import { handleCardUpload, handleCardGet, handleCardShare, handleCardPage } from "./cardimg.js";
+import { handleCardUpload, handleCardGet, handleCardShare } from "./cardimg.js";
 import { handleImportBatch, handleImportListItems, handleImportSync, handleBackupExport, handleBackupSend } from "./backup.js";
 import {
   handlePeopleSearch,
@@ -92,9 +92,6 @@ export default {
 
       if (path.startsWith("/card/") && method === "GET") {
         return await handleCardGet(url, env);
-      }
-      if (path.startsWith("/s/") && method === "GET") {
-        return await handleCardPage(url, env);
       }
 
       if (path.startsWith("/api/")) {
