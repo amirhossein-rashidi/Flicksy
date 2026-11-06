@@ -1,10 +1,9 @@
 // Flicksy share: one "Share" action for profile, title, recap and lists.
-// It draws the share pictures (see cards.js) and first tries the phone's own share menu
-// (Android / iOS: WhatsApp, X, Instagram, ...). If that is not available inside Telegram,
-// it opens a small sheet: Telegram chat, Telegram story, X (Twitter), save picture, copy link.
+// It opens a small sheet: Telegram chat (message with the picture), Telegram story,
+// save picture (pick a size and download it), copy link. Pictures are drawn on demand (see cards.js).
 //
 //   FX.share.profile(me)   - share my profile
-//   FX.share.open(opts)    - generic: { make(fmt) -> Promise<canvas>, link, text, name }   fmt = "story" | "tw"
+//   FX.share.open(opts)    - generic: { make(fmt) -> Promise<canvas>, link, text, name, param, formats }   fmt = "chat" | "story" | "tw"
 (function () {
   "use strict";
 
@@ -12,14 +11,14 @@
   if (!FX) return;
 
   var TXT = {
-    fa: { open: "باز کردن در Flicksy", preparing: "در حال آماده‌سازی تصویر...", title: "اشتراک‌گذاری", chat: "ارسال در چت تلگرام", story: "استوری تلگرام", x: "توییتر (X)", save: "ذخیره تصویر", copy: "کپی لینک", copied: "لینک کپی شد", fail: "ارسال نشد، دوباره امتحان کن", bio: "فیلم‌ها و سریال‌هام توی Flicksy", tag: "فیلم و سریال‌هات رو با دوستات دنبال کن", movies: "فیلم", episodes: "قسمت", lists: "لیست", followers: "دنبال‌کننده", thousand: "هزار" },
-    en: { open: "Open in Flicksy", preparing: "Preparing the picture...", title: "Share", chat: "Send in a Telegram chat", story: "Telegram story", x: "X (Twitter)", save: "Save picture", copy: "Copy link", copied: "Link copied", fail: "Could not share, try again", bio: "My movies & series on Flicksy", tag: "Track movies & series with friends in Telegram", movies: "Movies", episodes: "Episodes", lists: "Lists", followers: "Followers" },
-    ar: { open: "افتح في Flicksy", preparing: "جارٍ تجهيز الصورة...", title: "مشاركة", chat: "إرسال في محادثة تيليجرام", story: "قصة تيليجرام", x: "إكس (تويتر)", save: "حفظ الصورة", copy: "نسخ الرابط", copied: "تم نسخ الرابط", fail: "تعذّرت المشاركة، حاول مرة أخرى", bio: "أفلامي ومسلسلاتي على Flicksy", tag: "تابع الأفلام والمسلسلات مع أصدقائك على تيليجرام", movies: "أفلام", episodes: "حلقات", lists: "قوائم", followers: "متابعون", thousand: "ألف" },
-    tr: { open: "Flicksy’de aç", preparing: "Görsel hazırlanıyor...", title: "Paylaş", chat: "Telegram sohbetinde gönder", story: "Telegram hikâyesi", x: "X (Twitter)", save: "Görseli kaydet", copy: "Bağlantıyı kopyala", copied: "Bağlantı kopyalandı", fail: "Paylaşılamadı, tekrar dene", bio: "Flicksy'deki filmlerim ve dizilerim", tag: "Telegram'da arkadaşlarınla film ve dizi takip et", movies: "Film", episodes: "Bölüm", lists: "Liste", followers: "Takipçi" },
-    ru: { open: "Открыть во Flicksy", preparing: "Готовим картинку...", title: "Поделиться", chat: "Отправить в чат Telegram", story: "История Telegram", x: "X (Twitter)", save: "Сохранить картинку", copy: "Копировать ссылку", copied: "Ссылка скопирована", fail: "Не удалось поделиться, попробуй ещё раз", bio: "Мои фильмы и сериалы на Flicksy", tag: "Следи за фильмами и сериалами вместе с друзьями в Telegram", movies: "Фильмы", episodes: "Серии", lists: "Списки", followers: "Подписчики" },
-    es: { open: "Abrir en Flicksy", preparing: "Preparando la imagen...", title: "Compartir", chat: "Enviar en un chat de Telegram", story: "Historia de Telegram", x: "X (Twitter)", save: "Guardar imagen", copy: "Copiar enlace", copied: "Enlace copiado", fail: "No se pudo compartir, inténtalo de nuevo", bio: "Mis películas y series en Flicksy", tag: "Sigue películas y series con tus amigos en Telegram", movies: "Películas", episodes: "Episodios", lists: "Listas", followers: "Seguidores" },
-    fr: { open: "Ouvrir dans Flicksy", preparing: "Préparation de l'image...", title: "Partager", chat: "Envoyer dans une discussion Telegram", story: "Story Telegram", x: "X (Twitter)", save: "Enregistrer l'image", copy: "Copier le lien", copied: "Lien copié", fail: "Partage impossible, réessaie", bio: "Mes films et séries sur Flicksy", tag: "Suis des films et séries avec tes amis sur Telegram", movies: "Films", episodes: "Épisodes", lists: "Listes", followers: "Abonnés" },
-    de: { open: "In Flicksy öffnen", preparing: "Bild wird vorbereitet...", title: "Teilen", chat: "In einem Telegram-Chat senden", story: "Telegram-Story", x: "X (Twitter)", save: "Bild speichern", copy: "Link kopieren", copied: "Link kopiert", fail: "Teilen nicht möglich, versuch es nochmal", bio: "Meine Filme und Serien auf Flicksy", tag: "Verfolge Filme und Serien mit Freunden in Telegram", movies: "Filme", episodes: "Folgen", lists: "Listen", followers: "Follower" }
+    fa: { fchat: "چت", fstory: "استوری", ftw: "توییتر و پست", open: "باز کردن در Flicksy", preparing: "در حال آماده‌سازی تصویر...", title: "اشتراک‌گذاری", chat: "ارسال در چت تلگرام", story: "استوری تلگرام", x: "توییتر (X)", save: "ذخیره تصویر", copy: "کپی لینک", copied: "لینک کپی شد", fail: "ارسال نشد، دوباره امتحان کن", bio: "فیلم‌ها و سریال‌هام توی Flicksy", tag: "فیلم و سریال‌هات رو با دوستات دنبال کن", movies: "فیلم", episodes: "قسمت", lists: "لیست", followers: "دنبال‌کننده", thousand: "هزار" },
+    en: { fchat: "Chat", fstory: "Story", ftw: "Twitter & posts", open: "Open in Flicksy", preparing: "Preparing the picture...", title: "Share", chat: "Send in a Telegram chat", story: "Telegram story", x: "X (Twitter)", save: "Save picture", copy: "Copy link", copied: "Link copied", fail: "Could not share, try again", bio: "My movies & series on Flicksy", tag: "Track movies & series with friends in Telegram", movies: "Movies", episodes: "Episodes", lists: "Lists", followers: "Followers" },
+    ar: { fchat: "محادثة", fstory: "قصة", ftw: "تويتر والمنشورات", open: "افتح في Flicksy", preparing: "جارٍ تجهيز الصورة...", title: "مشاركة", chat: "إرسال في محادثة تيليجرام", story: "قصة تيليجرام", x: "إكس (تويتر)", save: "حفظ الصورة", copy: "نسخ الرابط", copied: "تم نسخ الرابط", fail: "تعذّرت المشاركة، حاول مرة أخرى", bio: "أفلامي ومسلسلاتي على Flicksy", tag: "تابع الأفلام والمسلسلات مع أصدقائك على تيليجرام", movies: "أفلام", episodes: "حلقات", lists: "قوائم", followers: "متابعون", thousand: "ألف" },
+    tr: { fchat: "Sohbet", fstory: "Hikâye", ftw: "Twitter ve gönderi", open: "Flicksy’de aç", preparing: "Görsel hazırlanıyor...", title: "Paylaş", chat: "Telegram sohbetinde gönder", story: "Telegram hikâyesi", x: "X (Twitter)", save: "Görseli kaydet", copy: "Bağlantıyı kopyala", copied: "Bağlantı kopyalandı", fail: "Paylaşılamadı, tekrar dene", bio: "Flicksy'deki filmlerim ve dizilerim", tag: "Telegram'da arkadaşlarınla film ve dizi takip et", movies: "Film", episodes: "Bölüm", lists: "Liste", followers: "Takipçi" },
+    ru: { fchat: "Чат", fstory: "История", ftw: "Twitter и посты", open: "Открыть во Flicksy", preparing: "Готовим картинку...", title: "Поделиться", chat: "Отправить в чат Telegram", story: "История Telegram", x: "X (Twitter)", save: "Сохранить картинку", copy: "Копировать ссылку", copied: "Ссылка скопирована", fail: "Не удалось поделиться, попробуй ещё раз", bio: "Мои фильмы и сериалы на Flicksy", tag: "Следи за фильмами и сериалами вместе с друзьями в Telegram", movies: "Фильмы", episodes: "Серии", lists: "Списки", followers: "Подписчики" },
+    es: { fchat: "Chat", fstory: "Historia", ftw: "Twitter y publicaciones", open: "Abrir en Flicksy", preparing: "Preparando la imagen...", title: "Compartir", chat: "Enviar en un chat de Telegram", story: "Historia de Telegram", x: "X (Twitter)", save: "Guardar imagen", copy: "Copiar enlace", copied: "Enlace copiado", fail: "No se pudo compartir, inténtalo de nuevo", bio: "Mis películas y series en Flicksy", tag: "Sigue películas y series con tus amigos en Telegram", movies: "Películas", episodes: "Episodios", lists: "Listas", followers: "Seguidores" },
+    fr: { fchat: "Discussion", fstory: "Story", ftw: "Twitter et publications", open: "Ouvrir dans Flicksy", preparing: "Préparation de l'image...", title: "Partager", chat: "Envoyer dans une discussion Telegram", story: "Story Telegram", x: "X (Twitter)", save: "Enregistrer l'image", copy: "Copier le lien", copied: "Lien copié", fail: "Partage impossible, réessaie", bio: "Mes films et séries sur Flicksy", tag: "Suis des films et séries avec tes amis sur Telegram", movies: "Films", episodes: "Épisodes", lists: "Listes", followers: "Abonnés" },
+    de: { fchat: "Chat", fstory: "Story", ftw: "Twitter & Beiträge", open: "In Flicksy öffnen", preparing: "Bild wird vorbereitet...", title: "Teilen", chat: "In einem Telegram-Chat senden", story: "Telegram-Story", x: "X (Twitter)", save: "Bild speichern", copy: "Link kopieren", copied: "Link kopiert", fail: "Teilen nicht möglich, versuch es nochmal", bio: "Meine Filme und Serien auf Flicksy", tag: "Verfolge Filme und Serien mit Freunden in Telegram", movies: "Filme", episodes: "Folgen", lists: "Listen", followers: "Follower" }
   };
 
   function lang() { return (window.I18N && I18N.lang) || "en"; }
@@ -83,13 +82,6 @@
     });
   }
 
-  function toBlob(canvas) {
-    return new Promise(function (resolve) {
-      try { canvas.toBlob(function (b) { resolve(b); }, "image/jpeg", 0.9); } catch (e) { resolve(null); }
-    });
-  }
-
-  // JPEG as a data address for the upload; smaller quality if it is too big for the server
   function toDataUrl(canvas) {
     var q = [0.9, 0.8, 0.7];
     for (var i = 0; i < q.length; i++) {
@@ -136,12 +128,9 @@
     return canvas.__url;
   }
 
-  // an address whose preview shows the picture (X, WhatsApp, ...) and which opens the bot
-  function landing(o, id) {
-    return location.origin + "/s/" + id + "?u=" + encodeURIComponent(o.param) + "&t=" + encodeURIComponent(o.text);
-  }
+  // ---------- the share sheet ----------
+  var SIZES = { chat: "1200 × 630", story: "1080 × 1920", tw: "1200 × 675" };
 
-  // ---------- the fallback sheet ----------
   function row(path, label, fn) {
     var b = el("button", "setting");
     b.type = "button";
@@ -155,7 +144,80 @@
     return b;
   }
 
-  function sheet(o, cv) {
+  // draws each size once, only when a row needs it
+  function cardGetter(o) {
+    var cache = {};
+    return function (fmt) {
+      if (!cache[fmt]) {
+        cache[fmt] = o.make(fmt);
+        cache[fmt].catch(function () { cache[fmt] = null; });
+      }
+      return cache[fmt];
+    };
+  }
+
+  function thumb(canvas) {
+    var w = 96, h = Math.round((canvas.height * w) / canvas.width);
+    if (h > 96) { h = 96; w = Math.round((canvas.width * h) / canvas.height); }
+    var c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    c.getContext("2d").drawImage(canvas, 0, 0, w, h);
+    var img = el("img");
+    img.src = c.toDataURL("image/jpeg", 0.8);
+    img.width = w; img.height = h;
+    img.style.borderRadius = "8px";
+    img.style.flex = "none";
+    return img;
+  }
+
+  // second sheet: every picture size, tap one to download it
+  function savePicker(o, get) {
+    var formats = o.formats || ["chat", "story", "tw"];
+    FX.openSheet(function (sh) {
+      sh.appendChild(el("div", "sheet-title", T("save")));
+      var list = el("div", "settings");
+      list.style.marginTop = "10px";
+      var note = el("div", "muted", T("preparing"));
+      sh.appendChild(note);
+      sh.appendChild(list);
+      Promise.all(formats.map(get)).then(function (cvs) {
+        note.remove();
+        formats.forEach(function (fmt, i) {
+          var b = el("button", "setting");
+          b.type = "button";
+          var left = el("span", "setting-left");
+          left.style.gap = "12px";
+          left.appendChild(thumb(cvs[i]));
+          var col = el("span");
+          col.style.display = "grid";
+          col.style.gap = "2px";
+          col.style.textAlign = "start";
+          col.appendChild(el("span", "", T("f" + fmt)));
+          var dim = el("span", "", SIZES[fmt]);
+          dim.style.fontSize = "12px";
+          dim.style.opacity = ".6";
+          dim.style.direction = "ltr";
+          col.appendChild(dim);
+          left.appendChild(col);
+          b.appendChild(left);
+          var ic = icon(IC.save, 20);
+          ic.setAttribute("class", "ic");
+          b.appendChild(ic);
+          b.addEventListener("click", function () {
+            FX.toast(T("preparing"));
+            upload(cvs[i]).then(function (r) {
+              tg().downloadFile({ url: r.url, file_name: "flicksy-" + fmt + ".jpg" });
+            }).catch(function () { FX.toast(T("fail"), true); });
+          });
+          list.appendChild(b);
+        });
+      }).catch(function () { note.textContent = T("fail"); });
+    });
+  }
+
+  // ---------- generic share ----------
+  function open(o) {
+    var get = cardGetter(o);
     FX.openSheet(function (sh) {
       sh.appendChild(el("div", "sheet-title", T("title")));
       var list = el("div", "settings");
@@ -168,11 +230,12 @@
         try { if (w && w.openTelegramLink) { w.openTelegramLink(url); return; } } catch (e) {}
         window.open(url, "_blank");
       }
+
       list.appendChild(row(IC.chat, T("chat"), function () {
-        // a ready-made message with the picture and an Open button (needs Telegram 8.0+); otherwise just the link
-        if (!(cv && o.param && tg() && tg().shareMessage && tgAtLeast("8.0"))) { chatByLink(); return; }
+        // ready message with the picture and an Open button (Telegram 8.0+); otherwise just the link
+        if (!(o.param && tg() && tg().shareMessage && tgAtLeast("8.0"))) { chatByLink(); return; }
         FX.toast(T("preparing"));
-        o.make("chat").then(upload).then(function (r) {
+        get("chat").then(upload).then(function (r) {
           return FX.api("/api/card-share", { method: "POST", body: { card_id: r.id, param: o.param, caption: o.text, button: T("open") } });
         }).then(function (res) {
           if (res.status !== 200 || !res.data || !res.data.id) throw new Error("share");
@@ -181,90 +244,28 @@
         }).catch(function () { chatByLink(); });
       }));
 
-      if (cv && tg() && tg().shareToStory && tgAtLeast("7.8")) {
+      if (tg() && tg().shareToStory && tgAtLeast("7.8")) {
         list.appendChild(row(IC.story, T("story"), function () {
           FX.toast(T("preparing"));
-          upload(cv[0]).then(function (r) {
+          get("story").then(upload).then(function (r) {
             FX.closeSheet();
             tg().shareToStory(r.url, { text: o.text, widget_link: { url: o.link, name: String(o.name || "Flicksy").slice(0, 48) } });
           }).catch(function () { FX.toast(T("fail"), true); });
         }));
       }
 
-      list.appendChild(row(IC.x, T("x"), function () {
-        function go(shareUrl) {
-          var url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(o.text) + "&url=" + encodeURIComponent(shareUrl);
-          FX.closeSheet();
-          var w = tg();
-          try { if (w && w.openLink) { w.openLink(url); return; } } catch (e) {}
-          window.open(url, "_blank");
-        }
-        // the address of our preview page makes X show the big picture
-        if (!(cv && o.param)) { go(o.link); return; }
-        FX.toast(T("preparing"));
-        upload(cv[1]).then(function (r) { go(landing(o, r.id)); }).catch(function () { go(o.link); });
-      }));
-
-      if (cv && tg() && tg().downloadFile && tgAtLeast("8.0")) {
-        list.appendChild(row(IC.save, T("save"), function () {
-          FX.toast(T("preparing"));
-          upload(cv[1]).then(function (r) {
-            FX.closeSheet();
-            tg().downloadFile({ url: r.url, file_name: "flicksy.jpg" });
-          }).catch(function () { FX.toast(T("fail"), true); });
-        }));
+      if (tg() && tg().downloadFile && tgAtLeast("8.0")) {
+        list.appendChild(row(IC.save, T("save"), function () { savePicker(o, get); }));
       }
 
       list.appendChild(row(IC.copy, T("copy"), function () {
-        function done(text) {
-          copyText(text).then(function () {
-            FX.closeSheet();
-            if (FX.haptic) FX.haptic();
-            FX.toast(T("copied"));
-          }, function () { FX.toast(text); });
-        }
-        // this address shows the picture when it is pasted in a chat or a post
-        if (!(cv && o.param)) { done(o.link); return; }
-        FX.toast(T("preparing"));
-        upload(cv[1]).then(function (r) { done(landing(o, r.id)); }).catch(function () { done(o.link); });
+        copyText(o.link).then(function () {
+          FX.closeSheet();
+          FX.toast(T("copied"));
+        }, function () { FX.toast(o.link); });
       }));
 
       sh.appendChild(list);
-    });
-  }
-
-  // ---------- generic share ----------
-  var busy = false;
-
-  function open(o) {
-    if (busy) return;
-    busy = true;
-    FX.toast(T("preparing"));
-    Promise.all([o.make("story"), o.make("tw")]).then(function (cv) {
-      return Promise.all([toBlob(cv[0]), toBlob(cv[1])]).then(function (bl) {
-        busy = false;
-        if (!bl[0] || !bl[1]) { sheet(o, cv); return; }
-        var data = null, can = false;
-        try {
-          data = {
-            files: [
-              new File([bl[0]], "flicksy-story.jpg", { type: "image/jpeg" }),
-              new File([bl[1]], "flicksy.jpg", { type: "image/jpeg" })
-            ],
-            text: o.text + "\n" + o.link
-          };
-          can = !!(navigator.share && navigator.canShare && navigator.canShare(data));
-        } catch (e) { can = false; }
-        if (!can) { sheet(o, cv); return; }
-        // the phone's own share menu; closing it is not an error
-        navigator.share(data).catch(function (e) {
-          if (e && e.name === "AbortError") return;
-          sheet(o, cv);
-        });
-      });
-    }).catch(function () {
-      busy = false;
-      sheet(o, null);
     });
   }
 
