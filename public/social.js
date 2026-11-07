@@ -389,8 +389,8 @@
       ".sp-idline { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; color: #cfc2ff; background: rgba(139,92,246,.16); border: 1px solid rgba(168,85,247,.28); direction: ltr; }" +
       ".pf-head { position: relative; }" +
       "#view-profile { padding-top: 0; }" +
-      ".pf-cover { position: relative; margin: 0 -16px; height: 250px; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }" +
-      ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; filter: blur(1.5px) saturate(1.1) brightness(.78); transform: scale(1.04); }" +
+      ".pf-cover { position: relative; margin: 0 -16px; height: 250px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }" +
+      ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; filter: blur(1.5px) saturate(1.1) brightness(.78); transform: scale(1.06); }" +
       ".pf-cover .sp-banner::after, .spage .pf-cover .sp-banner::after { background: linear-gradient(180deg, rgba(7,7,26,.28), rgba(7,7,26,0) 40%); }" +
       ".pf-more { position: absolute; top: 16px; right: 0; z-index: 3; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(7,7,26,.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); color: #fff; }" +
       ".pf-more .ic { stroke-width: 3.4; }" +
