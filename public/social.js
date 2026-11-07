@@ -34,6 +34,7 @@
       sx_privacy: "Privacy",
       sx_priv_private: "Private profile",
       sx_priv_private_hint: "People must send a request to follow you. Your Public lists stay open through their links.",
+      sx_priv_adv: "Advanced", sx_priv_private_note: "Done. People now need to send a request to see your lists and activity.",
       sx_priv_activity: "Show my activity to followers",
       sx_priv_activity_hint: "What you watch, rate and add to lists can appear to people who follow you.",
       sx_priv_id: "Let people find my Public lists by ID",
@@ -75,6 +76,7 @@
       sx_privacy: "حریم خصوصی",
       sx_priv_private: "پروفایل خصوصی",
       sx_priv_private_hint: "دیگران باید درخواست بدهند تا تو را دنبال کنند. لیست‌های عمومی‌ات با لینکشان باز می‌مانند.",
+      sx_priv_adv: "پیشرفته", sx_priv_private_note: "انجام شد. حالا دیگران برای دیدن لیست‌ها و فعالیت‌هایت باید درخواست دنبال کردن بدهند.",
       sx_priv_activity: "نمایش فعالیت‌هایم به دنبال‌کننده‌ها",
       sx_priv_activity_hint: "آنچه می‌بینی، امتیاز می‌دهی و به لیست‌ها اضافه می‌کنی ممکن است به دنبال‌کننده‌هایت نشان داده شود.",
       sx_priv_id: "پیدا شدن لیست‌های عمومی من با آیدی",
@@ -112,6 +114,7 @@
       sx_privacy: "الخصوصية",
       sx_priv_private: "ملف خاص",
       sx_priv_private_hint: "على الآخرين إرسال طلب لمتابعتك. تبقى قوائمك العامة مفتوحة عبر روابطها.",
+      sx_priv_adv: "متقدم", sx_priv_private_note: "تم. على الآخرين الآن إرسال طلب متابعة لرؤية قوائمك ونشاطك.",
       sx_priv_activity: "عرض نشاطي للمتابعين",
       sx_priv_activity_hint: "قد يظهر لمتابعيك ما تشاهده وتقيّمه وتضيفه إلى القوائم.",
       sx_priv_id: "السماح بالعثور على قوائمي العامة عبر المعرّف",
@@ -149,6 +152,7 @@
       sx_privacy: "Gizlilik",
       sx_priv_private: "Gizli profil",
       sx_priv_private_hint: "Seni takip etmek için istek göndermeleri gerekir. Herkese açık listelerin bağlantılarıyla açık kalır.",
+      sx_priv_adv: "Gelişmiş", sx_priv_private_note: "Tamam. Listelerini ve etkinliğini görmek için artık takip isteği göndermeleri gerekiyor.",
       sx_priv_activity: "Etkinliklerimi takipçilere göster",
       sx_priv_activity_hint: "İzlediklerin, puanladıkların ve listelere eklediklerin takipçilerine görünebilir.",
       sx_priv_id: "Herkese açık listelerim kimlikle bulunabilsin",
@@ -186,6 +190,7 @@
       sx_privacy: "Приватность",
       sx_priv_private: "Закрытый профиль",
       sx_priv_private_hint: "Чтобы подписаться на тебя, нужно отправить запрос. Публичные списки остаются доступными по ссылкам.",
+      sx_priv_adv: "Дополнительно", sx_priv_private_note: "Готово. Чтобы увидеть твои списки и активность, нужно отправить запрос на подписку.",
       sx_priv_activity: "Показывать мою активность подписчикам",
       sx_priv_activity_hint: "То, что ты смотришь, оцениваешь и добавляешь в списки, может быть видно подписчикам.",
       sx_priv_id: "Находить мои публичные списки по ID",
@@ -223,6 +228,7 @@
       sx_privacy: "Privacidad",
       sx_priv_private: "Perfil privado",
       sx_priv_private_hint: "Hay que enviar una solicitud para seguirte. Tus listas públicas siguen abiertas con sus enlaces.",
+      sx_priv_adv: "Avanzado", sx_priv_private_note: "Listo. Ahora deben enviar una solicitud de seguimiento para ver tus listas y tu actividad.",
       sx_priv_activity: "Mostrar mi actividad a mis seguidores",
       sx_priv_activity_hint: "Lo que ves, puntúas y añades a listas puede mostrarse a quienes te siguen.",
       sx_priv_id: "Permitir encontrar mis listas públicas por ID",
@@ -260,6 +266,7 @@
       sx_privacy: "Confidentialité",
       sx_priv_private: "Profil privé",
       sx_priv_private_hint: "Il faut envoyer une demande pour te suivre. Tes listes publiques restent ouvertes via leurs liens.",
+      sx_priv_adv: "Avancé", sx_priv_private_note: "C'est fait. Il faut désormais envoyer une demande pour voir tes listes et ton activité.",
       sx_priv_activity: "Montrer mon activité à mes abonnés",
       sx_priv_activity_hint: "Ce que tu regardes, notes et ajoutes aux listes peut apparaître chez tes abonnés.",
       sx_priv_id: "Permettre de trouver mes listes publiques par ID",
@@ -297,6 +304,7 @@
       sx_privacy: "Datenschutz",
       sx_priv_private: "Privates Profil",
       sx_priv_private_hint: "Wer dir folgen will, muss eine Anfrage senden. Deine öffentlichen Listen bleiben über ihre Links offen.",
+      sx_priv_adv: "Erweitert", sx_priv_private_note: "Erledigt. Zum Ansehen deiner Listen und Aktivität ist jetzt eine Anfrage nötig.",
       sx_priv_activity: "Meine Aktivität für Follower zeigen",
       sx_priv_activity_hint: "Was du ansiehst, bewertest und zu Listen hinzufügst, kann deinen Followern angezeigt werden.",
       sx_priv_id: "Meine öffentlichen Listen per ID auffindbar machen",
@@ -1159,13 +1167,10 @@
           { label: "sx_priv_activity", hint: "sx_priv_activity_hint",
             get: function () { return !!state.activity_visible; },
             body: function (next) { return { activity_visible: next }; } },
-          { label: "sx_priv_id", hint: "sx_priv_id_hint",
-            get: function () { return !state.inline_hidden; },
-            body: function (next) { return { inline_hidden: !next }; } },
           { label: "sx_priv_user", hint: "sx_priv_user_hint",
             get: function () { return !!state.username_visible; },
             body: function (next) { return { username_visible: next }; } },
-          { label: "sx_priv_follows", hint: "sx_priv_follows_hint",
+          { label: "sx_priv_follows", hint: "sx_priv_follows_hint", adv: true,
             get: function () { return state.follows_visible !== false; },
             body: function (next) { return { follows_visible: next }; } }
         ];
@@ -1174,6 +1179,11 @@
           clear(box);
           rows.forEach(function (r) {
             var on = r.get();
+            if (r.adv) {
+              var advT = el("div", "label", lt("sx_priv_adv"));
+              advT.style.marginTop = "26px";
+              box.appendChild(advT);
+            }
             var wrap = el("div", "sp-prow");
             var row = button("setting", null, function () {
               if (saving) return;
@@ -1188,6 +1198,7 @@
                 me.username_visible = state.username_visible ? 1 : 0;
                 me.follows_visible = state.follows_visible === false ? 0 : 1;
                 FX.haptic();
+                if (r.label === "sx_priv_private" && state.is_private) FX.toast(lt("sx_priv_private_note"));
                 draw();
               }).catch(function () {
                 saving = false;
