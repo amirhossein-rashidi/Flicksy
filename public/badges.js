@@ -176,7 +176,12 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
       ".bpage .bs-grid { margin-top: 22px; }" +
       ".bs-lock { display: inline-block; filter: grayscale(1); opacity: .28; line-height: 0; }" +
       ".bs-top.lk svg { opacity: .55; filter: grayscale(.6); }" +
-      ".bs-sec-plain { margin-top: 18px; padding: 0; height: 0; }";
+      ".bs-sec-plain { margin-top: 18px; padding: 0; height: 0; }" +
+      ".bdg-mini { display: inline-flex; line-height: 0; margin-inline-start: 6px; vertical-align: middle; flex: none; pointer-events: none; }" +
+      ".bdg-mini svg { display: block; }" +
+      ".cm-nm .bdg-mini { align-self: center; margin-inline-start: 0; }" +
+      ".ac-nm b.has-bdg, .sp-name.has-bdg { display: flex; align-items: center; }" +
+      ".has-bdg > .nm-t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }";
     document.head.appendChild(st);
   }
 
@@ -193,6 +198,19 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     setLang();
     mountDefs();
     return holder(bd(it, size || 28));
+  };
+
+  // A small badge for list rows (leaderboard, comments, people search). It is only a picture:
+  // tapping the row does what it did before (opens the person's profile, where the full badge page lives).
+  FX.badgeMini = function (id, size) {
+    var it = ALL[id];
+    if (!it) return null;
+    setLang();
+    mountDefs();
+    css();
+    var s = el("span", "bdg-mini");
+    s.innerHTML = bd(it, size || 20);
+    return s;
   };
 
   // how to get each badge (shown when it is not earned yet)
