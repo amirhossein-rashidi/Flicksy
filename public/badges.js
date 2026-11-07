@@ -225,6 +225,15 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
     return s;
   };
 
+  // A picture address (SVG data URL) of one badge that carries its own colours, for drawing a badge on a share card.
+  FX.badgeImageUrl = function (id) {
+    var it = ALL[id];
+    if (!it) return null;
+    setLang();
+    var svg = bd(it, 256).replace(/^<svg[^>]*>/, function (m) { return m + defs(); });
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  };
+
   // how to get each badge (shown when it is not earned yet)
   var ACTIVE = /^(m|e|l|f|c|h|s)\d+$|^(cur100|cur1000|founder|early|team|verified|beta|supporter|rewatch|spoiler|finisher|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
   var HOW = {
