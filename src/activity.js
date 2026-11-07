@@ -27,7 +27,7 @@ export async function handleFeed(url, env, user) {
 
   const rows = await env.DB.prepare(
     "SELECT a.id, a.type, a.value, a.created_at, " +
-      "u.public_id, u.display_name, u.username, u.photo_url, " +
+      "u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
       "t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, " +
       "l.title AS list_title, l.share_code AS list_code " +
       "FROM activities a " +
@@ -93,7 +93,7 @@ export async function handleLeaderboard(url, env, user) {
         "WHERE ep.season_number >= 1 GROUP BY ep.user_id";
 
   const rows = await env.DB.prepare(
-    "SELECT u.id AS uid, u.public_id, u.display_name, u.username, u.photo_url, c.n AS n, " +
+    "SELECT u.id AS uid, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, c.n AS n, " +
       "f.status AS fstatus, " +
       "(SELECT COUNT(*) FROM follows x WHERE x.followed_id = u.id AND x.status = 'accepted') AS followers " +
       "FROM (" + source + ") c " +
