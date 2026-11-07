@@ -8,7 +8,9 @@
 //   a list with 100 / 1000 followers                               (cur100, cur1000)
 //   founder (first 100 users), early (first 1,000 users)           (by sign-up order)
 //   team, verified, beta, supporter                                (set by hand in the user_badges table)
-// Not yet: hours, streaks, genre masters, leaderboard, behavior, seasonal.
+//   hours (estimated), best streak, genre masters, rewatcher, spoiler-safe, series finisher
+//     -> earned and can be pinned, but never chosen automatically as the main badge
+// Not yet: leaderboard rank, marathon, night owl, seasonal.
 
 import { json } from "./util.js";
 
@@ -18,12 +20,32 @@ export const LADDERS = {
   l: [1, 5, 20],
   f: [10, 100, 1000, 10000],
   c: [10, 100, 1000],
+  h: [100, 500, 1000, 5000],
+  s: [7, 30, 100, 365],
 };
 
 // which count each ladder reads
-const COUNT_OF = { m: "movies", e: "episodes", l: "lists", f: "followers", c: "comments" };
-// the order used to break ties between ladders of the same tier
+const COUNT_OF = { m: "movies", e: "episodes", l: "lists", f: "followers", c: "comments", h: "hours", s: "streak" };
+// the order used to break ties between ladders of the same tier (only these can become the automatic main badge)
 const LADDER_ORDER = ["m", "e", "f", "l", "c"];
+// ladders that are earned and can be pinned, but never become the automatic main badge
+// (they cost more to work out, and the main badge of many people is needed at once in list rows)
+const EXTRA_LADDERS = ["h", "s"];
+// single badges with a goal
+const GENRE_GOAL = 20;
+const GENRES = {
+  horror: ["Horror"],
+  scifi: ["Science Fiction", "Sci-Fi & Fantasy"],
+  comedy: ["Comedy"],
+  drama: ["Drama"],
+  thriller: ["Thriller"],
+  anim: ["Animation"],
+  doc: ["Documentary"],
+  romance: ["Romance"],
+};
+const GOALS = { rewatch: ["rewatches", 5], spoiler: ["spoilers", 10], finisher: ["finished", 3] };
+// ids that need the extra counts: used to trust a pinned badge in the batch version
+const EXTRA_ID = /^(h\d+|s\d+|rewatch|spoiler|finisher|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
 // special badges that are shown first, best first
 const SPECIAL_ORDER = ["team", "verified", "founder", "early", "beta", "supporter"];
 const MANUAL = ["team", "verified", "beta", "supporter"];
@@ -39,7 +61,7 @@ function tierOf(index, n) {
 
 // earnedBase = founder / early / hand-given badges. Adds every ladder level reached and picks the primary badge.
 // pinnedRaw = the badge the person pinned next to their name (used only while it is still earned).
-function finish(counts, earnedBase, pinnedRaw) {
+function finish(counts, earnedBase, pinnedRaw, trustExtraPin) {
   const earned = earnedBase.slice();
 
   // ladders: every level reached is earned; remember the best colour level for the "primary" badge
@@ -56,6 +78,20 @@ function finish(counts, earnedBase, pinnedRaw) {
   if (counts.list_followers >= 100) { earned.push("cur100"); best.push({ id: "cur100", tier: 3 }); }
   if (counts.list_followers >= 1000) { earned.push("cur1000"); best.push({ id: "cur1000", tier: 4 }); }
 
+  // hours and streak ladders, goals, genre masters: earned (and pinnable) but not part of the automatic choice
+  EXTRA_LADDERS.forEach((k) => {
+    const have = counts[COUNT_OF[k]] || 0;
+    LADDERS[k].forEach((v) => {
+      if (have >= v) earned.push(k + v);
+    });
+  });
+  Object.keys(GOALS).forEach((id) => {
+    if ((counts[GOALS[id][0]] || 0) >= GOALS[id][1]) earned.push(id);
+  });
+  Object.keys(GENRES).forEach((id) => {
+    if (((counts.genres || {})[id] || 0) >= GENRE_GOAL) earned.push(id);
+  });
+
   // automatic primary badge: a special one first, otherwise the ladder badge with the highest colour level
   let auto = null;
   for (const id of SPECIAL_ORDER) {
@@ -67,8 +103,87 @@ function finish(counts, earnedBase, pinnedRaw) {
     auto = pick.id;
   }
 
-  const pinned = pinnedRaw && earned.indexOf(pinnedRaw) !== -1 ? pinnedRaw : null;
+  const pinned =
+    pinnedRaw && (earned.indexOf(pinnedRaw) !== -1 || (trustExtraPin && EXTRA_ID.test(pinnedRaw))) ? pinnedRaw : null;
   return { counts: counts, earned: earned, primary: pinned || auto, pinned: pinned, auto: auto };
+}
+
+// longest run of days in a row, from a list of "YYYY-MM-DD" days (days in the future are ignored)
+function bestStreak(days) {
+  const today = Date.now() + 86400000;
+  const nums = [];
+  days.forEach((d) => {
+    if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    const ms = Date.parse(d + "T12:00:00Z");
+    if (Number.isNaN(ms) || ms > today) return;
+    nums.push(Math.round(ms / 86400000));
+  });
+  nums.sort((a, b) => a - b);
+  let best = 0;
+  let run = 0;
+  let prev = null;
+  nums.forEach((n) => {
+    if (n === prev) return;
+    run = prev !== null && n === prev + 1 ? run + 1 : 1;
+    prev = n;
+    if (run > best) best = run;
+  });
+  return best;
+}
+
+// hours watched, best streak, rewatches, spoiler comments, finished series, titles per genre
+async function addExtraCounts(env, userId, counts) {
+  counts.hours = 0;
+  counts.streak = 0;
+  counts.rewatches = 0;
+  counts.spoilers = 0;
+  counts.finished = 0;
+  counts.genres = {};
+  try {
+    const rs = await env.DB.batch([
+      env.DB.prepare(
+        "SELECT COALESCE(SUM(COALESCE(t.runtime, 100)), 0) AS n FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+          "WHERE ut.user_id = ?1 AND t.media_type = 'movie' AND ut.status = 'watched'"
+      ).bind(userId),
+      env.DB.prepare(
+        "SELECT COALESCE(SUM(COALESCE(t.runtime, 40)), 0) AS n FROM episode_progress ep JOIN titles t ON t.id = ep.title_id " +
+          "WHERE ep.user_id = ?1 AND ep.season_number >= 1"
+      ).bind(userId),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM watch_log WHERE user_id = ?1 AND is_rewatch = 1").bind(userId),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE user_id = ?1 AND deleted = 0 AND spoiler = 1").bind(userId),
+      env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+          "WHERE ut.user_id = ?1 AND t.media_type = 'tv' AND ut.status = 'watched'"
+      ).bind(userId),
+      env.DB.prepare(
+        "SELECT t.genres AS g FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
+          "WHERE ut.user_id = ?1 AND ut.status = 'watched' AND t.genres IS NOT NULL"
+      ).bind(userId),
+      env.DB.prepare(
+        "SELECT substr(watched_at, 1, 10) AS d FROM episode_progress WHERE user_id = ?1 " +
+          "UNION SELECT watched_on AS d FROM watch_log WHERE user_id = ?1"
+      ).bind(userId),
+    ]);
+    counts.hours = Math.floor((((one(rs[0]).n || 0) + (one(rs[1]).n || 0)) / 60));
+    counts.rewatches = one(rs[2]).n || 0;
+    counts.spoilers = one(rs[3]).n || 0;
+    counts.finished = one(rs[4]).n || 0;
+    ((rs[5] && rs[5].results) || []).forEach((r) => {
+      let list = [];
+      try {
+        list = JSON.parse(r.g || "[]");
+      } catch (e) {
+        list = [];
+      }
+      if (!Array.isArray(list)) return;
+      Object.keys(GENRES).forEach((id) => {
+        if (GENRES[id].some((name) => list.indexOf(name) !== -1)) counts.genres[id] = (counts.genres[id] || 0) + 1;
+      });
+    });
+    counts.streak = bestStreak(((rs[6] && rs[6].results) || []).map((r) => r.d));
+  } catch (e) {
+    // watch_log is added by migration 8; without it these badges simply stay locked
+  }
 }
 
 export async function computeBadges(env, userId) {
@@ -121,6 +236,8 @@ export async function computeBadges(env, userId) {
   } catch (e) {
     // user_badges is added by migration 13
   }
+
+  await addExtraCounts(env, userId, counts);
 
   // the badge the person pinned next to their name
   let pinnedRaw = null;
@@ -221,7 +338,8 @@ export async function primaryBadgesFor(env, userIds) {
       (manual.get(id) || []).forEach((b) => {
         if (earnedBase.indexOf(b) === -1) earnedBase.push(b);
       });
-      const res = finish(counts, earnedBase, pins.get(id) || null);
+      // the extra counts are not worked out here, so a pinned extra badge is trusted (it was checked when it was pinned)
+      const res = finish(counts, earnedBase, pins.get(id) || null, true);
       if (res.primary) out.set(id, res.primary);
     });
   }
