@@ -508,14 +508,23 @@
     text(g, ch, cx, cy - d / 2, d, { weight: 800, size: fs, fill: "#fff", align: "center", dir: "ltr" });
   }
 
-  // name followed by the mark; startEdge = inline-start edge (physical x). returns total width
-  function nameRow(g, name, startEdge, top, h, size, gap, mk, rtl, dy, maxW) {
+  // a badge picture (from FX.badgeImageUrl) drawn in the same square and shadow as the Flicksy mark
+  function drawBadgeImg(g, img, x, y, size) {
+    g.save();
+    g.shadowColor = "rgba(139,92,246,.55)"; g.shadowBlur = 10; g.shadowOffsetY = 4;
+    g.drawImage(img, x, y, size, size);
+    g.restore();
+  }
+
+  // name followed by the mark (or the person's main badge when bimg is given); startEdge = inline-start edge (physical x). returns total width
+  function nameRow(g, name, startEdge, top, h, size, gap, mk, rtl, dy, maxW, bimg) {
     if (maxW) { var sh = shrink(g, name, 800, size, maxW - gap - mk); name = sh.t; size = sh.size; }
     var nw = textWidth(g, name, 800, size);
     var tx = startEdge;
     text(g, name, tx, top, h, { weight: 800, size: size, fill: "#f1f1fb", align: rtl ? "right" : "left", fixed: true, dy: dy || 0 });
     var mx = rtl ? startEdge - nw - gap - mk : startEdge + nw + gap;
-    drawMark(g, mx, top + (h - mk) / 2, mk, { blur: 10, dy: 4 });
+    if (bimg) drawBadgeImg(g, bimg, mx, top + (h - mk) / 2, mk);
+    else drawMark(g, mx, top + (h - mk) / 2, mk, { blur: 10, dy: 4 });
     return nw + gap + mk;
   }
 
@@ -617,7 +626,7 @@
     var textEdge = rtl ? avX - 30 : avX + avD + 30;
     var nmH = 50 * 1.15, unH = lineH(g, 600, 24, false), blockH = nmH + 6 + unH;
     var nTop = y + (avD - blockH) / 2;
-    var rowW = nameRow(g, d.name, textEdge, nTop, nmH, 50, 12, 40, rtl, -1, 440);
+    var rowW = nameRow(g, d.name, textEdge, nTop, nmH, 50, 12, 40, rtl, -1, 440, d.badgeImg);
     var us = shrink(g, d.un, 600, 24, 440);
     var unW = textWidth(g, us.t, 600, us.size), blockW = Math.max(rowW, unW);
     text(g, us.t, rtl ? textEdge - blockW : textEdge, nTop + nmH + 6, unH, { weight: 600, size: us.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
@@ -645,7 +654,7 @@
     avatarBig(g, cx, y + 120, 240, 8, d.ini, 104);
     y += 240 + 34;
     var nmH = 80 * 1.15, sh80 = shrink(g, d.name, 800, 80, 920 - 18 - 62), nw = textWidth(g, sh80.t, 800, sh80.size), rowW = nw + 18 + 62;
-    nameRow(g, sh80.t, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, sh80.size, 18, 62, rtl, -1);
+    nameRow(g, sh80.t, rtl ? cx + rowW / 2 : cx - rowW / 2, y, nmH, sh80.size, 18, 62, rtl, -1, null, d.badgeImg);
     y += nmH + 12;
     var unH = lineH(g, 600, 34, false);
     var us34 = shrink(g, d.un, 600, 34, 920);
@@ -679,7 +688,7 @@
     var y = (H - total) / 2;
     avatarBig(g, rtl ? edge - 75 : edge + 75, y + 75, 150, 6, d.ini, 64);
     y += 150 + 10 + 22;
-    nameRow(g, d.name, edge, y, nmH, 60, 14, 48, rtl, 0, 600);
+    nameRow(g, d.name, edge, y, nmH, 60, 14, 48, rtl, 0, 600, d.badgeImg);
     y += nmH + 22;
     var us27 = shrink(g, d.un, 600, 27, 600);
     text(g, us27.t, colL, y, unH, { weight: 600, size: us27.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
@@ -910,7 +919,7 @@
     var avX = rtl ? edge - c.av : edge;
     avatarBig(g, avX + c.av / 2, y + rowH / 2, c.av, c.r, d.ini, c.avFs, true);
     var tEdge = rtl ? avX - c.gap : avX + c.av + c.gap, top = y + (rowH - blockH) / 2;
-    nameRow(g, nsh.t, tEdge, top, nmH, nsh.size, c.nmGap, c.mk, rtl, c.dy || 0);
+    nameRow(g, nsh.t, tEdge, top, nmH, nsh.size, c.nmGap, c.mk, rtl, c.dy || 0, null, d.badgeImg);
     text(g, ush.t, rtl ? tEdge - blockW : tEdge, top + nmH + c.unMt, unH, { weight: 600, size: ush.size, fill: "#a3a3c4", align: "left", dir: "ltr" });
     return rowH;
   }
