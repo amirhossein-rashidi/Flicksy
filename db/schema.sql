@@ -332,3 +332,9 @@ ALTER TABLE users ADD COLUMN username_visible INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN follows_visible INTEGER NOT NULL DEFAULT 1;
 
 INSERT INTO schema_version (version) SELECT 16 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 16);
+
+-- 17: the "find my Public lists by ID" switch was removed from Privacy. Everyone is visible again;
+-- a private profile still keeps its lists out of the bot.
+UPDATE users SET inline_hidden = 0;
+
+INSERT INTO schema_version (version) SELECT 17 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 17);
