@@ -150,7 +150,9 @@ export async function findUser(env, telegramId) {
 }
 
 export function statusKeyboard(lang, type, tmdbId, current) {
-  const row = ["want", "watching", "watched"].map(function (s) {
+  // a movie is not "watching": only series get that button
+  const statuses = type === "tv" ? ["want", "watching", "watched"] : ["want", "watched"];
+  const row = statuses.map(function (s) {
     return {
       text: (current === s ? "✓ " : "") + t(lang, s),
       callback_data: "a:" + (type === "tv" ? "t" : "m") + ":" + tmdbId + ":" + LETTER[s],
