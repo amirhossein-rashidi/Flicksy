@@ -606,7 +606,17 @@
     row.style.cursor = "pointer";
     row.appendChild(avatar(person));
     var info = el("div", "sp-info");
-    info.appendChild(el("div", "sp-name", person.display_name || ""));
+    var nameEl = el("div", "sp-name", person.display_name || "");
+    if (person.badge && FX.badgeMini) {
+      var mini = FX.badgeMini(person.badge, 20);
+      if (mini) {
+        nameEl.className = "sp-name has-bdg";
+        nameEl.textContent = "";
+        nameEl.appendChild(el("span", "nm-t", person.display_name || ""));
+        nameEl.appendChild(mini);
+      }
+    }
+    info.appendChild(nameEl);
     var sub = [];
     if (person.username) sub.push("@" + person.username);
     sub.push(person.public_id);
