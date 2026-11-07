@@ -139,7 +139,7 @@ export async function handleListFollowers(url, env, user) {
     const before = parseInt(url.searchParams.get("before") || "0", 10);
     const beforeId = Number.isInteger(before) && before > 0 ? before : 2147483647;
     const rows = await env.DB.prepare(
-      "SELECT lf.id, lf.created_at, u.public_id, u.display_name, u.username, u.photo_url " +
+      "SELECT lf.id, lf.created_at, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url " +
         "FROM list_follows lf JOIN users u ON u.id = lf.user_id " +
         "WHERE lf.list_id = ?1 AND lf.id < ?2 ORDER BY lf.id DESC LIMIT " + (PAGE + 1)
     )
@@ -164,7 +164,7 @@ export async function handleListsLeaderboard(url, env, user) {
   const limit = Number.isInteger(lim) && lim > 0 ? Math.min(lim, BOARD_SIZE) : BOARD_SIZE;
   try {
     const rows = await env.DB.prepare(
-      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, u.username, u.photo_url, " +
+      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
         "(SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS n, " +
         "(SELECT COUNT(*) FROM list_follows lf WHERE lf.list_id = l.id) AS followers " +
         "FROM lists l JOIN users u ON u.id = l.owner_id " +
@@ -190,7 +190,7 @@ export async function handleListsLeaderboard(url, env, user) {
 export async function handleListsWeekly(url, env, user) {
   try {
     const rows = await env.DB.prepare(
-      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, u.username, u.photo_url, " +
+      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
         "(SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS n, " +
         "(SELECT COUNT(*) FROM list_follows lf WHERE lf.list_id = l.id) AS followers, " +
         "(SELECT COUNT(*) FROM list_follows lw WHERE lw.list_id = l.id AND lw.created_at >= datetime('now', '-7 days')) AS weekly " +
@@ -214,7 +214,7 @@ export async function handleListsWeekly(url, env, user) {
 export async function handleListsFollowed(url, env, user) {
   try {
     const rows = await env.DB.prepare(
-      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, u.username, u.photo_url, " +
+      "SELECT l.id, l.title, l.share_code, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
         "(SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS n, " +
         "(SELECT COUNT(*) FROM list_follows x WHERE x.list_id = l.id) AS followers " +
         "FROM list_follows lf JOIN lists l ON l.id = lf.list_id JOIN users u ON u.id = l.owner_id " +
