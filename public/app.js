@@ -5,7 +5,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   // Small bridge so extra feature files (like lists.js) can plug into the app.
-  var FX = window.FX = { hooks: {}, backStack: [] };
+  var FX = window.FX = { hooks: {}, backStack: [], settingsItems: {} };
 
   // New look: each new element shows only when its flag is true (and its data is there). The backend steps turn them on one by one.
   var FEATURES = FX.features = { reminders: false, rewatch: true, spoiler: false, trailer: true, commentsRow: false, friendsRow: true, profileTabs: false };
@@ -828,13 +828,46 @@
     try { localStorage.setItem(LS_LANG, code); } catch (e) {}
     api("/api/me?lang=" + code).catch(function () {}); // tell the server, so the bot answers in the same language
     closeSheet();
+    closePages();
     renderNav();
     renderTab(currentTab);
   }
 
+  // ---------- full pages (Settings and its sections) ----------
+  // A page covers the screen, has a back button and its own title; pages can open on top of each other.
+  var pageStack = [];
+  function closePages() {
+    pageStack.slice().reverse().forEach(function (p) { p(); });
+  }
+  function openPage(title, build) {
+    var root = el("div", "page fxpage");
+    root.style.zIndex = String(26 + pageStack.length);
+    var closed = false;
+    function close() {
+      if (closed) return;
+      closed = true;
+      root.remove();
+      var i = pageStack.indexOf(close);
+      if (i >= 0) pageStack.splice(i, 1);
+      FX.popBack(close);
+    }
+    var back = iconButton("round-btn", "back", t("btn_close"), close);
+    back.firstChild.classList.add("flip");
+    root.appendChild(back);
+    var scroller = el("div", "page-scroll");
+    var body = el("div", "fxp-body");
+    body.appendChild(el("h1", "fxp-h1", title));
+    scroller.appendChild(body);
+    root.appendChild(scroller);
+    document.body.appendChild(root);
+    pageStack.push(close);
+    FX.pushBack(close);
+    build(body, close);
+    return close;
+  }
+
   function openLanguageSheet() {
-    openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", t("language")));
+    openPage(t("language"), function (sh) {
       var list = el("div", "lang-list");
       I18N.languages.forEach(function (l) {
         var row = button("lang-row" + (l.code === I18N.lang ? " active" : ""), null, function () { setLanguage(l.code); });
@@ -848,8 +881,7 @@
   }
 
   function openAboutSheet() {
-    openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", "Flicksy"));
+    openPage("Flicksy", function (sh) {
       sh.appendChild(el("p", "about-text", t("about_text")));
       var credit = el("div", "credit");
       var logo = el("img", "tmdb-logo");
@@ -859,14 +891,17 @@
       credit.appendChild(logo);
       credit.appendChild(el("p", "", "This product uses the TMDB API but is not endorsed or certified by TMDB."));
       sh.appendChild(credit);
-      sh.appendChild(button("btn glass block", t("btn_close"), closeSheet));
     });
   }
 
   function settingRow(iconName, label, value, handler) {
+    return settingRowNode(icon(iconName, 20), label, value, handler);
+  }
+
+  function settingRowNode(iconNode, label, value, handler) {
     var row = button("setting", null, handler);
     var left = el("span", "setting-left");
-    left.appendChild(icon(iconName, 20));
+    left.appendChild(iconNode);
     left.appendChild(el("span", "", label));
     row.appendChild(left);
     var right = el("span", "setting-right");
@@ -879,16 +914,23 @@
   }
 
   // Settings now open from the profile's three-dot menu.
+  // The sections other files add (privacy, notifications, backup) register in FX.settingsItems:
+  // { iconNode(), label(), open(me) }. The order here is the order on the page.
   function openSettingsSheet() {
-    openSheet(function (sh) {
-      var list = el("div", "settings sheet-settings");
-      list.appendChild(el("h2", "sec-title", t("settings")));
-      list.appendChild(settingRow("globe", t("language"), languageName(), openLanguageSheet));
-      list.appendChild(settingRow("info", t("about"), "", openAboutSheet));
-      if (FX.hooks.settings) FX.hooks.settings(list, me);
-      // tapping a row closes this sheet first, so pages and sheets that rows open are not hidden behind it
-      list.addEventListener("click", function () { closeSheet(); }, true);
-      sh.appendChild(list);
+    openPage(t("settings"), function (body) {
+      var list = el("div", "settings");
+      list.style.marginTop = "18px";
+      var items = FX.settingsItems;
+      var own = {
+        language: { iconNode: function () { return icon("globe", 20); }, label: function () { return t("language"); }, value: languageName, open: openLanguageSheet },
+        about: { iconNode: function () { return icon("info", 20); }, label: function () { return t("about"); }, open: openAboutSheet }
+      };
+      ["privacy", "notifs", "language", "backup", "about"].forEach(function (id) {
+        var it = own[id] || items[id];
+        if (!it) return;
+        list.appendChild(settingRowNode(it.iconNode(), it.label(), it.value ? it.value() : "", function () { it.open(me); }));
+      });
+      body.appendChild(list);
     });
   }
 
@@ -2552,6 +2594,7 @@
   FX.rerender = function () { renderTab(currentTab); };
   FX.goTab = goTab;
   FX.openSettings = openSettingsSheet;
+  FX.openPage = openPage;
   FX.refreshLock = function () { syncLock(); tgBack(); };
   FX.pushBack = function (fn) { FX.backStack.push(fn); FX.refreshLock(); };
   FX.popBack = function (fn) {
