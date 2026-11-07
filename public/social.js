@@ -1118,9 +1118,9 @@
 
   // ---------- privacy sheet ----------
   function openPrivacySheet(me) {
-    FX.openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", lt("sx_privacy")));
+    FX.openPage(lt("sx_privacy"), function (sh) {
       var box = el("div");
+      box.style.marginTop = "14px";
       sh.appendChild(box);
       box.appendChild(FX.msg(I18N.t("loading")));
 
@@ -1294,20 +1294,10 @@
     }).catch(function () {});
   };
 
-  // Settings: a Privacy row at the top of the list.
-  FX.hooks.settings = function (list, me) {
-    var row = button("setting", null, function () { openPrivacySheet(me || {}); });
-    var left = el("span", "setting-left");
-    left.appendChild(svg(LOCK, 20));
-    left.appendChild(el("span", "", lt("sx_privacy")));
-    row.appendChild(left);
-    var right = el("span", "setting-right");
-    var chev = FX.icon("chevron", 18);
-    chev.classList.add("flip");
-    right.appendChild(chev);
-    row.appendChild(right);
-    var title = list.firstChild;
-    if (title && title.nextSibling) list.insertBefore(row, title.nextSibling);
-    else list.appendChild(row);
+  // Settings: the Privacy section.
+  FX.settingsItems.privacy = {
+    iconNode: function () { return svg(LOCK, 20); },
+    label: function () { return lt("sx_privacy"); },
+    open: function (me) { openPrivacySheet(me || {}); }
   };
 })();
