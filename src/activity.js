@@ -2,7 +2,7 @@
 // Read-only. Other people are identified only by their Flicksy ID (public_id).
 // Privacy rules used here:
 //  - the feed shows only accepted follows whose "show my activity" switch is on
-//  - the leaderboard shows only public profiles with "show my activity" on (plus you)
+//  - the leaderboard shows everybody (private profiles too: you can tap them, a private one asks you to send a follow request)
 
 import { json } from "./util.js";
 import { TMDB_IMG } from "./tmdb.js";
@@ -99,7 +99,6 @@ export async function handleLeaderboard(url, env, user) {
       "FROM (" + source + ") c " +
       "JOIN users u ON u.id = c.uid " +
       "LEFT JOIN follows f ON f.follower_id = ?1 AND f.followed_id = u.id " +
-      "WHERE u.id = ?1 OR (u.is_private = 0 AND u.activity_visible = 1) " +
       "ORDER BY c.n DESC, u.id ASC LIMIT " + BOARD_SIZE
   )
     .bind(user.id)
