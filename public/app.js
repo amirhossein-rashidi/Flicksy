@@ -772,6 +772,7 @@
       [["all", "filter_all"], ["movie", "filter_movies"], ["tv", "filter_series"]].forEach(function (pair) {
         seg.appendChild(button("seg-btn" + (libView.type === pair[0] ? " active" : ""), t(pair[1]), function () {
           libView.type = pair[0];
+          if (libView.type === "movie" && libView.status === "watching") libView.status = null; // movies have no "Watching"
           drawSeg(); drawChips(); drawGrid();
         }));
       });
@@ -787,6 +788,7 @@
         libView.status = null; drawChips(); drawGrid();
       }));
       STATUS_ORDER.forEach(function (s) {
+        if (s === "watching" && libView.type === "movie") return; // a movie is not "watching": no such tab
         row.appendChild(button("chip" + (libView.status === s ? " active" : ""), t("status_" + s) + " (" + (counts[s] || 0) + ")", function () {
           libView.status = s; drawChips(); drawGrid();
         }));
@@ -1880,6 +1882,7 @@
       function drawStatus() {
         clear(st);
         STATUS_ORDER.forEach(function (s) {
+          if (isMovie && s === "watching") return; // no "Watching" for a movie
           st.appendChild(button("pill" + (selStatus === s ? " sel" : ""), t("status_" + s), function () {
             selStatus = s;
             drawStatus();
