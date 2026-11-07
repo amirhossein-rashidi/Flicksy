@@ -6,7 +6,7 @@
 import { json, parseTitleRef } from "./util.js";
 import { getPrefs, commentBellItems, markCommentNotifsRead, notifyFollowBot } from "./notify.js";
 import { TMDB_IMG, tmdbGet } from "./tmdb.js";
-import { computeBadges } from "./badges.js";
+import { computeBadges, primaryBadgesFor } from "./badges.js";
 
 const MAX_FOLLOWING = 1000;
 const MAX_PENDING_ACCEPT = 200;
@@ -30,8 +30,9 @@ function relationOf(row) {
   return row.status === "accepted" ? "following" : "requested";
 }
 
-function personOut(row, relation) {
+function personOut(row, relation, badge) {
   return {
+    badge: badge || null,
     public_id: row.public_id,
     display_name: row.display_name,
     username: row.username || null,
@@ -51,7 +52,7 @@ export async function handlePeopleSearch(url, env, user) {
 
   let rows;
   const base =
-    "SELECT u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, u.is_private, f.status AS fstatus " +
+    "SELECT u.id AS uid, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, u.is_private, f.status AS fstatus " +
     "FROM users u LEFT JOIN follows f ON f.follower_id = ?1 AND f.followed_id = u.id ";
 
   if (/^\d+$/.test(raw)) {
@@ -78,9 +79,9 @@ export async function handlePeopleSearch(url, env, user) {
       .all();
   }
 
-  const people = (rows.results || [])
-    .filter((r) => r.public_id)
-    .map((r) => personOut(r, relationOf(r.fstatus ? { status: r.fstatus } : null)));
+  const found = (rows.results || []).filter((r) => r.public_id);
+  const badgeOf = await primaryBadgesFor(env, found.map((r) => r.uid));
+  const people = found.map((r) => personOut(r, relationOf(r.fstatus ? { status: r.fstatus } : null), badgeOf.get(r.uid)));
   return json({ people: people });
 }
 
