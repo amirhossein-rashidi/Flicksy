@@ -6,6 +6,7 @@
 
 import { json } from "./util.js";
 import { TMDB_IMG } from "./tmdb.js";
+import { primaryBadgesFor } from "./badges.js";
 
 const FEED_PAGE = 30;
 const BOARD_SIZE = 50;
@@ -80,7 +81,7 @@ export async function handleFeed(url, env, user) {
 }
 
 // GET /api/leaderboard?kind=movies|episodes
-// -> { kind, rows: [{ rank, person, value, followers, relation, is_me }] }
+// -> { kind, rows: [{ rank, person (with .badge = main badge id or null), value, followers, relation, is_me }] }
 export async function handleLeaderboard(url, env, user) {
   const kind = url.searchParams.get("kind") === "episodes" ? "episodes" : "movies";
 
@@ -104,9 +105,12 @@ export async function handleLeaderboard(url, env, user) {
     .bind(user.id)
     .all();
 
-  const list = (rows.results || []).map((r, i) => ({
+  const found = rows.results || [];
+  const badgeOf = await primaryBadgesFor(env, found.map((r) => r.uid));
+
+  const list = found.map((r, i) => ({
     rank: i + 1,
-    person: person(r),
+    person: Object.assign(person(r), { badge: badgeOf.get(r.uid) || null }),
     value: r.n,
     followers: r.followers || 0,
     relation: r.uid === user.id ? "self" : r.fstatus === "accepted" ? "following" : r.fstatus ? "requested" : "none",
