@@ -259,7 +259,11 @@
     row.appendChild(personAvatar(r.person, "ac-lav"));
     var nm = el("div", "ac-nm");
     var b = el("b");
-    b.appendChild(el("bdi", "", r.is_me ? t("ac_you") : r.person.display_name));
+    b.appendChild(el("bdi", "nm-t", r.is_me ? t("ac_you") : r.person.display_name));
+    if (r.person.badge && FX.badgeMini) {
+      var mini = FX.badgeMini(r.person.badge, 20);
+      if (mini) { b.className = "has-bdg"; b.appendChild(mini); }
+    }
     nm.appendChild(b);
     nm.appendChild(el("small", "", nf(r.followers) + " " + t("ac_followers")));
     row.appendChild(nm);
