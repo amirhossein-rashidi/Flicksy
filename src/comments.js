@@ -16,6 +16,7 @@
 import { json, parseTitleRef } from "./util.js";
 import { ensureTitle } from "./tmdb.js";
 import { notifyReply, notifyLike, removeLikeNotif } from "./notify.js";
+import { primaryBadgesFor } from "./badges.js";
 
 const EDIT_WINDOW_MS = 5 * 60 * 1000;
 const MAX_BODY = 1000;
@@ -93,6 +94,9 @@ async function shape(env, user, rows) {
     // ratings are optional
   }
 
+  // the main badge of every author
+  const badgeOf = await primaryBadgesFor(env, rows.map((r) => r.user_id));
+
   return rows.map((r) => {
     const rating = r.season_number === null ? titleRating.get(r.user_id) : epRating.get(r.user_id);
     return {
@@ -102,6 +106,7 @@ async function shape(env, user, rows) {
         public_id: r.public_id,
         display_name: r.display_name,
         photo_url: r.photo_url || null,
+        badge: badgeOf.get(r.user_id) || null,
       },
       body: r.deleted ? "" : r.body,
       deleted: !!r.deleted,
