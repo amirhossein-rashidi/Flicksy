@@ -389,6 +389,10 @@
     var nm = el("div", "cm-nm");
     var bdi = el("bdi", "", c.mine ? c.user.display_name + " (" + ct("cm_you") + ")" : c.user.display_name);
     nm.appendChild(bdi);
+    if (c.user.badge && FX.badgeMini) {
+      var mini = FX.badgeMini(c.user.badge, 18);
+      if (mini) nm.appendChild(mini);
+    }
     if (c.rating) nm.appendChild(el("span", "cm-st", stars(c.rating)));
     nm.appendChild(el("small", "", ago(c.created_at) + (c.edited ? " · " + ct("cm_edited") : "")));
     top.appendChild(nm);
