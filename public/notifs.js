@@ -59,9 +59,9 @@
   }
 
   function openPrefs() {
-    FX.openSheet(function (sh) {
-      sh.appendChild(el("h3", "sheet-title", nt("nf_title")));
+    FX.openPage(nt("nf_title"), function (sh) {
       var box = el("div", "nf");
+      box.style.marginTop = "14px";
       sh.appendChild(box);
       box.appendChild(FX.msg(I18N.t("loading")));
       FX.api("/api/notif-prefs").then(function (res) {
@@ -101,19 +101,9 @@
     });
   }
 
-  var previous = FX.hooks.settings;
-  FX.hooks.settings = function (list, me) {
-    if (previous) previous(list, me);
-    var row = button("setting", null, openPrefs);
-    var left = el("span", "setting-left");
-    left.appendChild(FX.icon("bell", 20));
-    left.appendChild(el("span", "", nt("nf_title")));
-    row.appendChild(left);
-    var right = el("span", "setting-right");
-    var chev = FX.icon("chevron", 18);
-    chev.classList.add("flip");
-    right.appendChild(chev);
-    row.appendChild(right);
-    list.appendChild(row);
+  FX.settingsItems.notifs = {
+    iconNode: function () { return FX.icon("bell", 20); },
+    label: function () { return nt("nf_title"); },
+    open: function () { openPrefs(); }
   };
 })();
