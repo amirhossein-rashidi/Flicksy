@@ -38,6 +38,8 @@
       sx_priv_activity_hint: "What you watch, rate and add to lists can appear to people who follow you.",
       sx_priv_id: "Let people find my Public lists by ID",
       sx_priv_id_hint: "Used by @flicksyrobot with your Flicksy ID in chats.",
+      sx_priv_user: "Show my Telegram username on my profile", sx_priv_user_hint: "Off by default. People can still find you by searching your @username.",
+      sx_priv_follows: "Let people see who follows me and who I follow", sx_priv_follows_hint: "The numbers stay visible. Only the lists are hidden when this is off.", sx_follows_hidden: "This person keeps their followers and following private.",
       sx_header_change: "Change header",
       sx_header_pick: "Pick a title you watched",
       sx_header_scene: "Pick a scene",
@@ -77,6 +79,8 @@
       sx_priv_activity_hint: "آنچه می‌بینی، امتیاز می‌دهی و به لیست‌ها اضافه می‌کنی ممکن است به دنبال‌کننده‌هایت نشان داده شود.",
       sx_priv_id: "پیدا شدن لیست‌های عمومی من با آیدی",
       sx_priv_id_hint: "برای @flicksyrobot همراه با آیدی Flicksy تو در چت‌ها.",
+      sx_priv_user: "نمایش یوزرنیم تلگرام من در پروفایل", sx_priv_user_hint: "به‌طور پیش‌فرض خاموش است. بقیه هنوز می‌توانند با جستجوی @یوزرنیم تو را پیدا کنند.",
+      sx_priv_follows: "نمایش فالورها و فالووینگ‌های من به بقیه", sx_priv_follows_hint: "تعدادها همیشه دیده می‌شود. وقتی خاموش باشد فقط لیست‌ها پنهان می‌شوند.", sx_follows_hidden: "این کاربر فالورها و فالووینگ‌هایش را پنهان کرده است.",
       sx_header_change: "تغییر هدر",
       sx_header_pick: "یک فیلم یا سریالِ دیده‌شده را انتخاب کن",
       sx_header_scene: "یک صحنه انتخاب کن",
@@ -112,6 +116,8 @@
       sx_priv_activity_hint: "قد يظهر لمتابعيك ما تشاهده وتقيّمه وتضيفه إلى القوائم.",
       sx_priv_id: "السماح بالعثور على قوائمي العامة عبر المعرّف",
       sx_priv_id_hint: "يستخدمه @flicksyrobot مع معرّف Flicksy الخاص بك في المحادثات.",
+      sx_priv_user: "إظهار اسم المستخدم في تيليجرام على ملفي", sx_priv_user_hint: "متوقف افتراضيًا. يمكن للآخرين العثور عليك بالبحث عن @اسم_المستخدم.",
+      sx_priv_follows: "السماح للآخرين برؤية متابعيّ ومن أتابعهم", sx_priv_follows_hint: "تبقى الأرقام ظاهرة. تُخفى القوائم فقط عند إيقاف هذا الخيار.", sx_follows_hidden: "هذا المستخدم يُخفي متابعيه ومن يتابعهم.",
       sx_header_change: "تغيير الغلاف",
       sx_header_pick: "اختر عملًا شاهدته",
       sx_header_scene: "اختر مشهدًا",
@@ -147,6 +153,8 @@
       sx_priv_activity_hint: "İzlediklerin, puanladıkların ve listelere eklediklerin takipçilerine görünebilir.",
       sx_priv_id: "Herkese açık listelerim kimlikle bulunabilsin",
       sx_priv_id_hint: "Sohbetlerde @flicksyrobot ile Flicksy kimliğin için kullanılır.",
+      sx_priv_user: "Telegram kullanıcı adımı profilimde göster", sx_priv_user_hint: "Varsayılan olarak kapalı. İnsanlar @kullanıcıadı ile arayarak seni yine de bulabilir.",
+      sx_priv_follows: "Takipçilerimi ve takip ettiklerimi herkes görebilsin", sx_priv_follows_hint: "Sayılar görünür kalır. Kapalıyken yalnızca listeler gizlenir.", sx_follows_hidden: "Bu kişi takipçilerini ve takip ettiklerini gizli tutuyor.",
       sx_header_change: "Kapağı değiştir",
       sx_header_pick: "İzlediğin bir yapım seç",
       sx_header_scene: "Bir sahne seç",
@@ -182,6 +190,8 @@
       sx_priv_activity_hint: "То, что ты смотришь, оцениваешь и добавляешь в списки, может быть видно подписчикам.",
       sx_priv_id: "Находить мои публичные списки по ID",
       sx_priv_id_hint: "Используется в @flicksyrobot вместе с твоим Flicksy ID в чатах.",
+      sx_priv_user: "Показывать мой username в Telegram в профиле", sx_priv_user_hint: "По умолчанию выключено. Тебя всё равно можно найти по @username.",
+      sx_priv_follows: "Показывать мои подписки и подписчиков другим", sx_priv_follows_hint: "Числа остаются видны. При выключении скрыты только списки.", sx_follows_hidden: "Этот человек скрыл свои подписки и подписчиков.",
       sx_header_change: "Сменить обложку",
       sx_header_pick: "Выбери просмотренный фильм или сериал",
       sx_header_scene: "Выбери кадр",
@@ -217,6 +227,8 @@
       sx_priv_activity_hint: "Lo que ves, puntúas y añades a listas puede mostrarse a quienes te siguen.",
       sx_priv_id: "Permitir encontrar mis listas públicas por ID",
       sx_priv_id_hint: "Lo usa @flicksyrobot con tu ID de Flicksy en los chats.",
+      sx_priv_user: "Mostrar mi usuario de Telegram en mi perfil", sx_priv_user_hint: "Desactivado por defecto. Aún pueden encontrarte buscando tu @usuario.",
+      sx_priv_follows: "Permitir ver mis seguidores y a quién sigo", sx_priv_follows_hint: "Los números siguen visibles. Si se apaga, solo se ocultan las listas.", sx_follows_hidden: "Esta persona mantiene privados sus seguidores y seguidos.",
       sx_header_change: "Cambiar portada",
       sx_header_pick: "Elige un título que viste",
       sx_header_scene: "Elige una escena",
@@ -252,6 +264,8 @@
       sx_priv_activity_hint: "Ce que tu regardes, notes et ajoutes aux listes peut apparaître chez tes abonnés.",
       sx_priv_id: "Permettre de trouver mes listes publiques par ID",
       sx_priv_id_hint: "Utilisé par @flicksyrobot avec ton ID Flicksy dans les discussions.",
+      sx_priv_user: "Afficher mon nom d'utilisateur Telegram sur mon profil", sx_priv_user_hint: "Désactivé par défaut. On peut toujours te trouver en cherchant ton @nom.",
+      sx_priv_follows: "Laisser voir mes abonnés et mes abonnements", sx_priv_follows_hint: "Les nombres restent visibles. Désactivé, seules les listes sont masquées.", sx_follows_hidden: "Cette personne garde ses abonnés et abonnements privés.",
       sx_header_change: "Changer la bannière",
       sx_header_pick: "Choisis un titre que tu as vu",
       sx_header_scene: "Choisis une scène",
@@ -287,6 +301,8 @@
       sx_priv_activity_hint: "Was du ansiehst, bewertest und zu Listen hinzufügst, kann deinen Followern angezeigt werden.",
       sx_priv_id: "Meine öffentlichen Listen per ID auffindbar machen",
       sx_priv_id_hint: "Wird von @flicksyrobot mit deiner Flicksy-ID in Chats verwendet.",
+      sx_priv_user: "Meinen Telegram-Benutzernamen im Profil zeigen", sx_priv_user_hint: "Standardmäßig aus. Man kann dich weiterhin über @benutzername finden.",
+      sx_priv_follows: "Meine Follower und Gefolgten für andere sichtbar machen", sx_priv_follows_hint: "Die Zahlen bleiben sichtbar. Ausgeschaltet sind nur die Listen verborgen.", sx_follows_hidden: "Diese Person hält Follower und Gefolgte privat.",
       sx_header_change: "Titelbild ändern",
       sx_header_pick: "Wähle einen gesehenen Titel",
       sx_header_scene: "Wähle eine Szene",
@@ -651,7 +667,7 @@
   }
 
   // Your own followers / following: one sheet with a switch (Followers | Following) and a search box.
-  function openFollowSheet(kind) {
+  function openFollowSheet(kind, pid) {
     var cur = kind, q = "", data = {};
     var seg = el("div", "segment");
     var sbox = el("div", "searchbox");
@@ -713,8 +729,9 @@
       var asked = cur;
       clear(holder);
       holder.appendChild(FX.msg(I18N.t("loading")));
-      FX.api("/api/follow-list?kind=" + asked).then(function (res) {
+      FX.api("/api/follow-list?kind=" + asked + (pid ? "&id=" + encodeURIComponent(pid) : "")).then(function (res) {
         if (!holder.isConnected || cur !== asked) return;
+        if (res.status === 403) { clear(holder); holder.appendChild(FX.msg(lt("sx_follows_hidden"))); return; }
         if (res.status !== 200) { clear(holder); holder.appendChild(FX.msg(netError(res), true)); return; }
         data[asked] = res.data.items || [];
         render();
@@ -737,7 +754,7 @@
     show();
   }
 
-  function socLine(stats, tappable) {
+  function socLine(stats, tappable, pid) {
     var soc = el("div", "pf-soc");
     function part(n, label, kind) {
       var sp = el("span");
@@ -745,7 +762,7 @@
       sp.appendChild(document.createTextNode(" " + label));
       if (tappable) {
         sp.style.cursor = "pointer";
-        sp.addEventListener("click", function () { openFollowSheet(kind); });
+        sp.addEventListener("click", function () { openFollowSheet(kind, pid); });
       }
       return sp;
     }
@@ -797,7 +814,9 @@
       ptag.style.marginTop = "8px";
       body.appendChild(ptag);
     }
-    body.appendChild(socLine(d.stats));
+    // the lists open for you when the person allows it (a private profile: only when you follow them)
+    var canOpenLists = d.relation === "self" || (d.follows_visible !== false && (!pr.is_private || d.relation === "following"));
+    body.appendChild(socLine(d.stats, canOpenLists, pr.public_id));
 
     if (d.relation !== "self") {
       var act = el("div", "sp-act");
@@ -1140,7 +1159,13 @@
             body: function (next) { return { activity_visible: next }; } },
           { label: "sx_priv_id", hint: "sx_priv_id_hint",
             get: function () { return !state.inline_hidden; },
-            body: function (next) { return { inline_hidden: !next }; } }
+            body: function (next) { return { inline_hidden: !next }; } },
+          { label: "sx_priv_user", hint: "sx_priv_user_hint",
+            get: function () { return !!state.username_visible; },
+            body: function (next) { return { username_visible: next }; } },
+          { label: "sx_priv_follows", hint: "sx_priv_follows_hint",
+            get: function () { return state.follows_visible !== false; },
+            body: function (next) { return { follows_visible: next }; } }
         ];
 
         function draw() {
@@ -1158,6 +1183,8 @@
                 me.is_private = state.is_private ? 1 : 0;
                 me.activity_visible = state.activity_visible ? 1 : 0;
                 me.inline_hidden = state.inline_hidden ? 1 : 0;
+                me.username_visible = state.username_visible ? 1 : 0;
+                me.follows_visible = state.follows_visible === false ? 0 : 1;
                 FX.haptic();
                 draw();
               }).catch(function () {
