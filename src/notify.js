@@ -224,7 +224,7 @@ async function listFollowBellItems(env, userId, prefs) {
   if (prefs.list_follow_app !== 1) return { items: items, unread: unread };
   try {
     const rs = await env.DB.prepare(
-      "SELECT n.is_read, n.created_at AS at, u.public_id, u.display_name, u.username, u.photo_url, l.title, l.share_code " +
+      "SELECT n.is_read, n.created_at AS at, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, l.title, l.share_code " +
         "FROM list_follow_notifs n JOIN users u ON u.id = n.actor_id JOIN lists l ON l.id = n.list_id " +
         "JOIN list_follows lf ON lf.list_id = n.list_id AND lf.user_id = n.actor_id " +
         "WHERE n.user_id = ?1 AND l.visibility = 'public' ORDER BY n.id DESC LIMIT 30"
@@ -255,7 +255,7 @@ export async function commentBellItems(env, userId, prefs) {
   try {
     if (prefs.reply_app === 1) {
       const rs = await env.DB.prepare(
-        "SELECT cn.is_read, cn.created_at AS at, cn.comment_id, u.public_id, u.display_name, u.username, u.photo_url, " +
+        "SELECT cn.is_read, cn.created_at AS at, cn.comment_id, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
           "c.body, c.spoiler, t.title FROM comment_notifs cn JOIN users u ON u.id = cn.actor_id " +
           "JOIN comments c ON c.id = cn.comment_id LEFT JOIN titles t ON t.id = c.title_id " +
           "WHERE cn.user_id = ?1 AND cn.kind = 'reply' AND c.deleted = 0 ORDER BY cn.id DESC LIMIT 30"
@@ -288,7 +288,7 @@ export async function commentBellItems(env, userId, prefs) {
         .all();
       for (const r of ls.results || []) {
         const a = await env.DB.prepare(
-          "SELECT u.public_id, u.display_name, u.username, u.photo_url FROM comment_notifs cn JOIN users u ON u.id = cn.actor_id WHERE cn.id = ?1"
+          "SELECT u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url FROM comment_notifs cn JOIN users u ON u.id = cn.actor_id WHERE cn.id = ?1"
         )
           .bind(r.last_id)
           .first();
