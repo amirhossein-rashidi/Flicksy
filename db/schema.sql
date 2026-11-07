@@ -325,3 +325,10 @@ CREATE TABLE IF NOT EXISTS card_images (
 CREATE INDEX IF NOT EXISTS idx_card_images_user ON card_images (user_id, created_at DESC);
 
 INSERT INTO schema_version (version) SELECT 15 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 15);
+
+-- Migration 16: privacy. username_visible = show my @username to other people (default off);
+-- follows_visible = let other people open my followers / following lists (default on).
+ALTER TABLE users ADD COLUMN username_visible INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN follows_visible INTEGER NOT NULL DEFAULT 1;
+
+INSERT INTO schema_version (version) SELECT 16 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 16);
