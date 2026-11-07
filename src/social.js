@@ -51,7 +51,7 @@ export async function handlePeopleSearch(url, env, user) {
 
   let rows;
   const base =
-    "SELECT u.public_id, u.display_name, u.username, u.photo_url, u.is_private, f.status AS fstatus " +
+    "SELECT u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, u.is_private, f.status AS fstatus " +
     "FROM users u LEFT JOIN follows f ON f.follower_id = ?1 AND f.followed_id = u.id ";
 
   if (/^\d+$/.test(raw)) {
@@ -90,7 +90,7 @@ export async function handleProfile(url, env, user) {
   if (!pid) return json({ error: "bad_id" }, 400);
 
   const target = await env.DB.prepare(
-    "SELECT id, public_id, display_name, username, photo_url, header, is_private, created_at " +
+    "SELECT id, public_id, display_name, username, username_visible, follows_visible, photo_url, header, is_private, created_at " +
       "FROM users WHERE public_id = ?1"
   )
     .bind(pid)
@@ -180,13 +180,14 @@ export async function handleProfile(url, env, user) {
     profile: {
       public_id: target.public_id,
       display_name: target.display_name,
-      username: target.username || null,
+      username: isSelf || target.username_visible === 1 ? target.username || null : null,
       photo_url: target.photo_url || null,
       header: target.header || null,
       is_private: target.is_private === 1,
       joined: target.created_at,
     },
     stats: stats,
+    follows_visible: isSelf || target.follows_visible !== 0,
     relation: relation,
     lists_locked: !canSeeLists,
     lists: lists,
@@ -304,12 +305,12 @@ export async function handleNotifications(url, env, user) {
   const prefs = await getPrefs(env, user.id);
   const [req, items, unread] = await env.DB.batch([
     env.DB.prepare(
-      "SELECT u.public_id, u.display_name, u.username, u.photo_url, f.created_at AS at " +
+      "SELECT u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, f.created_at AS at " +
         "FROM follows f JOIN users u ON u.id = f.follower_id " +
         "WHERE f.followed_id = ?1 AND f.status = 'pending' ORDER BY f.created_at DESC LIMIT 50"
     ).bind(user.id),
     env.DB.prepare(
-      "SELECT n.id, n.type, n.is_read, n.created_at AS at, u.public_id, u.display_name, u.username, u.photo_url " +
+      "SELECT n.id, n.type, n.is_read, n.created_at AS at, u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url " +
         "FROM notifications n LEFT JOIN users u ON u.id = n.actor_id " +
         "WHERE n.user_id = ?1 ORDER BY n.id DESC LIMIT 30"
     ).bind(user.id),
@@ -360,7 +361,7 @@ export async function handleNotificationsRead(request, env, user) {
 // GET /api/privacy
 export async function handlePrivacyGet(url, env, user) {
   const row = await env.DB.prepare(
-    "SELECT is_private, activity_visible, inline_hidden, header FROM users WHERE id = ?1"
+    "SELECT is_private, activity_visible, inline_hidden, username_visible, follows_visible, header FROM users WHERE id = ?1"
   )
     .bind(user.id)
     .first();
@@ -369,17 +370,19 @@ export async function handlePrivacyGet(url, env, user) {
     is_private: row.is_private === 1,
     activity_visible: row.activity_visible !== 0,
     inline_hidden: row.inline_hidden === 1,
+    username_visible: row.username_visible === 1,
+    follows_visible: row.follows_visible !== 0,
     header: row.header || null,
   });
 }
 
-// PUT /api/privacy  { is_private?, activity_visible?, inline_hidden? }  (send any of them)
+// PUT /api/privacy  { is_private?, activity_visible?, inline_hidden?, username_visible?, follows_visible? }  (send any of them)
 // Turning "private" off accepts everyone who was waiting for approval.
 export async function handlePrivacySet(request, env, user) {
   const body = await readBody(request);
   if (!body) return json({ error: "bad_request" }, 400);
 
-  const keys = ["is_private", "activity_visible", "inline_hidden"];
+  const keys = ["is_private", "activity_visible", "inline_hidden", "username_visible", "follows_visible"];
   const sets = [];
   const values = [];
   for (const k of keys) {
