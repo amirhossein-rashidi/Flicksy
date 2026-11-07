@@ -1002,20 +1002,10 @@
   }
 
   // ---------- plug into Settings ----------
-  var previous = FX.hooks.settings;
-  FX.hooks.settings = function (list, me) {
-    if (previous) previous(list, me);
-    var row = button("setting", null, openPage);
-    var left = el("span", "setting-left");
-    left.appendChild(svgIcon(DOWN, 20));
-    left.appendChild(el("span", "", lt("title")));
-    row.appendChild(left);
-    var right = el("span", "setting-right");
-    var chev = FX.icon("chevron", 18);
-    chev.classList.add("flip");
-    right.appendChild(chev);
-    row.appendChild(right);
-    list.appendChild(row);
+  FX.settingsItems.backup = {
+    iconNode: function () { return svgIcon(DOWN, 20); },
+    label: function () { return lt("title"); },
+    open: function () { openPage(); }
   };
 
   // for tests
