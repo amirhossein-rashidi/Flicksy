@@ -290,7 +290,7 @@
     return { v: n.toLocaleString(loc) };
   }
 
-  function profileData(me, stats, listCount, posters) {
+  function profileData(me, stats, listCount, posters, badgeImg) {
     var l = lang();
     function st(n, label) {
       var f = fmtNum(n, l);
@@ -310,11 +310,18 @@
         st(listCount, T("lists")),
         st(stats.followers, T("followers"))
       ],
-      posters: posters
+      posters: posters,
+      badgeImg: badgeImg || null
     };
   }
 
   var HUES = [230, 35, 12, 265];
+
+  // the picture address of a person's main badge from an /api/profile answer (null = show the Flicksy mark)
+  function mainBadgeUrl(res) {
+    var b = res && res.status === 200 && res.data && res.data.badges;
+    return b && b.primary && FX.badgeImageUrl ? FX.badgeImageUrl(b.primary) : null;
+  }
 
   function profile(me) {
     if (!me || !me.public_id) return;
@@ -334,12 +341,12 @@
         var items = (r[2] && r[2].status === 200 && r[2].data && r[2].data.items) || [];
         var urls = [];
         for (var i = 0; i < items.length && urls.length < 4; i++) if (items[i].poster) urls.push(items[i].poster);
-        return Promise.all(urls.map(loadImage)).then(function (imgs) {
-          var posters = [];
+        return Promise.all([Promise.all(urls.map(loadImage)), loadImage(mainBadgeUrl(r[0]))]).then(function (got) {
+          var imgs = got[0], posters = [];
           for (var k = 0; k < 4; k++) {
             posters.push(imgs[k] || { h: HUES[k], letter: String.fromCharCode(65 + k) });
           }
-          return profileData(me, stats, lists.length, posters);
+          return profileData(me, stats, lists.length, posters, got[1]);
         });
       });
       return cache;
@@ -539,8 +546,9 @@
       function load() {
         if (cache) return cache;
         var top = r.top || [];
-        cache = Promise.all([0, 1, 2].map(function (i) { return loadImage(top[i] && top[i].poster); })).then(function (imgs) {
-          var posters = [];
+        var prof = FX.api("/api/profile?id=" + encodeURIComponent(me.public_id)).catch(function () { return null; });
+        cache = Promise.all([Promise.all([0, 1, 2].map(function (i) { return loadImage(top[i] && top[i].poster); })), prof.then(function (pr) { return loadImage(mainBadgeUrl(pr)); })]).then(function (got) {
+          var imgs = got[0], posters = [];
           for (var k = 0; k < 3; k++) posters.push(imgs[k] || { h: HUES[k], letter: String((top[k] && top[k].title) || String.fromCharCode(65 + k)).charAt(0).toUpperCase() });
           return {
             lang: cl,
@@ -560,7 +568,8 @@
             cap: top[0] ? T("rtop").replace("{t}", top[0].title) : T("rtops"),
             capStory: T("rtops"),
             tagline: T("tag"),
-            posters: posters
+            posters: posters,
+            badgeImg: got[1]
           };
         });
         return cache;
