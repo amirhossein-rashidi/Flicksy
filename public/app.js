@@ -23,6 +23,9 @@
   var rowsCache = {};     // "lang:kind" -> { items } or { promise }
   var library = { items: [], loaded: false, stale: true, loading: null };
   var detailStack = [];
+  // Everything opened on top of a tab, oldest first: title pages (entries of detailStack) and person pages.
+  // Back always closes the newest one, so you return to exactly where you came from.
+  var layers = [];
   var heroTimer = null;
   var disc = { q: "", filter: "all", tab: "titles", results: [], status: "idle", timer: null, controller: null };
   var libView = { type: "all", status: null };
@@ -1012,11 +1015,25 @@
     } catch (e) {}
   }
 
+  // The title page is one element that shows the newest title; person pages are separate. This puts each in
+  // the order it was opened, so a title opened from a person page is above it and a person opened from a title is above that.
+  function layerZ() {
+    var hasPerson = layers.some(function (l) { return !!l.root; });
+    if (!hasPerson) {
+      // a title opened from a profile that sits on top of the title page must come to the front again
+      $("detail").style.zIndex = document.querySelector(".spage") ? "40" : "";
+      return;
+    }
+    layers.forEach(function (l, i) { if (l.root) l.root.style.zIndex = String(Math.min(41 + i, 49)); });
+    var top = topDetail();
+    if (top) $("detail").style.zIndex = String(Math.min(41 + Math.max(layers.indexOf(top), 0), 49));
+  }
+
   function openDetail(item) {
     var d = { item: item, data: null, tab: "cast", ep: null, error: "", els: {} };
     detailStack.push(d);
-    // a title opened from a profile that sits on top of the title page must come to the front again
-    $("detail").style.zIndex = document.querySelector(".spage") ? "40" : "";
+    layers.push(d);
+    layerZ();
     $("detail").classList.remove("hidden");
     syncLock();
     tgBack();
@@ -1026,7 +1043,9 @@
 
   function backDetail() {
     if (epPage) { closeEpisode(); return; }
-    detailStack.pop();
+    var gone = detailStack.pop();
+    var li = layers.indexOf(gone);
+    if (li >= 0) layers.splice(li, 1);
     var d = topDetail();
     if (d) {
       renderDetail(d);
@@ -1035,6 +1054,7 @@
       clear($("detail"));
       renderTab(currentTab);
     }
+    layerZ();
     syncLock();
     tgBack();
   }
@@ -1093,7 +1113,7 @@
             FX.openProfile(p.public_id);
             // the title page is above profile pages by default; lift this profile over it
             var sp = document.querySelectorAll(".spage");
-            if (sp.length) sp[sp.length - 1].style.zIndex = "35";
+            if (sp.length) sp[sp.length - 1].style.zIndex = String((parseInt($("detail").style.zIndex, 10) || 40) + 1);
           }
         });
         r.appendChild(friendAvatar(p, "fr-av"));
@@ -1277,32 +1297,33 @@
   }
 
   // ---------- person page: biography and filmography (newest first) ----------
-  var personPage = null;
-
-  function closePerson() {
-    if (!personPage) return;
-    personPage.root.remove();
-    FX.popBack(personPage.back);
-    personPage = null;
+  function closePerson(pg) {
+    if (!pg || pg.closed) return;
+    pg.closed = true;
+    pg.root.remove();
+    FX.popBack(pg.back);
+    var i = layers.indexOf(pg);
+    if (i >= 0) layers.splice(i, 1);
+    layerZ();
   }
 
   function openPerson(seed) {
     if (!seed || !seed.id) return;
-    if (personPage) closePerson();
     var root = el("div", "page spage ppage");
-    root.style.zIndex = "35";
-    var pg = { root: root, back: closePerson, data: null, error: "", open: false };
-    personPage = pg;
+    var pg = { root: root, data: null, error: "", open: false, closed: false };
+    pg.back = function () { closePerson(pg); };
     document.body.appendChild(root);
+    layers.push(pg);
+    layerZ();
     FX.pushBack(pg.back);
     drawPerson(pg, seed);
     api(L("/api/person?id=" + encodeURIComponent(seed.id))).then(function (res) {
-      if (personPage !== pg) return;
+      if (pg.closed) return;
       if (res.status !== 200) pg.error = problem(res, "err_load");
       else pg.data = res.data;
       drawPerson(pg, seed);
     }).catch(function () {
-      if (personPage !== pg) return;
+      if (pg.closed) return;
       pg.error = t("err_network");
       drawPerson(pg, seed);
     });
@@ -1313,7 +1334,7 @@
     clear(root);
     var scroller = el("div", "page-scroll");
     root.appendChild(scroller);
-    var back = iconButton("round-btn", "back", t("btn_close"), closePerson);
+    var back = iconButton("round-btn", "back", t("btn_close"), pg.back);
     back.firstChild.classList.add("flip");
     root.appendChild(back);
 
@@ -2676,6 +2697,11 @@
         try { tg.setHeaderColor("#07071a"); tg.setBackgroundColor("#07071a"); } catch (e) {}
         tg.BackButton.onClick(function () {
           if ($("sheet-root").children.length) closeSheet();
+          else if (layers.length) {
+            var topLayer = layers[layers.length - 1];
+            if (topLayer.root) topLayer.back();
+            else backDetail();
+          }
           else if (detailStack.length) backDetail();
           else if (FX.backStack.length) FX.backStack[FX.backStack.length - 1]();
         });
