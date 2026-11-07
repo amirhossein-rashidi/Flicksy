@@ -404,6 +404,8 @@
       /* profile: the cover fades into the page and the avatar overlaps it */
       ".sp-idline { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; color: #cfc2ff; background: rgba(139,92,246,.16); border: 1px solid rgba(168,85,247,.28); direction: ltr; }" +
       ".pf-head { position: relative; }" +
+      ".spage .pf-cover { margin: 0; }" +
+      ".spage .page-scroll, .sheet { overflow-x: hidden; }" +
       "#view-profile { padding-top: 0; }" +
       ".pf-cover { position: relative; margin: 0 -16px; height: 250px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }" +
       ".pf-cover .sp-banner, .spage .pf-cover .sp-banner { height: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; filter: none; }" +
@@ -445,8 +447,8 @@
       ".sp-presets { display: flex; gap: 10px; flex-wrap: wrap; }" +
       ".sp-preset { width: 54px; height: 38px; border-radius: 12px; border: 2px solid transparent; }" +
       ".sp-preset.sel { border-color: #fff; }" +
-      ".sp-pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }" +
-      ".sp-igrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }" +
+      ".sp-pgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }" +
+      ".sp-igrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }" +
       ".sp-img { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #15152f; border: 1px solid var(--line); }" +
       ".sp-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }" +
       ".sp-back { display: inline-flex; align-items: center; gap: 6px; padding: 6px 2px; margin-bottom: 6px; font-size: 14px; font-weight: 700; color: #c9b6ff; }";
