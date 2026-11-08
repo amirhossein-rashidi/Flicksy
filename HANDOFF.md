@@ -53,10 +53,12 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
   - `/start`, `/menu`, `/help` show the home screen: 🔎 Search (opens inline mode in the same chat), 📚 Lists, 🎲 Surprise me, ⚙️ Settings, 🌐 Open Flicksy (a real `web_app` button). Other commands: `/search`, `/lists`, `/settings`, `/app`.
   - Lists: "My lists" (inline, same chat) and "Share lists with my friend" (`switch_inline_query`: pick a chat/group first, then the bot opens there). Someone else's public lists: type bot name + 8-digit Flicksy ID in any chat.
   - Surprise me: random movie or series from the user's own watchlist (status `want`); buttons "Try again" (edits the message, avoids the same title) and "Explore on Flicksy" (`startapp=title-<movie|tv>-<tmdbId>`). It shows the TMDB poster + info card, NOT the app's canvas poster (those are drawn in the browser; a server-side renderer would be a big new job).
-  - Settings: only language for now (8 languages, writes `users.app_lang`). The `inline_hidden` switch was deliberately NOT added to the bot (the app removed it in migration 17).
+  - Settings: language (8 languages, writes `users.app_lang`) and backup buttons: "Export backup" sends the JSON file to the chat (calls `handleBackupSend`), "Import backup" only explains and opens the Mini App (import needs the app's batching; Worker limits). The `inline_hidden` switch was deliberately NOT added to the bot (the app removed it in migration 17).
+  - Language sync: the Mini App no longer sends its language on open (it used to overwrite the bot's choice with English). `/api/me` returns `app_lang` and `adoptServerLanguage()` in `app.js` follows it; changing language inside the app still pushes it to the server. An already-open Mini App only updates after it is reopened.
   - Plain words typed to the bot (no link, no command) search titles and show results as buttons; then the card with status buttons. IMDb/TMDB links still work as before.
   - Callback data prefixes: `menu:`, `v:` (view card), `set:`, `sur:`; old `a:` and `all:` belong to `botlinks.js`. Bot texts exist in en and fa only (other languages fall back to English).
   - Removed on purpose: bot watchlist and "next episode" screens (the user did not want them). Telegram Rich Messages (Bot API 10.1+) were researched and judged not needed now.
+  - `/bot/setup` also sets the bot name (Flicksy), About (short description) and Description in en and fa. The description picture/GIF can only be set in BotFather (`/setdescriptionpic`, 640x360); a ready image was made but the owner has not uploaded it yet.
 - Layer stack in `app.js` (`layers`, `layerZ`, `closePerson`) so person pages and detail pages go back correctly.
 
 ## 5. Known gotchas
