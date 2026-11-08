@@ -1,6 +1,8 @@
 // "Recap": my watching numbers for a period (this month / this year), for the share card.
-//   GET /api/recap?from=YYYY-MM-DD&to=YYYY-MM-DD&lang=xx
-// Only the signed-in person's own numbers. Counted from the watch history (movies) and the
+//   GET /api/recap?from=YYYY-MM-DD&to=YYYY-MM-DD&lang=xx[&id=<Flicksy ID>]
+// Without id: the signed-in person's own numbers. With id: that person's numbers, the same rule as a profile:
+// a private profile shows them only to its owner and to accepted followers, everyone else gets { locked: true }.
+// The answer carries "person" (who the recap belongs to) when id is given. Counted from the watch history (movies) and the
 // watched episodes. Hours = runtime of what was watched (a missing runtime counts as 100 min for a
 // movie and 40 min for an episode). Streak = the longest run of days in a row with something watched.
 
@@ -50,17 +52,39 @@ export async function handleRecap(url, env, user) {
     return json({ error: "bad_range" }, 400);
   }
 
+  // whose recap: mine, or the person with this Flicksy ID
+  let ownerId = user.id;
+  let person = null;
+  const pidRaw = url.searchParams.get("id");
+  if (pidRaw) {
+    if (!/^\d{3,12}$/.test(pidRaw)) return json({ error: "bad_id" }, 400);
+    const target = await env.DB.prepare(
+      "SELECT id, public_id, display_name, photo_url, is_private FROM users WHERE public_id = ?1"
+    )
+      .bind(pidRaw)
+      .first();
+    if (!target) return json({ error: "not_found" }, 404);
+    person = { public_id: target.public_id, display_name: target.display_name, photo_url: target.photo_url || null, is_me: target.id === user.id };
+    if (target.id !== user.id && target.is_private === 1) {
+      const f = await env.DB.prepare("SELECT status FROM follows WHERE follower_id = ?1 AND followed_id = ?2")
+        .bind(user.id, target.id)
+        .first();
+      if (!f || f.status !== "accepted") return json({ locked: true, person: person });
+    }
+    ownerId = target.id;
+  }
+
   const rs = await env.DB.batch([
     env.DB.prepare(
       "SELECT w.watched_on AS day, t.id AS tid, t.title, t.title_fa, t.poster_path, t.genres, t.runtime " +
         "FROM watch_log w JOIN titles t ON t.id = w.title_id " +
         "WHERE w.user_id = ?1 AND t.media_type = 'movie' AND w.watched_on >= ?2 AND w.watched_on <= ?3 LIMIT " + MAX_ROWS
-    ).bind(user.id, from, to),
+    ).bind(ownerId, from, to),
     env.DB.prepare(
       "SELECT substr(ep.watched_at, 1, 10) AS day, t.id AS tid, t.title, t.title_fa, t.poster_path, t.genres, t.runtime " +
         "FROM episode_progress ep JOIN titles t ON t.id = ep.title_id " +
         "WHERE ep.user_id = ?1 AND ep.season_number >= 1 AND substr(ep.watched_at, 1, 10) >= ?2 AND substr(ep.watched_at, 1, 10) <= ?3 LIMIT " + MAX_ROWS
-    ).bind(user.id, from, to),
+    ).bind(ownerId, from, to),
   ]);
   const movieRows = (rs[0] && rs[0].results) || [];
   const episodeRows = (rs[1] && rs[1].results) || [];
@@ -104,5 +128,6 @@ export async function handleRecap(url, env, user) {
     streak: longestStreak(days),
     genre: genre,
     top: top,
+    person: person,
   });
 }
