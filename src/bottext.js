@@ -8,6 +8,7 @@ export const LANGS = [
 
 export const S = {
   en: {
+    helpBtn: "❓ Help",
     welcome: "🎬 <b>Welcome to Flicksy</b>\n\nYour movies and series, right here in the chat.\n\n🔎 Search any movie or series\n📚 See your lists, or anyone's lists\n⚙️ Change your settings\n🔗 Or send me an IMDb / TMDB link",
     search: "🔎 Search", lists: "📚 Lists", settings: "⚙️ Settings", app: "🌐 Open Flicksy", home: "‹ Menu",
     searchPrompt: "Type the name of a movie or series:", placeholder: "Movie or series name",
@@ -24,6 +25,7 @@ export const S = {
     first: "Open Flicksy once first, then come back here.", err: "Something went wrong. Please try again.", done: "Saved ✓",
   },
   fa: {
+    helpBtn: "❓ راهنما",
     welcome: "🎬 <b>به Flicksy خوش اومدی</b>\n\nفیلم و سریال‌هات همین‌جا توی چته.\n\n🔎 هر فیلم یا سریالی رو جستجو کن\n📚 لیست‌های خودت یا بقیه رو ببین\n⚙️ تنظیماتت رو عوض کن\n🔗 یا یه لینک IMDb / TMDB برام بفرست",
     search: "🔎 جستجو", lists: "📚 لیست‌ها", settings: "⚙️ تنظیمات", app: "🌐 باز کردن Flicksy", home: "‹ منو",
     searchPrompt: "اسم فیلم یا سریال رو بنویس:", placeholder: "اسم فیلم یا سریال",
@@ -40,6 +42,7 @@ export const S = {
     first: "اول یه بار Flicksy رو باز کن، بعد بیا اینجا.", err: "یه مشکلی پیش اومد. دوباره امتحان کن.", done: "ذخیره شد ✓",
   },
   ar: {
+    helpBtn: "❓ مساعدة",
     welcome: "🎬 <b>أهلًا بك في Flicksy</b>\n\nأفلامك ومسلسلاتك هنا في المحادثة.\n\n🔎 ابحث عن أي فيلم أو مسلسل\n📚 شاهد قوائمك أو قوائم أي شخص\n⚙️ غيّر إعداداتك\n🔗 أو أرسل لي رابط IMDb / TMDB",
     search: "🔎 بحث", lists: "📚 القوائم", settings: "⚙️ الإعدادات", app: "🌐 افتح Flicksy", home: "‹ القائمة",
     searchPrompt: "اكتب اسم الفيلم أو المسلسل:", placeholder: "اسم الفيلم أو المسلسل",
@@ -56,6 +59,7 @@ export const S = {
     first: "افتح Flicksy مرة واحدة أولًا ثم عد إلى هنا.", err: "حدث خطأ. حاول مرة أخرى.", done: "تم الحفظ ✓",
   },
   tr: {
+    helpBtn: "❓ Yardım",
     welcome: "🎬 <b>Flicksy’ye hoş geldin</b>\n\nFilmlerin ve dizilerin tam burada, sohbetin içinde.\n\n🔎 Herhangi bir film veya diziyi ara\n📚 Kendi listelerini ya da başkalarının listelerini gör\n⚙️ Ayarlarını değiştir\n🔗 Ya da bana bir IMDb / TMDB bağlantısı gönder",
     search: "🔎 Ara", lists: "📚 Listeler", settings: "⚙️ Ayarlar", app: "🌐 Flicksy’yi aç", home: "‹ Menü",
     searchPrompt: "Film veya dizi adını yaz:", placeholder: "Film veya dizi adı",
@@ -72,6 +76,7 @@ export const S = {
     first: "Önce Flicksy’yi bir kez aç, sonra buraya dön.", err: "Bir sorun oluştu. Tekrar dene.", done: "Kaydedildi ✓",
   },
   ru: {
+    helpBtn: "❓ Справка",
     welcome: "🎬 <b>Добро пожаловать в Flicksy</b>\n\nТвои фильмы и сериалы прямо здесь, в чате.\n\n🔎 Найди любой фильм или сериал\n📚 Смотри свои списки и списки других\n⚙️ Поменяй настройки\n🔗 Или пришли мне ссылку IMDb / TMDB",
     search: "🔎 Поиск", lists: "📚 Списки", settings: "⚙️ Настройки", app: "🌐 Открыть Flicksy", home: "‹ Меню",
     searchPrompt: "Напиши название фильма или сериала:", placeholder: "Название фильма или сериала",
@@ -88,6 +93,7 @@ export const S = {
     first: "Сначала открой Flicksy один раз, потом возвращайся сюда.", err: "Что-то пошло не так. Попробуй ещё раз.", done: "Сохранено ✓",
   },
   es: {
+    helpBtn: "❓ Ayuda",
     welcome: "🎬 <b>Te damos la bienvenida a Flicksy</b>\n\nTus películas y series, aquí mismo en el chat.\n\n🔎 Busca cualquier película o serie\n📚 Mira tus listas o las de otras personas\n⚙️ Cambia tus ajustes\n🔗 O envíame un enlace de IMDb / TMDB",
     search: "🔎 Buscar", lists: "📚 Listas", settings: "⚙️ Ajustes", app: "🌐 Abrir Flicksy", home: "‹ Menú",
     searchPrompt: "Escribe el nombre de una película o serie:", placeholder: "Nombre de película o serie",
@@ -104,6 +110,7 @@ export const S = {
     first: "Abre Flicksy una vez primero y luego vuelve aquí.", err: "Algo salió mal. Inténtalo de nuevo.", done: "Guardado ✓",
   },
   fr: {
+    helpBtn: "❓ Aide",
     welcome: "🎬 <b>Bienvenue sur Flicksy</b>\n\nTes films et séries, ici même dans le chat.\n\n🔎 Cherche n’importe quel film ou série\n📚 Vois tes listes ou celles des autres\n⚙️ Change tes réglages\n🔗 Ou envoie-moi un lien IMDb / TMDB",
     search: "🔎 Rechercher", lists: "📚 Listes", settings: "⚙️ Réglages", app: "🌐 Ouvrir Flicksy", home: "‹ Menu",
     searchPrompt: "Écris le nom d’un film ou d’une série :", placeholder: "Nom du film ou de la série",
@@ -120,6 +127,7 @@ export const S = {
     first: "Ouvre d’abord Flicksy une fois, puis reviens ici.", err: "Un problème est survenu. Réessaie.", done: "Enregistré ✓",
   },
   de: {
+    helpBtn: "❓ Hilfe",
     welcome: "🎬 <b>Willkommen bei Flicksy</b>\n\nDeine Filme und Serien, direkt hier im Chat.\n\n🔎 Suche irgendeinen Film oder eine Serie\n📚 Sieh deine Listen oder die von anderen\n⚙️ Ändere deine Einstellungen\n🔗 Oder schick mir einen IMDb- / TMDB-Link",
     search: "🔎 Suchen", lists: "📚 Listen", settings: "⚙️ Einstellungen", app: "🌐 Flicksy öffnen", home: "‹ Menü",
     searchPrompt: "Schreib den Namen eines Films oder einer Serie:", placeholder: "Name von Film oder Serie",
@@ -163,12 +171,12 @@ export const DESC = {
 
 // the command list (menu, search, lists, settings, app)
 export const CMDS = {
-  en: ["Main menu", "Search a movie or series", "Lists", "Settings", "Open Flicksy"],
-  fa: ["منوی اصلی", "جستجوی فیلم یا سریال", "لیست‌ها", "تنظیمات", "باز کردن Flicksy"],
-  ar: ["القائمة الرئيسية", "ابحث عن فيلم أو مسلسل", "القوائم", "الإعدادات", "افتح Flicksy"],
-  tr: ["Ana menü", "Film veya dizi ara", "Listeler", "Ayarlar", "Flicksy’yi aç"],
-  ru: ["Главное меню", "Найти фильм или сериал", "Списки", "Настройки", "Открыть Flicksy"],
-  es: ["Menú principal", "Buscar película o serie", "Listas", "Ajustes", "Abrir Flicksy"],
-  fr: ["Menu principal", "Chercher un film ou une série", "Listes", "Réglages", "Ouvrir Flicksy"],
-  de: ["Hauptmenü", "Film oder Serie suchen", "Listen", "Einstellungen", "Flicksy öffnen"],
+  en: ["Main menu", "Search a movie or series", "Lists", "Settings", "How to use Flicksy", "Open Flicksy"],
+  fa: ["منوی اصلی", "جستجوی فیلم یا سریال", "لیست‌ها", "تنظیمات", "راهنما", "باز کردن Flicksy"],
+  ar: ["القائمة الرئيسية", "ابحث عن فيلم أو مسلسل", "القوائم", "الإعدادات", "المساعدة", "افتح Flicksy"],
+  tr: ["Ana menü", "Film veya dizi ara", "Listeler", "Ayarlar", "Yardım", "Flicksy’yi aç"],
+  ru: ["Главное меню", "Найти фильм или сериал", "Списки", "Настройки", "Справка", "Открыть Flicksy"],
+  es: ["Menú principal", "Buscar película o serie", "Listas", "Ajustes", "Ayuda", "Abrir Flicksy"],
+  fr: ["Menu principal", "Chercher un film ou une série", "Listes", "Réglages", "Aide", "Ouvrir Flicksy"],
+  de: ["Hauptmenü", "Film oder Serie suchen", "Listen", "Einstellungen", "Hilfe", "Flicksy öffnen"],
 };
