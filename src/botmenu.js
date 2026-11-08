@@ -2,50 +2,9 @@
 
 import { searchCards, loadCard, supportedLang } from "./titlecard.js";
 import { handleBackupSend } from "./backup.js";
+import { LANGS, S, ABOUT, DESC, CMDS } from "./bottext.js";
 
 const APP_URL = "https://flicksy.rashidi-a96.workers.dev/";
-const LANGS = [
-  ["en", "English"], ["fa", "فارسی"], ["ar", "العربية"], ["tr", "Türkçe"],
-  ["ru", "Русский"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"],
-];
-
-const S = {
-  en: {
-    welcome: "🎬 <b>Welcome to Flicksy</b>\n\nYour movies and series, right here in the chat.\n\n🔎 Search any movie or series\n📚 See your lists, or anyone's lists\n⚙️ Change your settings\n🔗 Or send me an IMDb / TMDB link",
-    search: "🔎 Search", lists: "📚 Lists", settings: "⚙️ Settings", app: "🌐 Open Flicksy", home: "‹ Menu",
-    searchPrompt: "Type the name of a movie or series:", placeholder: "Movie or series name",
-    results: "Results for “{q}”", noResults: "Nothing found. Try another name.",
-    listsText: "📚 <b>Lists</b>\n\n• <b>My lists:</b> shows your lists here. Pick one to send it to this chat.\n• <b>Share lists with my friend:</b> choose a private chat or a group, and your lists will pop up there. Pick one to send it.\n\nTo see someone else's public lists, type the bot name and their 8-digit Flicksy ID in any chat.",
-    myLists: "📚 My lists", anyLists: "📤 Share lists with my friend",
-    surprise: "🎲 Surprise me", surpriseText: "🎲 <b>Surprise me</b>\n\nI will pick one title from your watchlist. What are you in the mood for?",
-    rMovie: "🎬 Random movie", rTv: "📺 Random series", again: "🔄 Try again", explore: "🌐 Explore on Flicksy",
-    nothing: "Your watchlist has nothing of that kind yet. Add some titles first.",
-    setTitle: "⚙️ <b>Settings</b>", setLang: "Language",
-    pickLang: "Choose a language:",
-    bkExport: "📤 Export backup", bkImport: "📥 Import backup", settingsBack: "‹ Settings",
-    bkSending: "Sending your backup…", bkFail: "Couldn't send the backup. Please try again.",
-    bkImportText: "📥 <b>Import backup</b>\n\nImporting reads your file and adds the titles one batch at a time, so it runs inside the app.\n\n1. Open Flicksy with the button below\n2. Settings → Backup → Import\n3. Choose your file (Flicksy backup, IMDb, TV Time, Letterboxd or Bingers)\n\nNothing you already have is changed or deleted.",
-    first: "Open Flicksy once first, then come back here.", err: "Something went wrong. Please try again.", done: "Saved ✓",
-  },
-  fa: {
-    welcome: "🎬 <b>به Flicksy خوش آمدی</b>\n\nفیلم‌ها و سریال‌هایت، همین‌جا توی چت.\n\n🔎 هر فیلم یا سریالی را جستجو کن\n📚 لیست‌های خودت یا هر کس دیگری را ببین\n⚙️ تنظیماتت را عوض کن\n🔗 یا یک لینک IMDb / TMDB بفرست",
-    search: "🔎 جستجو", lists: "📚 لیست‌ها", settings: "⚙️ تنظیمات", app: "🌐 باز کردن Flicksy", home: "‹ منو",
-    searchPrompt: "اسم فیلم یا سریال را بنویس:", placeholder: "اسم فیلم یا سریال",
-    results: "نتیجه‌ی «{q}»", noResults: "چیزی پیدا نشد. اسم دیگری امتحان کن.",
-    listsText: "📚 <b>لیست‌ها</b>\n\n• <b>لیست‌های من:</b> لیست‌هایت را همین‌جا نشان می‌دهد. یکی را انتخاب کن تا به همین چت فرستاده شود.\n• <b>اشتراک لیست‌ها با دوستم:</b> یک چت خصوصی یا گروه انتخاب کن، لیست‌هایت همان‌جا باز می‌شود. یکی را انتخاب کن تا فرستاده شود.\n\nبرای دیدن لیست‌های عمومی یک نفر دیگر، توی هر چتی اسم ربات و شناسه‌ی ۸ رقمی Flicksy او را بنویس.",
-    myLists: "📚 لیست‌های من", anyLists: "📤 اشتراک لیست‌ها با دوستم",
-    surprise: "🎲 سورپرایزم کن", surpriseText: "🎲 <b>سورپرایزم کن</b>\n\nیکی از عنوان‌های واچ‌لیستت را انتخاب می‌کنم. حال چی را داری؟",
-    rMovie: "🎬 فیلم تصادفی", rTv: "📺 سریال تصادفی", again: "🔄 دوباره", explore: "🌐 دیدن در Flicksy",
-    nothing: "واچ‌لیستت هنوز از این نوع چیزی ندارد. اول چند عنوان اضافه کن.",
-    setTitle: "⚙️ <b>تنظیمات</b>", setLang: "زبان",
-    pickLang: "یک زبان انتخاب کن:",
-    bkExport: "📤 خروجی بکاپ", bkImport: "📥 ورودی بکاپ", settingsBack: "‹ تنظیمات",
-    bkSending: "در حال ارسال بکاپ…", bkFail: "ارسال بکاپ نشد. دوباره امتحان کن.",
-    bkImportText: "📥 <b>ورودی گرفتن بکاپ</b>\n\nورودی گرفتن فایلت را می‌خواند و عنوان‌ها را دسته‌دسته اضافه می‌کند، برای همین داخل خود اپ انجام می‌شود.\n\n۱. با دکمه‌ی پایین Flicksy را باز کن\n۲. تنظیمات ← بکاپ ← ورودی\n۳. فایلت را انتخاب کن (بکاپ Flicksy، IMDb، TV Time، Letterboxd یا Bingers)\n\nهیچ چیز از اطلاعات فعلی‌ات تغییر نمی‌کند یا پاک نمی‌شود.",
-    first: "اول یک بار Flicksy را باز کن، بعد برگرد اینجا.", err: "مشکلی پیش آمد. دوباره امتحان کن.", done: "ذخیره شد ✓",
-  },
-};
-
 function s(lang, key, params) {
   let text = (S[lang] && S[lang][key]) || S.en[key] || key;
   if (params) Object.keys(params).forEach(function (k) { text = text.split("{" + k + "}").join(String(params[k])); });
@@ -297,37 +256,22 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
   }
 }
 
-// Called from /bot/setup: the command list and the menu button next to the text field.
+// Called from /bot/setup: command list, About, Description and name, in every language.
 export async function setupBotMenu(env) {
-  const cmds = {
-    en: [
-      ["menu", "Main menu"], ["search", "Search a movie or series"], ["lists", "Lists"],
-      ["settings", "Settings"], ["app", "Open Flicksy"],
-    ],
-    fa: [
-      ["menu", "منوی اصلی"], ["search", "جستجوی فیلم یا سریال"], ["lists", "لیست‌ها"],
-      ["settings", "تنظیمات"], ["app", "باز کردن Flicksy"],
-    ],
-  };
+  const names = ["menu", "search", "lists", "settings", "app"];
   const out = {};
-  const pack = function (list) { return list.map(function (c) { return { command: c[0], description: c[1] }; }); };
-  out.default = await tg(env, "setMyCommands", { commands: pack(cmds.en) });
-  out.fa = await tg(env, "setMyCommands", { commands: pack(cmds.fa), language_code: "fa" });
+  for (const l of LANGS) {
+    const code = l[0];
+    const extra = code === "en" ? {} : { language_code: code };
+    const commands = names.map(function (n, i) { return { command: n, description: CMDS[code][i] }; });
+    const r = await Promise.all([
+      tg(env, "setMyCommands", Object.assign({ commands: commands }, extra)),
+      tg(env, "setMyShortDescription", Object.assign({ short_description: ABOUT[code] }, extra)),
+      tg(env, "setMyDescription", Object.assign({ description: DESC[code] }, extra)),
+    ]);
+    out[code] = r.map(function (x) { return !!(x && x.ok); });
+  }
   out.menu = await tg(env, "setChatMenuButton", { menu_button: { type: "commands" } });
-
-  // "About" (profile page of the bot) and "Description" (shown above Start in an empty chat)
-  const about = {
-    en: "Track movies & series, rate them, build lists and share them with friends. Your cinema community on Telegram.",
-    fa: "فیلم و سریال‌هایت را ثبت کن، امتیاز بده، لیست بساز و با دوستانت به اشتراک بگذار. جامعه‌ی سینمایی تو در تلگرام.",
-  };
-  const about_long = {
-    en: "🎬 Flicksy is your cinema community inside Telegram.\n\n• Track what you want to watch, are watching and have watched\n• Follow your series episode by episode\n• Rate, comment and earn badges\n• Build lists and share them with friends\n• Search any title right here in the chat\n\nPress Start to begin.",
-    fa: "🎬 Flicksy جامعه‌ی سینمایی تو داخل تلگرام است.\n\n• ثبت کن چه می‌خواهی ببینی، چه می‌بینی و چه دیده‌ای\n• سریال‌هایت را قسمت به قسمت دنبال کن\n• امتیاز بده، نظر بگذار و نشان بگیر\n• لیست بساز و با دوستانت به اشتراک بگذار\n• هر فیلم و سریالی را همین‌جا در چت جستجو کن\n\nبرای شروع Start را بزن.",
-  };
-  out.about_en = await tg(env, "setMyShortDescription", { short_description: about.en });
-  out.about_fa = await tg(env, "setMyShortDescription", { short_description: about.fa, language_code: "fa" });
-  out.desc_en = await tg(env, "setMyDescription", { description: about_long.en });
-  out.desc_fa = await tg(env, "setMyDescription", { description: about_long.fa, language_code: "fa" });
-  out.name_en = await tg(env, "setMyName", { name: "Flicksy" });
+  out.name = await tg(env, "setMyName", { name: "Flicksy" });
   return out;
 }
