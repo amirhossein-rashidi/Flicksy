@@ -284,7 +284,7 @@ export async function handleLinkCallback(env, cq) {
   // a button under a normal message, or under a card sent through @flicksyrobot in some chat
   const target = cq.message ? { chat_id: cq.message.chat.id, message_id: cq.message.message_id } : { inline_message_id: cq.inline_message_id };
 
-  if (/^(menu|v|set|sur):/.test(cq.data)) {
+  if (/^(menu|v|set|sur|bk):/.test(cq.data)) {
     await handleMenuCallback(env, cq, user, lang, { statusKeyboard: statusKeyboard, statusOf: statusOf, cardPreview: cardPreview });
     return;
   }
