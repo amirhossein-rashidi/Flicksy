@@ -41,8 +41,10 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 ## 4. What exists now (all committed and verified)
 - Titles (movies/series), library, lists (public/followers/private), comments, ratings, episodes progress, person (actor) pages, discover, search.
 - Social: profiles, follow / follow requests, notifications bell, activity feed, leaderboard (movies / episodes / lists; EVERYONE appears, private profiles too – tapping opens the profile page, a private one asks for a follow request).
-- Badges (migrations 13–15). Done: first categories only. Not yet: hours, streaks, genre masters, leaderboard, behavior, seasonal.
+- Badges (migrations 13–15). Done: ladders (movies, episodes, lists, followers, comments, hours, streak), list-followers badges, founder / early / hand-given (team, verified, beta, supporter), 8 genre masters (20 titles), rewatcher (5), spoiler-safe (10 spoiler comments), series finisher (3 series). Hours, streak, genre, behavior badges can be earned and pinned but are never the automatic main badge (too heavy for list rows). Not yet: leaderboard rank, marathon, night owl, seasonal (they need new data: user local time, per-day episode count, a permanent rank record, trusted event dates).
+- Main badge (`primary`) is shown as a small picture next to the name in leaderboard, comments and people search (`FX.badgeMini`, backend `primaryBadgesFor` batch in `src/badges.js`; the backend adds `badge` to person / comment user objects). The same badge replaces the Flicksy mark next to the name on profile and recap share cards (`FX.badgeImageUrl` + `badgeImg` in card data); no badge = Flicksy mark.
 - Share flow: one simple share sheet (send in chat, story, save picker with sizes, copy link). Share for profile, title, list and recap (month / year-to-date; Jalali dates for fa/ar). Cards are drawn on canvas (`FX.cards.render(type, data, fmt)`; types list/profile/title/recap; formats chat 1200×630, story 1080×1920, tw 1200×675). Long text shrinks the font first (`shrink`), ellipsis only as a last resort. Backend: `POST /api/card-upload` (random id, `/card/<id>.jpg`, keeps 30 per user / 3 days), `POST /api/card-share`, `POST /api/list-share-image`, `GET /api/recap`.
+- Recap link: `https://t.me/flicksyrobot?startapp=recap-<8-digit Flicksy ID>-<FROM yyyymmdd>-<TO yyyymmdd>` opens a sheet (`FX.share.openRecapLink`) with that person's numbers for that period. `GET /api/recap?from&to&lang&id=<Flicksy ID>`: same privacy as a profile (private profile: only owner and accepted followers; others get `{locked:true, person}`). Own recap still uses no `id`. Share param is validated by `validParam` in `src/cardimg.js`.
 - Settings are full pages with back buttons, order: privacy, notifications, language, backup, about (`FX.openPage`, `FX.settingsItems`).
 - Privacy page (now): Private profile, Show my activity to followers, Show my Telegram @username (off by default; people can still find by searching @username), and under "Advanced": Let people see who follows me / I follow (counts stay visible, only the lists hide). A toast explains what "private" means.
 - Inline bot: `@flicksyrobot <8-digit Flicksy ID>` shows that person's Public lists (not for private profiles). Words show movie/series cards and your own lists.
@@ -57,7 +59,6 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 - Old bot messages keep their old keyboard; only new messages change. The bulk bot button "All → Watching" still applies to mixed lists.
 
 ## 6. Next ideas (nothing here is decided yet; ask which first)
-1. Badge next to names in rows (leaderboard, comments, people search).
-2. Remaining badge categories (hours, streak, genre, leaderboard, behavior, seasonal).
-3. Replace the brand mark next to the name on profile cards with the user's real primary badge.
-4. A dedicated `recap-USERNAME-PERIOD` deep link (recap currently shares a profile link).
+1. Remaining badge categories: leaderboard rank (needs a permanent record when reached), marathon (10 episodes in a day; marking a whole season at once could cheat), night owl (needs the user's local time), seasonal (Yalda, Nowruz, Oscar night, Halloween; needs trusted dates, watch date can be edited). In the badge sheet these show "coming soon".
+2. Hours are an estimate (movie 100 min and episode 40 min when TMDB runtime is missing).
+3. Still open from earlier: what order My lists should appear in (alphabetical / most titles / newest). His own rating style and Android-style emoji were skipped for now.
