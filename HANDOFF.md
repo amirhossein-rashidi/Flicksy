@@ -56,7 +56,7 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
   - Settings: language (8 languages, writes `users.app_lang`) and backup buttons: "Export backup" sends the JSON file to the chat (calls `handleBackupSend`), "Import backup" only explains and opens the Mini App (import needs the app's batching; Worker limits). The `inline_hidden` switch was deliberately NOT added to the bot (the app removed it in migration 17).
   - Language sync: the Mini App no longer sends its language on open (it used to overwrite the bot's choice with English). `/api/me` returns `app_lang` and `adoptServerLanguage()` in `app.js` follows it; changing language inside the app still pushes it to the server. An already-open Mini App only updates after it is reopened.
   - Plain words typed to the bot (no link, no command) search titles and show results as buttons; then the card with status buttons. IMDb/TMDB links still work as before.
-  - Callback data prefixes: `menu:`, `v:` (view card), `set:`, `sur:`; old `a:` and `all:` belong to `botlinks.js`. Bot texts exist in en and fa only (other languages fall back to English).
+  - Callback data prefixes: `menu:`, `v:` (view card), `set:`, `sur:`; old `a:` and `all:` belong to `botlinks.js`. Bot menu texts, About, Description and command names live in `src/bottext.js` (8 languages; add new keys to ALL languages). Tone rule from the owner: simple, friendly, NOT bookish (Persian uses casual forms like می‌خوام / رو / میان). Mini App Persian was softened in i18n.js, i18n-more.js, i18n-redesign.js and backup.js; other languages' tone was not reviewed.
   - Removed on purpose: bot watchlist and "next episode" screens (the user did not want them). Telegram Rich Messages (Bot API 10.1+) were researched and judged not needed now.
   - `/bot/setup` also sets the bot name (Flicksy), About (short description) and Description in en and fa. The description picture/GIF can only be set in BotFather (`/setdescriptionpic`, 640x360); a ready image was made but the owner has not uploaded it yet.
 - Layer stack in `app.js` (`layers`, `layerZ`, `closePerson`) so person pages and detail pages go back correctly.
@@ -69,7 +69,7 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 - Old bot messages keep their old keyboard; only new messages change. The bulk bot button "All → Watching" still applies to mixed lists.
 
 ## 6. Next ideas (nothing here is decided yet; ask which first)
-0. Bot menu follow-ups: translate bot texts to the other 6 languages; maybe add more bot settings (e.g. private profile).
+0. Bot menu follow-ups: maybe add more bot settings; welcome picture/GIF still to be uploaded via BotFather (`flicksy-welcome` image was made in the session scratchpad, not in the repo) (e.g. private profile).
 1. Remaining badge categories: leaderboard rank (needs a permanent record when reached), marathon (10 episodes in a day; marking a whole season at once could cheat), night owl (needs the user's local time), seasonal (Yalda, Nowruz, Oscar night, Halloween; needs trusted dates, watch date can be edited). In the badge sheet these show "coming soon".
 2. Hours are an estimate (movie 100 min and episode 40 min when TMDB runtime is missing).
 3. Still open from earlier: what order My lists should appear in (alphabetical / most titles / newest). His own rating style and Android-style emoji were skipped for now.
