@@ -179,6 +179,8 @@ function cardPreview(card) {
 // A message with links arrived.
 export async function handleLinkMessage(env, message) {
   if (!message || !message.chat || message.chat.type !== "private" || !message.from) return;
+  // a card the person just sent from the inline search comes back to us as a message: do not answer it
+  if (message.via_bot) return;
   const chatId = message.chat.id;
   const text = message.text || message.caption || "";
   const user = await findUser(env, message.from.id);
