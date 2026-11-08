@@ -2609,6 +2609,7 @@
   FX.ingest = ingest;
   FX.openSheet = openSheet;
   FX.closeSheet = closeSheet;
+  FX.me = function () { return me; };
   FX.openDetail = openDetail;
   FX.posterCard = posterCard;
   FX.posterNode = posterNode;
@@ -2668,6 +2669,8 @@
     if (u && FX.openProfile) FX.openProfile(u[1]);
     var cm = /^comment-(\d{1,10})$/.exec(param);
     if (cm && FX.openCommentById) FX.openCommentById(parseInt(cm[1], 10));
+    var rc = /^recap-(\d{3,12})-(\d{8})-(\d{8})$/.exec(param);
+    if (rc && FX.share && FX.share.openRecapLink) FX.share.openRecapLink(rc[1], rc[2], rc[3]);
     var ti = /^title-(movie|tv)-(\d{1,9})$/.exec(param);
     if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
   }
