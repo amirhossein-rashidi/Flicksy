@@ -240,7 +240,7 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
       await answer();
       await show(env, target, chatId, {
         text: s(lang, "bkImportText"),
-        markup: { inline_keyboard: [[appButton(lang)], [{ text: s(lang, "settingsBack"), callback_data: "menu:g" }]] },
+        markup: { inline_keyboard: [[{ text: s(lang, "bkOpen"), url: "https://t.me/flicksyrobot?startapp=backup" }], [{ text: s(lang, "settingsBack"), callback_data: "menu:g" }]] },
       });
     } else if ((m = /^set:l:([a-z]{2})$/.exec(data))) {
       const code = supportedLang(m[1]);
