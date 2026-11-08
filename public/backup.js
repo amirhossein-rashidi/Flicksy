@@ -1008,6 +1008,9 @@
     open: function () { openPage(); }
   };
 
+  // opened by the bot: https://t.me/flicksyrobot?startapp=backup
+  FX.openBackup = function () { openPage(); };
+
   // for tests
   FX.backup = { parseCSV: parseCSV, analyze: analyze, readZip: readZip, buildBatches: buildBatches, extractRefs: extractRefs };
 })();
