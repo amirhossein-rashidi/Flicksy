@@ -53,7 +53,7 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
   - `/start`, `/menu`, `/help` show the home screen: 🔎 Search (opens inline mode in the same chat), 📚 Lists, 🎲 Surprise me, ⚙️ Settings, 🌐 Open Flicksy (a real `web_app` button). Other commands: `/search`, `/lists`, `/settings`, `/app`.
   - Lists: "My lists" (inline, same chat) and "Share lists with my friend" (`switch_inline_query`: pick a chat/group first, then the bot opens there). Someone else's public lists: type bot name + 8-digit Flicksy ID in any chat.
   - Surprise me: random movie or series from the user's own watchlist (status `want`); buttons "Try again" (edits the message, avoids the same title) and "Explore on Flicksy" (`startapp=title-<movie|tv>-<tmdbId>`). It shows the TMDB poster + info card, NOT the app's canvas poster (those are drawn in the browser; a server-side renderer would be a big new job).
-  - Settings: language (8, writes `users.app_lang`) and a switch for `users.inline_hidden`. Note: the app's own privacy page no longer has this switch (migration 17), so the bot's switch is the only place to change it.
+  - Settings: only language for now (8 languages, writes `users.app_lang`). The `inline_hidden` switch was deliberately NOT added to the bot (the app removed it in migration 17).
   - Plain words typed to the bot (no link, no command) search titles and show results as buttons; then the card with status buttons. IMDb/TMDB links still work as before.
   - Callback data prefixes: `menu:`, `v:` (view card), `set:`, `sur:`; old `a:` and `all:` belong to `botlinks.js`. Bot texts exist in en and fa only (other languages fall back to English).
   - Removed on purpose: bot watchlist and "next episode" screens (the user did not want them). Telegram Rich Messages (Bot API 10.1+) were researched and judged not needed now.
@@ -67,7 +67,7 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 - Old bot messages keep their old keyboard; only new messages change. The bulk bot button "All → Watching" still applies to mixed lists.
 
 ## 6. Next ideas (nothing here is decided yet; ask which first)
-0. Bot menu follow-ups: translate bot texts to the other 6 languages; decide whether to keep the `inline_hidden` switch in the bot settings; maybe add more settings (e.g. private profile).
+0. Bot menu follow-ups: translate bot texts to the other 6 languages; maybe add more bot settings (e.g. private profile).
 1. Remaining badge categories: leaderboard rank (needs a permanent record when reached), marathon (10 episodes in a day; marking a whole season at once could cheat), night owl (needs the user's local time), seasonal (Yalda, Nowruz, Oscar night, Halloween; needs trusted dates, watch date can be edited). In the badge sheet these show "coming soon".
 2. Hours are an estimate (movie 100 min and episode 40 min when TMDB runtime is missing).
 3. Still open from earlier: what order My lists should appear in (alphabetical / most titles / newest). His own rating style and Android-style emoji were skipped for now.
