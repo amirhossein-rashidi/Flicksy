@@ -4,6 +4,7 @@
 import { cleanEntries, importEntries, resolveAndStore, MAX_ENTRIES } from "./backup.js";
 import { pickLang } from "./share.js";
 import { findByImdb, loadCard, searchCards, supportedLang } from "./titlecard.js";
+import { handleMenuCommand, handleMenuSearch, handleMenuCallback } from "./botmenu.js";
 
 const BOT_LINK = "https://t.me/flicksyrobot";
 
@@ -183,17 +184,13 @@ export async function handleLinkMessage(env, message) {
   const user = await findUser(env, message.from.id);
   const lang = langFor(user, message.from);
 
-  if (/^\/(start|help)(@\w+)?(\s|$)/i.test(text)) {
-    await tg(env, "sendMessage", {
-      chat_id: chatId,
-      text: t(lang, "help"),
-      reply_markup: { inline_keyboard: [[openButton(lang)]] },
-    });
-    return;
-  }
+  if (await handleMenuCommand(env, message, user, lang)) return;
 
   const refs = extractRefs(text);
-  if (!refs.length) return;
+  if (!refs.length) {
+    await handleMenuSearch(env, message, user, lang);
+    return;
+  }
 
   if (!user) {
     await tg(env, "sendMessage", { chat_id: chatId, text: t(lang, "first"), reply_markup: { inline_keyboard: [[openButton(lang)]] } });
@@ -286,6 +283,11 @@ export async function handleLinkCallback(env, cq) {
   if (!user) { await answer(t(lang, "first")); return; }
   // a button under a normal message, or under a card sent through @flicksyrobot in some chat
   const target = cq.message ? { chat_id: cq.message.chat.id, message_id: cq.message.message_id } : { inline_message_id: cq.inline_message_id };
+
+  if (/^(menu|v|wd|ne):/.test(cq.data)) {
+    await handleMenuCallback(env, cq, user, lang, { statusKeyboard: statusKeyboard, statusOf: statusOf, cardPreview: cardPreview });
+    return;
+  }
 
   let m;
   if ((m = /^a:([mt]):(\d{1,9}):([wgd])$/.exec(cq.data))) {
