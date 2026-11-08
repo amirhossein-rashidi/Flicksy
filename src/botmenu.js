@@ -1,6 +1,7 @@
 // The bot's own menu: /start screen, search (inline), lists, settings - inside the chat.
 
 import { searchCards, loadCard, supportedLang } from "./titlecard.js";
+import { handleBackupSend } from "./backup.js";
 
 const APP_URL = "https://flicksy.rashidi-a96.workers.dev/";
 const LANGS = [
@@ -21,6 +22,9 @@ const S = {
     nothing: "Your watchlist has nothing of that kind yet. Add some titles first.",
     setTitle: "⚙️ <b>Settings</b>", setLang: "Language",
     pickLang: "Choose a language:",
+    bkExport: "📤 Export backup", bkImport: "📥 Import backup", settingsBack: "‹ Settings",
+    bkSending: "Sending your backup…", bkFail: "Couldn't send the backup. Please try again.",
+    bkImportText: "📥 <b>Import backup</b>\n\nImporting reads your file and adds the titles one batch at a time, so it runs inside the app.\n\n1. Open Flicksy with the button below\n2. Settings → Backup → Import\n3. Choose your file (Flicksy backup, IMDb, TV Time, Letterboxd or Bingers)\n\nNothing you already have is changed or deleted.",
     first: "Open Flicksy once first, then come back here.", err: "Something went wrong. Please try again.", done: "Saved ✓",
   },
   fa: {
@@ -35,6 +39,9 @@ const S = {
     nothing: "واچ‌لیستت هنوز از این نوع چیزی ندارد. اول چند عنوان اضافه کن.",
     setTitle: "⚙️ <b>تنظیمات</b>", setLang: "زبان",
     pickLang: "یک زبان انتخاب کن:",
+    bkExport: "📤 خروجی بکاپ", bkImport: "📥 ورودی بکاپ", settingsBack: "‹ تنظیمات",
+    bkSending: "در حال ارسال بکاپ…", bkFail: "ارسال بکاپ نشد. دوباره امتحان کن.",
+    bkImportText: "📥 <b>ورودی گرفتن بکاپ</b>\n\nورودی گرفتن فایلت را می‌خواند و عنوان‌ها را دسته‌دسته اضافه می‌کند، برای همین داخل خود اپ انجام می‌شود.\n\n۱. با دکمه‌ی پایین Flicksy را باز کن\n۲. تنظیمات ← بکاپ ← ورودی\n۳. فایلت را انتخاب کن (بکاپ Flicksy، IMDb، TV Time، Letterboxd یا Bingers)\n\nهیچ چیز از اطلاعات فعلی‌ات تغییر نمی‌کند یا پاک نمی‌شود.",
     first: "اول یک بار Flicksy را باز کن، بعد برگرد اینجا.", err: "مشکلی پیش آمد. دوباره امتحان کن.", done: "ذخیره شد ✓",
   },
 };
@@ -145,6 +152,7 @@ async function settingsView(env, user, lang) {
       return { text: (l[0] === lang ? "✓ " : "") + l[1], callback_data: "set:l:" + l[0] };
     }));
   }
+  kb.push([{ text: s(lang, "bkExport"), callback_data: "bk:e" }, { text: s(lang, "bkImport"), callback_data: "bk:i" }]);
   kb.push([homeButton(lang)]);
   const text =
     s(lang, "setTitle") + "\n\n" +
@@ -257,6 +265,16 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
     } else if (data === "menu:g") {
       await answer();
       await show(env, target, chatId, await settingsView(env, user, lang));
+    } else if (data === "bk:e") {
+      await answer(s(lang, "bkSending"));
+      const res = await handleBackupSend(null, env, user);
+      if (!res.ok) await tg(env, "sendMessage", { chat_id: chatId, text: s(lang, "bkFail") });
+    } else if (data === "bk:i") {
+      await answer();
+      await show(env, target, chatId, {
+        text: s(lang, "bkImportText"),
+        markup: { inline_keyboard: [[appButton(lang)], [{ text: s(lang, "settingsBack"), callback_data: "menu:g" }]] },
+      });
     } else if ((m = /^set:l:([a-z]{2})$/.exec(data))) {
       const code = supportedLang(m[1]);
       if (!code) { await answer(s(lang, "err")); return; }
