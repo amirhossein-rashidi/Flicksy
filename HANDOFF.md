@@ -72,4 +72,4 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 0. Bot menu follow-ups: maybe add more bot settings; welcome picture/GIF still to be uploaded via BotFather (`flicksy-welcome` image was made in the session scratchpad, not in the repo) (e.g. private profile).
 1. Remaining badge categories: leaderboard rank (needs a permanent record when reached), marathon (10 episodes in a day; marking a whole season at once could cheat), night owl (needs the user's local time), seasonal (Yalda, Nowruz, Oscar night, Halloween; needs trusted dates, watch date can be edited). In the badge sheet these show "coming soon".
 2. Hours are an estimate (movie 100 min and episode 40 min when TMDB runtime is missing).
-3. Still open from earlier: what order My lists should appear in (alphabetical / most titles / newest). His own rating style and Android-style emoji were skipped for now.
+3. Decided: My lists stays ordered by last edit (most recently changed first). Still skipped for now: his own rating style and Android-style emoji.
