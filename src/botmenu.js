@@ -3,7 +3,7 @@
 import { searchCards, loadCard, supportedLang } from "./titlecard.js";
 import { handleBackupSend } from "./backup.js";
 import { LANGS, S, ABOUT, DESC, CMDS } from "./bottext.js";
-import { runRichTest } from "./botrich.js";
+import { sendHelp } from "./botrich.js";
 
 const APP_URL = "https://flicksy.rashidi-a96.workers.dev/";
 function s(lang, key, params) {
@@ -48,7 +48,7 @@ function homeView(lang) {
       inline_keyboard: [
         [inlineButton(s(lang, "search")), { text: s(lang, "lists"), callback_data: "menu:l" }],
         [{ text: s(lang, "surprise"), callback_data: "menu:r" }],
-        [{ text: s(lang, "settings"), callback_data: "menu:g" }],
+        [{ text: s(lang, "settings"), callback_data: "menu:g" }, { text: s(lang, "helpBtn"), callback_data: "menu:p" }],
         [appButton(lang)],
       ],
     },
@@ -150,9 +150,8 @@ async function show(env, target, chatId, view) {
 // A command (/start, /menu, /search, /lists, /settings, /app). Returns true when it was one of ours.
 export async function handleMenuCommand(env, message, user, lang) {
   const text = message.text || "";
-  const m = /^\/(start|help|menu|search|lists|settings|app|richtest)(@\w+)?(\s|$)/i.exec(text);
+  const m = /^\/(start|help|menu|search|lists|settings|app)(@\w+)?(\s|$)/i.exec(text);
   if (!m) return false;
-  if (m[1].toLowerCase() === "richtest") { await runRichTest(env, message.chat.id); return true; }
   const cmd = m[1].toLowerCase();
   const chatId = message.chat.id;
 
@@ -160,7 +159,11 @@ export async function handleMenuCommand(env, message, user, lang) {
     await tg(env, "sendMessage", { chat_id: chatId, text: "🎬", reply_markup: { inline_keyboard: [[appButton(lang)]] } });
     return true;
   }
-  if (cmd === "start" || cmd === "help" || cmd === "menu") {
+  if (cmd === "help") {
+    await sendHelp(env, chatId, lang);
+    return true;
+  }
+  if (cmd === "start" || cmd === "menu") {
     await show(env, null, chatId, homeView(lang));
     return true;
   }
@@ -223,6 +226,9 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
       if (!view) { await answer(s(lang, "err")); return; }
       await answer();
       await show(env, target, chatId, view);
+    } else if (data === "menu:p") {
+      await answer();
+      await sendHelp(env, chatId, lang);
     } else if (data === "menu:g") {
       await answer();
       await show(env, target, chatId, await settingsView(env, user, lang));
@@ -260,7 +266,7 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
 
 // Called from /bot/setup: command list, About, Description and name, in every language.
 export async function setupBotMenu(env) {
-  const names = ["menu", "search", "lists", "settings", "app"];
+  const names = ["menu", "search", "lists", "settings", "help", "app"];
   const out = {};
   for (const l of LANGS) {
     const code = l[0];
