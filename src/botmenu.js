@@ -19,8 +19,8 @@ const S = {
     surprise: "🎲 Surprise me", surpriseText: "🎲 <b>Surprise me</b>\n\nI will pick one title from your watchlist. What are you in the mood for?",
     rMovie: "🎬 Random movie", rTv: "📺 Random series", again: "🔄 Try again", explore: "🌐 Explore on Flicksy",
     nothing: "Your watchlist has nothing of that kind yet. Add some titles first.",
-    setTitle: "⚙️ <b>Settings</b>", setLang: "Language", setInl: "Show my public lists when someone searches my Flicksy ID",
-    on: "On", off: "Off", pickLang: "Choose a language:",
+    setTitle: "⚙️ <b>Settings</b>", setLang: "Language",
+    pickLang: "Choose a language:",
     first: "Open Flicksy once first, then come back here.", err: "Something went wrong. Please try again.", done: "Saved ✓",
   },
   fa: {
@@ -33,8 +33,8 @@ const S = {
     surprise: "🎲 سورپرایزم کن", surpriseText: "🎲 <b>سورپرایزم کن</b>\n\nیکی از عنوان‌های واچ‌لیستت را انتخاب می‌کنم. حال چی را داری؟",
     rMovie: "🎬 فیلم تصادفی", rTv: "📺 سریال تصادفی", again: "🔄 دوباره", explore: "🌐 دیدن در Flicksy",
     nothing: "واچ‌لیستت هنوز از این نوع چیزی ندارد. اول چند عنوان اضافه کن.",
-    setTitle: "⚙️ <b>تنظیمات</b>", setLang: "زبان", setInl: "نمایش لیست‌های عمومی من وقتی کسی شناسه‌ی Flicksy من را جستجو می‌کند",
-    on: "روشن", off: "خاموش", pickLang: "یک زبان انتخاب کن:",
+    setTitle: "⚙️ <b>تنظیمات</b>", setLang: "زبان",
+    pickLang: "یک زبان انتخاب کن:",
     first: "اول یک بار Flicksy را باز کن، بعد برگرد اینجا.", err: "مشکلی پیش آمد. دوباره امتحان کن.", done: "ذخیره شد ✓",
   },
 };
@@ -138,8 +138,6 @@ async function surpriseView(env, user, lang, kind, last, ctx) {
 }
 
 async function settingsView(env, user, lang) {
-  const row = await env.DB.prepare("SELECT inline_hidden FROM users WHERE id = ?1").bind(user.id).first();
-  const visible = !(row && row.inline_hidden);
   const cur = LANGS.find(function (l) { return l[0] === lang; });
   const kb = [];
   for (let i = 0; i < LANGS.length; i += 4) {
@@ -147,12 +145,10 @@ async function settingsView(env, user, lang) {
       return { text: (l[0] === lang ? "✓ " : "") + l[1], callback_data: "set:l:" + l[0] };
     }));
   }
-  kb.push([{ text: (visible ? "✅ " : "⬜ ") + clip(s(lang, "setInl"), 50), callback_data: "set:i:" + (visible ? "0" : "1") }]);
   kb.push([homeButton(lang)]);
   const text =
     s(lang, "setTitle") + "\n\n" +
-    "• " + esc(s(lang, "setLang")) + ": <b>" + esc(cur ? cur[1] : lang) + "</b>\n" +
-    "• " + esc(s(lang, "setInl")) + ": <b>" + esc(s(lang, visible ? "on" : "off")) + "</b>";
+    "• " + esc(s(lang, "setLang")) + ": <b>" + esc(cur ? cur[1] : lang) + "</b>";
   return { text: text, markup: { inline_keyboard: kb } };
 }
 
@@ -267,10 +263,6 @@ export async function handleMenuCallback(env, cq, user, lang, ctx) {
       await env.DB.prepare("UPDATE users SET app_lang = ?1 WHERE id = ?2").bind(code, user.id).run();
       await answer(s(code, "done"));
       await show(env, target, chatId, await settingsView(env, user, code));
-    } else if ((m = /^set:i:([01])$/.exec(data))) {
-      await env.DB.prepare("UPDATE users SET inline_hidden = ?1 WHERE id = ?2").bind(m[1] === "1" ? 0 : 1, user.id).run();
-      await answer(s(lang, "done"));
-      await show(env, target, chatId, await settingsView(env, user, lang));
     } else if ((m = /^v:([mt]):(\d{1,9})$/.exec(data))) {
       const type = m[1] === "t" ? "tv" : "movie";
       const card = await loadCard(env, type, parseInt(m[2], 10), lang);
