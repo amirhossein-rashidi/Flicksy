@@ -3,6 +3,7 @@
 import { searchCards, loadCard, supportedLang } from "./titlecard.js";
 import { handleBackupSend } from "./backup.js";
 import { LANGS, S, ABOUT, DESC, CMDS } from "./bottext.js";
+import { runRichTest } from "./botrich.js";
 
 const APP_URL = "https://flicksy.rashidi-a96.workers.dev/";
 function s(lang, key, params) {
@@ -149,8 +150,9 @@ async function show(env, target, chatId, view) {
 // A command (/start, /menu, /search, /lists, /settings, /app). Returns true when it was one of ours.
 export async function handleMenuCommand(env, message, user, lang) {
   const text = message.text || "";
-  const m = /^\/(start|help|menu|search|lists|settings|app)(@\w+)?(\s|$)/i.exec(text);
+  const m = /^\/(start|help|menu|search|lists|settings|app|richtest)(@\w+)?(\s|$)/i.exec(text);
   if (!m) return false;
+  if (m[1].toLowerCase() === "richtest") { await runRichTest(env, message.chat.id); return true; }
   const cmd = m[1].toLowerCase();
   const chatId = message.chat.id;
 
