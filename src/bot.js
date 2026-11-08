@@ -3,6 +3,7 @@
 
 import { json } from "./util.js";
 import { buildCard, pickLang, WORDS } from "./share.js";
+import { setupBotMenu } from "./botmenu.js";
 import { handleLinkMessage, handleLinkCallback, inlineTitleResults, findUser, langFor } from "./botlinks.js";
 
 const MAX_RESULTS = 15;
@@ -33,7 +34,7 @@ async function tg(env, method, payload) {
 export async function handleBotSetup(request, env) {
   if (!env.BOT_TOKEN) return json({ ok: false, error: "no_bot_token" }, 500);
   const origin = new URL(request.url).origin;
-  let set, info;
+  let set, info, menu;
   try {
     set = await tg(env, "setWebhook", {
       url: origin + "/bot/webhook",
@@ -41,6 +42,7 @@ export async function handleBotSetup(request, env) {
       allowed_updates: ["inline_query", "message", "callback_query"],
     });
     info = await tg(env, "getWebhookInfo", {});
+    menu = await setupBotMenu(env);
   } catch (e) {
     return json({ ok: false, error: "telegram_unreachable" }, 502);
   }
@@ -51,6 +53,7 @@ export async function handleBotSetup(request, env) {
     webhook_url: w.url || null,
     pending_updates: w.pending_update_count,
     last_error: w.last_error_message || null,
+    menu: menu,
   });
 }
 
