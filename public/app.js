@@ -2675,6 +2675,17 @@
     if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
   }
 
+  // The bot (Settings > Language) can change the language: follow the server's copy when it is different.
+  function adoptServerLanguage(code) {
+    if (!code || code === I18N.lang) return;
+    var known = false;
+    I18N.languages.forEach(function (l) { if (l.code === code) known = true; });
+    if (!known) return;
+    I18N.set(code);
+    try { localStorage.setItem(LS_LANG, code); } catch (e) {}
+    renderNav();
+  }
+
   function start(attempt) {
     initData = readInitData();
     if (!initData) {
@@ -2682,9 +2693,11 @@
       showFatal(t("err_open_tg"));
       return;
     }
-    api("/api/me?lang=" + encodeURIComponent(I18N.lang)).then(function (res) {
+    // The language is NOT sent here: the person may have changed it in the bot, and the server's copy wins.
+    api("/api/me").then(function (res) {
       if (res.status !== 200) { showFatal(problem(res, "err_login")); return; }
       me = res.data.user;
+      adoptServerLanguage(me && me.app_lang);
       goTab("home");
       openStartParam();
     }).catch(function () { showFatal(t("err_network")); });
