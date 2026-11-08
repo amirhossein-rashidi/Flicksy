@@ -296,5 +296,20 @@ export async function setupBotMenu(env) {
   out.default = await tg(env, "setMyCommands", { commands: pack(cmds.en) });
   out.fa = await tg(env, "setMyCommands", { commands: pack(cmds.fa), language_code: "fa" });
   out.menu = await tg(env, "setChatMenuButton", { menu_button: { type: "commands" } });
+
+  // "About" (profile page of the bot) and "Description" (shown above Start in an empty chat)
+  const about = {
+    en: "Track movies & series, rate them, build lists and share them with friends. Your cinema community on Telegram.",
+    fa: "فیلم و سریال‌هایت را ثبت کن، امتیاز بده، لیست بساز و با دوستانت به اشتراک بگذار. جامعه‌ی سینمایی تو در تلگرام.",
+  };
+  const about_long = {
+    en: "🎬 Flicksy is your cinema community inside Telegram.\n\n• Track what you want to watch, are watching and have watched\n• Follow your series episode by episode\n• Rate, comment and earn badges\n• Build lists and share them with friends\n• Search any title right here in the chat\n\nPress Start to begin.",
+    fa: "🎬 Flicksy جامعه‌ی سینمایی تو داخل تلگرام است.\n\n• ثبت کن چه می‌خواهی ببینی، چه می‌بینی و چه دیده‌ای\n• سریال‌هایت را قسمت به قسمت دنبال کن\n• امتیاز بده، نظر بگذار و نشان بگیر\n• لیست بساز و با دوستانت به اشتراک بگذار\n• هر فیلم و سریالی را همین‌جا در چت جستجو کن\n\nبرای شروع Start را بزن.",
+  };
+  out.about_en = await tg(env, "setMyShortDescription", { short_description: about.en });
+  out.about_fa = await tg(env, "setMyShortDescription", { short_description: about.fa, language_code: "fa" });
+  out.desc_en = await tg(env, "setMyDescription", { description: about_long.en });
+  out.desc_fa = await tg(env, "setMyDescription", { description: about_long.fa, language_code: "fa" });
+  out.name_en = await tg(env, "setMyName", { name: "Flicksy" });
   return out;
 }
