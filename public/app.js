@@ -2671,6 +2671,7 @@
     if (cm && FX.openCommentById) FX.openCommentById(parseInt(cm[1], 10));
     var rc = /^recap-(\d{3,12})-(\d{8})-(\d{8})$/.exec(param);
     if (rc && FX.share && FX.share.openRecapLink) FX.share.openRecapLink(rc[1], rc[2], rc[3]);
+    if (param === "backup" && FX.openBackup) FX.openBackup();
     var ti = /^title-(movie|tv)-(\d{1,9})$/.exec(param);
     if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
   }
