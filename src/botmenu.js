@@ -187,8 +187,10 @@ export async function handleMenuCommand(env, message, user, lang) {
 
 // Plain words (no link, no command): search for a title and show the results as buttons.
 export async function handleMenuSearch(env, message, user, lang) {
-  const q = String(message.text || "").trim().slice(0, 64);
-  if (q.length < 2 || q[0] === "/") return;
+  const raw = String(message.text || "").trim();
+  // a title name is short and on one line; anything else is not a search
+  if (raw.length < 2 || raw.length > 64 || raw.indexOf("\n") >= 0 || raw[0] === "/") return;
+  const q = raw;
   if (!user) {
     await tg(env, "sendMessage", { chat_id: message.chat.id, text: s(lang, "first"), reply_markup: { inline_keyboard: [[appButton(lang)]] } });
     return;
