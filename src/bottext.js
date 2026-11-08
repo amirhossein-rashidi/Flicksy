@@ -21,7 +21,8 @@ export const S = {
     setTitle: "⚙️ <b>Settings</b>", setLang: "Language",
     bkExport: "📤 Export backup", bkImport: "📥 Import backup", settingsBack: "‹ Settings",
     bkSending: "Sending your backup…", bkFail: "Couldn't send the backup. Please try again.",
-    bkImportText: "📥 <b>Import backup</b>\n\nImporting happens inside the app, because it adds your titles in small batches.\n\n1. Open Flicksy with the button below\n2. Settings → Backup → Import\n3. Choose your file (Flicksy backup, IMDb, TV Time, Letterboxd or Bingers)\n\nNothing you already have is changed or deleted.",
+    bkOpen: "📥 Open backup page",
+    bkImportText: "📥 <b>Import backup</b>\n\nImporting happens inside the app, because it adds your titles in small batches.\n\n1. Tap the button below: it opens the backup page\n2. Choose your file (Flicksy backup, IMDb, TV Time, Letterboxd or Bingers)\n\nNothing you already have is changed or deleted.",
     first: "Open Flicksy once first, then come back here.", err: "Something went wrong. Please try again.", done: "Saved ✓",
   },
   fa: {
@@ -38,7 +39,8 @@ export const S = {
     setTitle: "⚙️ <b>تنظیمات</b>", setLang: "زبان",
     bkExport: "📤 گرفتن بکاپ", bkImport: "📥 وارد کردن بکاپ", settingsBack: "‹ تنظیمات",
     bkSending: "دارم بکاپ رو می‌فرستم…", bkFail: "بکاپ فرستاده نشد. دوباره امتحان کن.",
-    bkImportText: "📥 <b>وارد کردن بکاپ</b>\n\nاین کار توی خود اپ انجام می‌شه، چون عنوان‌ها رو کم‌کم اضافه می‌کنه.\n\n۱. با دکمه‌ی پایین Flicksy رو باز کن\n۲. تنظیمات ← بکاپ ← ورودی\n۳. فایلت رو انتخاب کن (بکاپ Flicksy، IMDb، TV Time، Letterboxd یا Bingers)\n\nچیزی از اطلاعات فعلیت عوض یا پاک نمی‌شه.",
+    bkOpen: "📥 باز کردن صفحه‌ی بکاپ",
+    bkImportText: "📥 <b>وارد کردن بکاپ</b>\n\nاین کار توی خود اپ انجام می‌شه، چون عنوان‌ها رو کم‌کم اضافه می‌کنه.\n\n۱. دکمه‌ی پایین رو بزن تا صفحه‌ی بکاپ باز بشه\n۲. فایلت رو انتخاب کن (بکاپ Flicksy، IMDb، TV Time، Letterboxd یا Bingers)\n\nچیزی از اطلاعات فعلیت عوض یا پاک نمی‌شه.",
     first: "اول یه بار Flicksy رو باز کن، بعد بیا اینجا.", err: "یه مشکلی پیش اومد. دوباره امتحان کن.", done: "ذخیره شد ✓",
   },
   ar: {
@@ -55,7 +57,8 @@ export const S = {
     setTitle: "⚙️ <b>الإعدادات</b>", setLang: "اللغة",
     bkExport: "📤 تصدير نسخة احتياطية", bkImport: "📥 استيراد نسخة احتياطية", settingsBack: "‹ الإعدادات",
     bkSending: "جارٍ إرسال النسخة الاحتياطية…", bkFail: "تعذّر إرسال النسخة. حاول مرة أخرى.",
-    bkImportText: "📥 <b>استيراد نسخة احتياطية</b>\n\nيتم الاستيراد داخل التطبيق لأنه يضيف الأعمال على دفعات صغيرة.\n\n1. افتح Flicksy بالزر أدناه\n2. الإعدادات ← النسخ الاحتياطي ← استيراد\n3. اختر ملفك (نسخة Flicksy أو IMDb أو TV Time أو Letterboxd أو Bingers)\n\nلن يتغير أو يُحذف أي شيء لديك.",
+    bkOpen: "📥 افتح صفحة النسخ الاحتياطي",
+    bkImportText: "📥 <b>استيراد نسخة احتياطية</b>\n\nيتم الاستيراد داخل التطبيق لأنه يضيف الأعمال على دفعات صغيرة.\n\n1. اضغط الزر أدناه لفتح صفحة النسخ الاحتياطي\n2. اختر ملفك (نسخة Flicksy أو IMDb أو TV Time أو Letterboxd أو Bingers)\n\nلن يتغير أو يُحذف أي شيء لديك.",
     first: "افتح Flicksy مرة واحدة أولًا ثم عد إلى هنا.", err: "حدث خطأ. حاول مرة أخرى.", done: "تم الحفظ ✓",
   },
   tr: {
@@ -72,7 +75,8 @@ export const S = {
     setTitle: "⚙️ <b>Ayarlar</b>", setLang: "Dil",
     bkExport: "📤 Yedeği dışa aktar", bkImport: "📥 Yedeği içe aktar", settingsBack: "‹ Ayarlar",
     bkSending: "Yedeğin gönderiliyor…", bkFail: "Yedek gönderilemedi. Tekrar dene.",
-    bkImportText: "📥 <b>Yedeği içe aktar</b>\n\nİçe aktarma uygulamanın içinde yapılır, çünkü yapımları küçük gruplar halinde ekler.\n\n1. Aşağıdaki düğmeyle Flicksy’yi aç\n2. Ayarlar → Yedek → İçe aktar\n3. Dosyanı seç (Flicksy yedeği, IMDb, TV Time, Letterboxd veya Bingers)\n\nSende olan hiçbir şey değişmez veya silinmez.",
+    bkOpen: "📥 Yedek sayfasını aç",
+    bkImportText: "📥 <b>Yedeği içe aktar</b>\n\nİçe aktarma uygulamanın içinde yapılır, çünkü yapımları küçük gruplar halinde ekler.\n\n1. Aşağıdaki düğmeye dokun, yedek sayfası açılır\n2. Dosyanı seç (Flicksy yedeği, IMDb, TV Time, Letterboxd veya Bingers)\n\nSende olan hiçbir şey değişmez veya silinmez.",
     first: "Önce Flicksy’yi bir kez aç, sonra buraya dön.", err: "Bir sorun oluştu. Tekrar dene.", done: "Kaydedildi ✓",
   },
   ru: {
@@ -89,7 +93,8 @@ export const S = {
     setTitle: "⚙️ <b>Настройки</b>", setLang: "Язык",
     bkExport: "📤 Экспорт копии", bkImport: "📥 Импорт копии", settingsBack: "‹ Настройки",
     bkSending: "Отправляю копию…", bkFail: "Не получилось отправить копию. Попробуй ещё раз.",
-    bkImportText: "📥 <b>Импорт копии</b>\n\nИмпорт делается внутри приложения: оно добавляет тайтлы небольшими порциями.\n\n1. Открой Flicksy кнопкой ниже\n2. Настройки → Резервная копия → Импорт\n3. Выбери файл (копия Flicksy, IMDb, TV Time, Letterboxd или Bingers)\n\nНичего из того, что у тебя уже есть, не изменится и не удалится.",
+    bkOpen: "📥 Открыть страницу копий",
+    bkImportText: "📥 <b>Импорт копии</b>\n\nИмпорт делается внутри приложения: оно добавляет тайтлы небольшими порциями.\n\n1. Нажми кнопку ниже, откроется страница резервной копии\n2. Выбери файл (копия Flicksy, IMDb, TV Time, Letterboxd или Bingers)\n\nНичего из того, что у тебя уже есть, не изменится и не удалится.",
     first: "Сначала открой Flicksy один раз, потом возвращайся сюда.", err: "Что-то пошло не так. Попробуй ещё раз.", done: "Сохранено ✓",
   },
   es: {
@@ -106,7 +111,8 @@ export const S = {
     setTitle: "⚙️ <b>Ajustes</b>", setLang: "Idioma",
     bkExport: "📤 Exportar copia", bkImport: "📥 Importar copia", settingsBack: "‹ Ajustes",
     bkSending: "Enviando tu copia…", bkFail: "No pude enviar la copia. Inténtalo de nuevo.",
-    bkImportText: "📥 <b>Importar copia</b>\n\nLa importación se hace dentro de la app, porque añade los títulos en tandas pequeñas.\n\n1. Abre Flicksy con el botón de abajo\n2. Ajustes → Copia de seguridad → Importar\n3. Elige tu archivo (copia de Flicksy, IMDb, TV Time, Letterboxd o Bingers)\n\nNada de lo que ya tienes se cambia ni se borra.",
+    bkOpen: "📥 Abrir la página de copias",
+    bkImportText: "📥 <b>Importar copia</b>\n\nLa importación se hace dentro de la app, porque añade los títulos en tandas pequeñas.\n\n1. Toca el botón de abajo para abrir la página de copias\n2. Elige tu archivo (copia de Flicksy, IMDb, TV Time, Letterboxd o Bingers)\n\nNada de lo que ya tienes se cambia ni se borra.",
     first: "Abre Flicksy una vez primero y luego vuelve aquí.", err: "Algo salió mal. Inténtalo de nuevo.", done: "Guardado ✓",
   },
   fr: {
@@ -123,7 +129,8 @@ export const S = {
     setTitle: "⚙️ <b>Réglages</b>", setLang: "Langue",
     bkExport: "📤 Exporter la sauvegarde", bkImport: "📥 Importer une sauvegarde", settingsBack: "‹ Réglages",
     bkSending: "J’envoie ta sauvegarde…", bkFail: "Impossible d’envoyer la sauvegarde. Réessaie.",
-    bkImportText: "📥 <b>Importer une sauvegarde</b>\n\nL’import se fait dans l’appli, car elle ajoute les titres par petits lots.\n\n1. Ouvre Flicksy avec le bouton ci-dessous\n2. Réglages → Sauvegarde → Importer\n3. Choisis ton fichier (sauvegarde Flicksy, IMDb, TV Time, Letterboxd ou Bingers)\n\nRien de ce que tu as déjà n’est modifié ni supprimé.",
+    bkOpen: "📥 Ouvrir la page de sauvegarde",
+    bkImportText: "📥 <b>Importer une sauvegarde</b>\n\nL’import se fait dans l’appli, car elle ajoute les titres par petits lots.\n\n1. Touche le bouton ci-dessous pour ouvrir la page de sauvegarde\n2. Choisis ton fichier (sauvegarde Flicksy, IMDb, TV Time, Letterboxd ou Bingers)\n\nRien de ce que tu as déjà n’est modifié ni supprimé.",
     first: "Ouvre d’abord Flicksy une fois, puis reviens ici.", err: "Un problème est survenu. Réessaie.", done: "Enregistré ✓",
   },
   de: {
@@ -140,7 +147,8 @@ export const S = {
     setTitle: "⚙️ <b>Einstellungen</b>", setLang: "Sprache",
     bkExport: "📤 Backup exportieren", bkImport: "📥 Backup importieren", settingsBack: "‹ Einstellungen",
     bkSending: "Ich schicke dein Backup…", bkFail: "Das Backup konnte nicht gesendet werden. Versuch es nochmal.",
-    bkImportText: "📥 <b>Backup importieren</b>\n\nDer Import läuft in der App, weil sie die Titel in kleinen Portionen hinzufügt.\n\n1. Öffne Flicksy mit dem Button unten\n2. Einstellungen → Backup → Importieren\n3. Wähl deine Datei (Flicksy-Backup, IMDb, TV Time, Letterboxd oder Bingers)\n\nNichts, was du schon hast, wird geändert oder gelöscht.",
+    bkOpen: "📥 Backup-Seite öffnen",
+    bkImportText: "📥 <b>Backup importieren</b>\n\nDer Import läuft in der App, weil sie die Titel in kleinen Portionen hinzufügt.\n\n1. Tipp auf den Button unten, die Backup-Seite öffnet sich\n2. Wähl deine Datei (Flicksy-Backup, IMDb, TV Time, Letterboxd oder Bingers)\n\nNichts, was du schon hast, wird geändert oder gelöscht.",
     first: "Öffne zuerst einmal Flicksy und komm dann hierher zurück.", err: "Etwas ist schiefgelaufen. Versuch es nochmal.", done: "Gespeichert ✓",
   },
 };
