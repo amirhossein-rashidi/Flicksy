@@ -29,7 +29,7 @@ Repo: https://github.com/amirhossein-rashidi/Flicksy (branch `main`)
 - Telegram WebApp APIs used: `shareMessage` (prepared message via backend `savePreparedInlineMessage`), `shareToStory`, `downloadFile`, `openTelegramLink`, `BackButton`.
 
 ### Backend files (src/)
-activity (feed + leaderboard), auth, backup, badges, bot (inline queries), botlinks (link messages + status keyboard), cardimg (card jpg store), comments, discover, episodes, followlist, health, index (router), library, listfollows, lists, notify, person, ratelimit, recap, search, share, shareimg, social (profile, follow, privacy), title, titlecard, tmdb, util.
+activity (feed + leaderboard), auth, backup, badges, bot (inline queries + webhook + /bot/setup), botlinks (link messages + status keyboard, hands commands/buttons to botmenu), botmenu (the bot's own menu), cardimg (card jpg store), comments, discover, episodes, followlist, health, index (router), library, listfollows, lists, notify, person, ratelimit, recap, search, share, shareimg, social (profile, follow, privacy), title, titlecard, tmdb, util.
 
 ### Frontend files (public/)
 app.js (core: tabs, title page, layers, settings pages), social.js (profiles, follow, privacy, header picker, bell), lists.js, comments.js, activity.js, badges.js, backup.js, notifs.js, inline.js, cards.js (canvas card renderer), sharesheet.js (share sheet), sharecard.js, i18n.js / i18n-more.js / i18n-redesign.js, CSS: app.css, extras.css, sheets.css, lists.css, comments.css, activity.css.
@@ -49,6 +49,14 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 - Privacy page (now): Private profile, Show my activity to followers, Show my Telegram @username (off by default; people can still find by searching @username), and under "Advanced": Let people see who follows me / I follow (counts stay visible, only the lists hide). A toast explains what "private" means.
 - Inline bot: `@flicksyrobot <8-digit Flicksy ID>` shows that person's Public lists (not for private profiles). Words show movie/series cards and your own lists.
 - "Watching" status removed for movies (Library chips, status sheet, bot keyboard). Series keep it.
+- Bot menu (`src/botmenu.js`, hooked from `src/botlinks.js`; commands registered by `GET /bot/setup` via `setupBotMenu`, which also sets the chat Menu button to "commands"):
+  - `/start`, `/menu`, `/help` show the home screen: 🔎 Search (opens inline mode in the same chat), 📚 Lists, 🎲 Surprise me, ⚙️ Settings, 🌐 Open Flicksy (a real `web_app` button). Other commands: `/search`, `/lists`, `/settings`, `/app`.
+  - Lists: "My lists" (inline, same chat) and "Share lists with my friend" (`switch_inline_query`: pick a chat/group first, then the bot opens there). Someone else's public lists: type bot name + 8-digit Flicksy ID in any chat.
+  - Surprise me: random movie or series from the user's own watchlist (status `want`); buttons "Try again" (edits the message, avoids the same title) and "Explore on Flicksy" (`startapp=title-<movie|tv>-<tmdbId>`). It shows the TMDB poster + info card, NOT the app's canvas poster (those are drawn in the browser; a server-side renderer would be a big new job).
+  - Settings: language (8, writes `users.app_lang`) and a switch for `users.inline_hidden`. Note: the app's own privacy page no longer has this switch (migration 17), so the bot's switch is the only place to change it.
+  - Plain words typed to the bot (no link, no command) search titles and show results as buttons; then the card with status buttons. IMDb/TMDB links still work as before.
+  - Callback data prefixes: `menu:`, `v:` (view card), `set:`, `sur:`; old `a:` and `all:` belong to `botlinks.js`. Bot texts exist in en and fa only (other languages fall back to English).
+  - Removed on purpose: bot watchlist and "next episode" screens (the user did not want them). Telegram Rich Messages (Bot API 10.1+) were researched and judged not needed now.
 - Layer stack in `app.js` (`layers`, `layerZ`, `closePerson`) so person pages and detail pages go back correctly.
 
 ## 5. Known gotchas
@@ -59,6 +67,7 @@ Privacy columns on `users`: `is_private`, `activity_visible`, `inline_hidden`, `
 - Old bot messages keep their old keyboard; only new messages change. The bulk bot button "All → Watching" still applies to mixed lists.
 
 ## 6. Next ideas (nothing here is decided yet; ask which first)
+0. Bot menu follow-ups: translate bot texts to the other 6 languages; decide whether to keep the `inline_hidden` switch in the bot settings; maybe add more settings (e.g. private profile).
 1. Remaining badge categories: leaderboard rank (needs a permanent record when reached), marathon (10 episodes in a day; marking a whole season at once could cheat), night owl (needs the user's local time), seasonal (Yalda, Nowruz, Oscar night, Halloween; needs trusted dates, watch date can be edited). In the badge sheet these show "coming soon".
 2. Hours are an estimate (movie 100 min and episode 40 min when TMDB runtime is missing).
 3. Still open from earlier: what order My lists should appear in (alphabetical / most titles / newest). His own rating style and Android-style emoji were skipped for now.
