@@ -31,11 +31,12 @@ export async function attachLibraryState(env, userId, results) {
   const ids = results.map((r) => r.tmdb_id).filter((n) => Number.isInteger(n));
   if (ids.length === 0) return;
 
+  // Looks the titles up first, then checks only those in my library (instead of walking my whole library).
   const placeholders = ids.map((_, i) => "?" + (i + 2)).join(",");
   const rows = await env.DB.prepare(
     "SELECT t.tmdb_id, t.media_type, ut.status, ut.rating " +
       "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
-      "WHERE ut.user_id = ?1 AND t.tmdb_id IN (" + placeholders + ")"
+      "WHERE ut.user_id = ?1 AND ut.title_id IN (SELECT id FROM titles WHERE tmdb_id IN (" + placeholders + "))"
   )
     .bind(userId, ...ids)
     .all();
