@@ -10,7 +10,9 @@
 //   team, verified, beta, supporter                                (set by hand in the user_badges table)
 //   hours (estimated), best streak, genre masters, rewatcher, spoiler-safe, series finisher
 //     -> earned and can be pinned, but never chosen automatically as the main badge
-// Not yet: leaderboard rank, marathon, night owl, seasonal.
+//   marathon (10 episodes on one day, counted by different watch times so "mark all" and imports do not count),
+//   seasonal: yalda (Dec 20-21), nowruz (Mar 20-23), hallo (Oct 31) -> watched something on those days
+// Not yet: leaderboard rank, night owl (needs the viewer's time zone), Oscar night (moving date).
 
 import { json } from "./util.js";
 
@@ -43,9 +45,11 @@ const GENRES = {
   doc: ["Documentary"],
   romance: ["Romance"],
 };
-const GOALS = { rewatch: ["rewatches", 5], spoiler: ["spoilers", 10], finisher: ["finished", 3] };
+const GOALS = { rewatch: ["rewatches", 5], spoiler: ["spoilers", 10], finisher: ["finished", 3], marathon: ["marathon", 10] };
+// seasonal badges: [first month, first day, last month, last day] of the dates that count
+const SEASONS = { yalda: [12, 20, 12, 21], nowruz: [3, 20, 3, 23], hallo: [10, 31, 10, 31] };
 // ids that need the extra counts: used to trust a pinned badge in the batch version
-const EXTRA_ID = /^(h\d+|s\d+|rewatch|spoiler|finisher|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
+const EXTRA_ID = /^(h\d+|s\d+|rewatch|spoiler|finisher|marathon|yalda|nowruz|hallo|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
 // special badges that are shown first, best first
 const SPECIAL_ORDER = ["team", "verified", "founder", "early", "beta", "supporter"];
 const MANUAL = ["team", "verified", "beta", "supporter"];
@@ -91,6 +95,7 @@ function finish(counts, earnedBase, pinnedRaw, trustExtraPin) {
   Object.keys(GENRES).forEach((id) => {
     if (((counts.genres || {})[id] || 0) >= GENRE_GOAL) earned.push(id);
   });
+  (counts.seasons || []).forEach((id) => earned.push(id));
 
   // automatic primary badge: a special one first, otherwise the ladder badge with the highest colour level
   let auto = null;
@@ -139,6 +144,8 @@ async function addExtraCounts(env, userId, counts) {
   counts.spoilers = 0;
   counts.finished = 0;
   counts.genres = {};
+  counts.marathon = 0;
+  counts.seasons = [];
   try {
     const rs = await env.DB.batch([
       env.DB.prepare(
@@ -163,6 +170,11 @@ async function addExtraCounts(env, userId, counts) {
         "SELECT substr(watched_at, 1, 10) AS d FROM episode_progress WHERE user_id = ?1 " +
           "UNION SELECT watched_on AS d FROM watch_log WHERE user_id = ?1"
       ).bind(userId),
+      // most episodes on one day, counted by different watch times (a whole season marked at once shares one time)
+      env.DB.prepare(
+        "SELECT COALESCE(MAX(c), 0) AS n FROM (SELECT COUNT(DISTINCT watched_at) AS c FROM episode_progress " +
+          "WHERE user_id = ?1 AND season_number >= 1 GROUP BY substr(watched_at, 1, 10))"
+      ).bind(userId),
     ]);
     counts.hours = Math.floor((((one(rs[0]).n || 0) + (one(rs[1]).n || 0)) / 60));
     counts.rewatches = one(rs[2]).n || 0;
@@ -180,7 +192,19 @@ async function addExtraCounts(env, userId, counts) {
         if (GENRES[id].some((name) => list.indexOf(name) !== -1)) counts.genres[id] = (counts.genres[id] || 0) + 1;
       });
     });
-    counts.streak = bestStreak(((rs[6] && rs[6].results) || []).map((r) => r.d));
+    const days = ((rs[6] && rs[6].results) || []).map((r) => r.d);
+    counts.streak = bestStreak(days);
+    counts.marathon = one(rs[7]).n || 0;
+    Object.keys(SEASONS).forEach((id) => {
+      const s = SEASONS[id];
+      const hit = days.some((d) => {
+        const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || "");
+        if (!m) return false;
+        const v = +m[1] * 100 + +m[2];
+        return v >= s[0] * 100 + s[1] && v <= s[2] * 100 + s[3];
+      });
+      if (hit) counts.seasons.push(id);
+    });
   } catch (e) {
     // watch_log is added by migration 8; without it these badges simply stay locked
   }
