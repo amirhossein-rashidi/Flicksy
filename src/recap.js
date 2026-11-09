@@ -7,7 +7,7 @@
 // movie and 40 min for an episode). Streak = the longest run of days in a row with something watched.
 
 import { json } from "./util.js";
-import { TMDB_IMG } from "./tmdb.js";
+import { TMDB_IMG, posterSql } from "./tmdb.js";
 
 const MOVIE_MIN = 100;
 const EPISODE_MIN = 40;
@@ -76,12 +76,12 @@ export async function handleRecap(url, env, user) {
 
   const rs = await env.DB.batch([
     env.DB.prepare(
-      "SELECT w.watched_on AS day, t.id AS tid, t.title, t.title_fa, t.poster_path, t.genres, t.runtime " +
+      "SELECT w.watched_on AS day, t.id AS tid, t.title, t.title_fa, " + posterSql(user) + " AS poster_path, t.genres, t.runtime " +
         "FROM watch_log w JOIN titles t ON t.id = w.title_id " +
         "WHERE w.user_id = ?1 AND t.media_type = 'movie' AND w.watched_on >= ?2 AND w.watched_on <= ?3 LIMIT " + MAX_ROWS
     ).bind(ownerId, from, to),
     env.DB.prepare(
-      "SELECT substr(ep.watched_at, 1, 10) AS day, t.id AS tid, t.title, t.title_fa, t.poster_path, t.genres, t.runtime " +
+      "SELECT substr(ep.watched_at, 1, 10) AS day, t.id AS tid, t.title, t.title_fa, " + posterSql(user) + " AS poster_path, t.genres, t.runtime " +
         "FROM episode_progress ep JOIN titles t ON t.id = ep.title_id " +
         "WHERE ep.user_id = ?1 AND ep.season_number >= 1 AND substr(ep.watched_at, 1, 10) >= ?2 AND substr(ep.watched_at, 1, 10) <= ?3 LIMIT " + MAX_ROWS
     ).bind(ownerId, from, to),
