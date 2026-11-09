@@ -373,3 +373,10 @@ INSERT INTO schema_version (version) SELECT 18 WHERE NOT EXISTS (SELECT 1 FROM s
 --   (SELECT MAX(ep.watched_at) FROM episode_progress ep WHERE ep.user_id = ut.user_id AND ep.title_id = ut.title_id),
 --   (SELECT MAX(wl.watched_on) FROM watch_log wl WHERE wl.user_id = ut.user_id AND wl.title_id = ut.title_id),
 --   ut.finished_at, ut.started_at, ut.created_at);
+
+-- ===== Migration 19: posters per language =====
+-- poster_path = default (English) poster, poster_fa = Persian poster ('' = there is none).
+-- NULL means "not checked yet"; open /bot/fix-posters once to fix the older titles.
+ALTER TABLE titles ADD COLUMN poster_fa TEXT;
+
+INSERT INTO schema_version (version) SELECT 19 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 19);
