@@ -120,10 +120,10 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
   var TXT = {
     fa: { title: "نشان‌ها", of: "از", back: "بستن", pin: "بذار کنار اسمم", unpin: "برداشتن از کنار اسمم", lock: "قفل", pinned: "نشان کنار اسمت گذاشته شد", auto: "به حالت خودکار برگشت", fail: "ذخیره نشد، دوباره امتحان کن", next: "نشان بعدی", max: "به بالاترین سطح رسیدی", earned: "نشان‌های گرفته‌شده", locked: "در راه", special: "نشان ویژه", empty: "هنوز نشانی نگرفته‌ای.",
       m: "فیلم تماشا شده", e: "قسمت تماشا شده", l: "لیست ساخته‌شده", f: "دنبال‌کننده", c: "نظر نوشته‌شده", h: "ساعت تماشا (تخمینی)", s: "روز پشت‌سرهم (بهترین رکوردت)", cur: "دنبال‌کنندهٔ پرطرفدارترین لیست",
-      d_founder: "جزو ۱۰۰ نفر اول Flicksy بودی.", d_early: "جزو ۱۰۰۰ نفر اول Flicksy بودی.", d_beta: "در تست بتا کمک کردی.", d_verified: "این حساب تأییدشده است.", d_team: "عضو تیم Flicksy.", d_supporter: "از Flicksy حمایت کرده‌ای." },
+      d_founder: "جزو ۱۰۰ نفر اول Flicksy بودی.", d_early: "جزو ۱۰۰۰ نفر اول Flicksy بودی.", d_beta: "در تست بتا کمک کردی.", d_verified: "این حساب تأییدشده است.", d_team: "عضو تیم Flicksy.", d_supporter: "از Flicksy حمایت کرده‌ای.", d_yalda: "شب یلدا هم Flicksy همراهت بود.", d_nowruz: "نوروز را با فیلم و سریال شروع کردی.", d_hallo: "هالووین را با تماشا گذراندی." },
     en: { title: "Badges", of: "of", back: "Close", pin: "Pin next to my name", unpin: "Remove from my name", lock: "Locked", pinned: "Badge pinned next to your name", auto: "Back to automatic", fail: "Could not save, try again", next: "Next badge", max: "Top level reached", earned: "Earned badges", locked: "Coming up", special: "Special badge", empty: "No badges yet.",
       m: "movies watched", e: "episodes watched", l: "lists created", f: "followers", c: "comments written", h: "hours watched (estimated)", s: "days in a row (your best)", cur: "followers on your top list",
-      d_founder: "You were among the first 100 people on Flicksy.", d_early: "You were among the first 1,000 people on Flicksy.", d_beta: "You helped test the beta.", d_verified: "This account is verified.", d_team: "Part of the Flicksy team.", d_supporter: "You supported Flicksy." }
+      d_founder: "You were among the first 100 people on Flicksy.", d_early: "You were among the first 1,000 people on Flicksy.", d_beta: "You helped test the beta.", d_verified: "This account is verified.", d_team: "Part of the Flicksy team.", d_supporter: "You supported Flicksy.", d_yalda: "You watched on Yalda night.", d_nowruz: "You watched during Nowruz.", d_hallo: "You watched on Halloween." }
   };
   var LADDERS = { m: [10, 50, 100, 250, 500, 1000, 2500, 5000], e: [50, 250, 1000, 2500, 5000, 10000], l: [1, 5, 20], f: [10, 100, 1000, 10000], c: [10, 100, 1000], h: [100, 500, 1000, 5000], s: [7, 30, 100, 365] };
   var COUNT_OF = { m: "movies", e: "episodes", l: "lists", f: "followers", c: "comments", h: "hours", s: "streak" };
@@ -132,7 +132,8 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
   var THRESH = {
     rewatch: { key: "rewatches", goal: 5, u: ["بار تماشای دوباره", "rewatches"] },
     spoiler: { key: "spoilers", goal: 10, u: ["کامنت اسپویلری", "spoiler comments"] },
-    finisher: { key: "finished", goal: 3, u: ["سریال دیده‌شده", "series finished"] }
+    finisher: { key: "finished", goal: 3, u: ["سریال دیده‌شده", "series finished"] },
+    marathon: { key: "marathon", goal: 10, u: ["قسمت در یک روز", "episodes in one day"] }
   };
   ["horror", "scifi", "comedy", "drama", "thriller", "anim", "doc", "romance"].forEach(function (g) {
     THRESH[g] = { genre: g, goal: 20, u: ["عنوان از این ژانر", "titles in this genre"] };
@@ -235,21 +236,21 @@ const ALL={};CATS.forEach(c=>c.items.forEach(i=>ALL[i.id]=i));
   };
 
   // how to get each badge (shown when it is not earned yet)
-  var ACTIVE = /^(m|e|l|f|c|h|s)\d+$|^(cur100|cur1000|founder|early|team|verified|beta|supporter|rewatch|spoiler|finisher|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
+  var ACTIVE = /^(m|e|l|f|c|h|s)\d+$|^(cur100|cur1000|founder|early|team|verified|beta|supporter|rewatch|spoiler|finisher|marathon|yalda|nowruz|hallo|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
   var HOW = {
     fa: { m: "{n} فیلم را «دیده‌شده» علامت بزن.", e: "{n} قسمت را «دیده‌شده» علامت بزن.", l: "{n} لیست بساز.", f: "{n} نفر دنبالت کنند.", c: "{n} کامنت بنویس.", h: "{n} ساعت فیلم و سریال تماشا کن.", s: "{n} روز پشت‌سرهم چیزی تماشا کن.",
       cur100: "لیستی عمومی بساز که ۱۰۰ نفر دنبالش کنند.", cur1000: "لیستی عمومی بساز که ۱۰۰۰ نفر دنبالش کنند.",
       founder: "فقط ۱۰۰ نفر اول Flicksy این نشان را دارند.", early: "فقط ۱۰۰۰ نفر اول Flicksy این نشان را دارند.", beta: "تیم Flicksy این نشان را به تست‌کننده‌های بتا می‌دهد.", verified: "حساب‌های تأییدشده را تیم Flicksy مشخص می‌کند.", team: "ویژه‌ی اعضای تیم Flicksy.", supporter: "تیم Flicksy این نشان را به حامیان می‌دهد.",
       genre: "حداقل ۲۰ فیلم و سریال از همین ژانر را «دیده‌شده» علامت بزن.", lb: "در جدول ماهانه‌ی برترها به این رتبه برس.",
-      rewatch: "۵ بار «دوباره دیدم» را روی فیلم‌ها ثبت کن.", spoiler: "۱۰ کامنت با برچسب اسپویلر بنویس.", marathon: "در یک روز ۱۰ قسمت تماشا کن.", night: "دیروقت شب تماشا کن.", finisher: "۳ سریال را «دیده‌شده» علامت بزن.",
-      yalda: "فقط در شب یلدا قابل دریافت است.", nowruz: "فقط در نوروز قابل دریافت است.", oscar: "فقط در شب اسکار قابل دریافت است.", hallo: "فقط در هالووین قابل دریافت است.",
+      rewatch: "۵ بار «دوباره دیدم» را روی فیلم‌ها ثبت کن.", spoiler: "۱۰ کامنت با برچسب اسپویلر بنویس.", marathon: "در یک روز ۱۰ قسمت تماشا کن (جدا از هم علامت بزن، نه یکجا).", night: "دیروقت شب تماشا کن.", finisher: "۳ سریال را «دیده‌شده» علامت بزن.",
+      yalda: "در شب یلدا (۲۰ یا ۲۱ دسامبر) چیزی تماشا کن.", nowruz: "در نوروز (۲۰ تا ۲۳ مارس) چیزی تماشا کن.", oscar: "فقط در شب اسکار قابل دریافت است.", hallo: "در هالووین (۳۱ اکتبر) چیزی تماشا کن.",
       not: "هنوز نگرفته‌ای", soon: "این نشان هنوز فعال نشده و به‌زودی اضافه می‌شود.", left: "{n} {u} دیگه مونده" },
     en: { m: "Mark {n} movies as Watched.", e: "Mark {n} episodes as Watched.", l: "Create {n} lists.", f: "Get {n} followers.", c: "Write {n} comments.", h: "Watch {n} hours of movies and series.", s: "Watch something {n} days in a row.",
       cur100: "Make a public list that 100 people follow.", cur1000: "Make a public list that 1,000 people follow.",
       founder: "Only the first 100 people on Flicksy have this.", early: "Only the first 1,000 people on Flicksy have this.", beta: "The Flicksy team gives this to beta testers.", verified: "The Flicksy team decides which accounts are verified.", team: "For members of the Flicksy team.", supporter: "The Flicksy team gives this to supporters.",
       genre: "Mark at least 20 movies and series of this genre as Watched.", lb: "Reach this rank on the monthly leaderboard.",
-      rewatch: "Log 5 rewatches of movies.", spoiler: "Write 10 comments tagged as spoilers.", marathon: "Watch 10 episodes in one day.", night: "Watch late at night.", finisher: "Mark 3 series as Watched.",
-      yalda: "Only available on Yalda night.", nowruz: "Only available during Nowruz.", oscar: "Only available on Oscar night.", hallo: "Only available on Halloween.",
+      rewatch: "Log 5 rewatches of movies.", spoiler: "Write 10 comments tagged as spoilers.", marathon: "Watch 10 episodes in one day (mark them one by one, not all at once).", night: "Watch late at night.", finisher: "Mark 3 series as Watched.",
+      yalda: "Watch something on Yalda night (Dec 20 or 21).", nowruz: "Watch something during Nowruz (Mar 20-23).", oscar: "Only available on Oscar night.", hallo: "Watch something on Halloween (Oct 31).",
       not: "Not earned yet", soon: "This badge isn't active yet and will be added soon.", left: "{n} more {u} to go" }
   };
   var GENRES = { horror: 1, scifi: 1, comedy: 1, drama: 1, thriller: 1, anim: 1, doc: 1, romance: 1 };
