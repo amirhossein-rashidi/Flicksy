@@ -131,6 +131,8 @@ html[dir="rtl"] .greet { direction: rtl; }
 .searchinput { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: 16px; }
 .searchinput::placeholder { color: var(--dim); }
 .searchinput::-webkit-search-cancel-button { display: none; }
+.sclear { flex: none; width: 26px; height: 26px; padding: 0; border: none; border-radius: 50%; display: none; align-items: center; justify-content: center; background: var(--line); color: var(--text); cursor: pointer; }
+.sclear svg { width: 14px; height: 14px; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 6px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--line); white-space: nowrap; }
