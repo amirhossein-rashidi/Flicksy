@@ -1,6 +1,7 @@
 // Flicksy backend (Cloudflare Worker) - the router.
 // Each feature lives in its own file in this folder.
 
+import { handleFixPosters } from "./fixposters.js";
 import { json } from "./util.js";
 import { allow } from "./ratelimit.js";
 import { authenticate, getOrCreateUser } from "./auth.js";
@@ -78,6 +79,9 @@ export default {
 
       if (path === "/bot/setup" && method === "GET") {
         return await handleBotSetup(request, env);
+      }
+      if (path === "/bot/fix-posters" && method === "GET") {
+        return await handleFixPosters(request, env);
       }
       if (path === "/bot/webhook" && method === "POST") {
         return await handleBotWebhook(request, env);
