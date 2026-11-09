@@ -3,7 +3,7 @@
 // Needs the list_follows table (migration 12). Every handler is safe if the table is missing.
 
 import { json } from "./util.js";
-import { TMDB_IMG } from "./tmdb.js";
+import { TMDB_IMG, posterSql } from "./tmdb.js";
 import { notifyListFollow } from "./notify.js";
 
 const BOARD_SIZE = 50;
@@ -27,12 +27,12 @@ function owner(r) {
 }
 
 // up to 4 poster pictures for each list id
-async function posterMap(env, ids) {
+async function posterMap(env, user, ids) {
   const map = new Map();
   if (!ids.length) return map;
   const rows = await env.DB.prepare(
     "SELECT list_id, poster_path FROM (" +
-      "SELECT li.list_id AS list_id, t.poster_path AS poster_path, " +
+      "SELECT li.list_id AS list_id, " + posterSql(user) + " AS poster_path, " +
       "ROW_NUMBER() OVER (PARTITION BY li.list_id ORDER BY li.position, li.id) AS rn " +
       "FROM list_items li JOIN titles t ON t.id = li.title_id " +
       "WHERE li.list_id IN (" + marks(ids.length) + ")" +
@@ -175,7 +175,7 @@ export async function handleListsLeaderboard(url, env, user) {
       .bind(user.id)
       .all();
     const list = rows.results || [];
-    const posters = await posterMap(env, list.map((r) => r.id));
+    const posters = await posterMap(env, user, list.map((r) => r.id));
     return json({
       kind: "lists",
       rows: list.map((r, i) => ({ rank: i + 1, list: card(r, posters) })),
@@ -202,7 +202,7 @@ export async function handleListsWeekly(url, env, user) {
       .bind(user.id)
       .all();
     const list = rows.results || [];
-    const posters = await posterMap(env, list.map((r) => r.id));
+    const posters = await posterMap(env, user, list.map((r) => r.id));
     return json({ items: list.map((r) => ({ list: card(r, posters), weekly: r.weekly || 0 })) });
   } catch (e) {
     return json({ items: [] });
@@ -224,7 +224,7 @@ export async function handleListsFollowed(url, env, user) {
       .bind(user.id)
       .all();
     const list = rows.results || [];
-    const posters = await posterMap(env, list.map((r) => r.id));
+    const posters = await posterMap(env, user, list.map((r) => r.id));
     return json({ items: list.map((r) => ({ list: card(r, posters) })) });
   } catch (e) {
     return json({ items: [] });
