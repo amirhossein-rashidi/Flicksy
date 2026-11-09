@@ -1,7 +1,7 @@
 // The user's library: list, set status/rating, remove.
 
 import { json, STATUSES, parseTitleRef } from "./util.js";
-import { TMDB_IMG, TMDB_BACKDROP, ensureTitle } from "./tmdb.js";
+import { TMDB_IMG, TMDB_BACKDROP, ensureTitle, posterSql } from "./tmdb.js";
 
 // The feelings a user can attach to a title they watched (max 3).
 export const MOODS = ["😍", "😂", "😢", "😱", "🤯", "😴", "😡", "🤔"];
@@ -84,7 +84,7 @@ export async function handleLibraryList(url, env, user) {
   if (status && !STATUSES.includes(status)) return json({ error: "bad_status" }, 400);
 
   let sql =
-    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, t.backdrop_path, " +
+    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, " + posterSql(user) + " AS poster_path, t.backdrop_path, " +
     "ut.status, ut.rating, ut.updated_at " +
     "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
     "WHERE ut.user_id = ?1";
