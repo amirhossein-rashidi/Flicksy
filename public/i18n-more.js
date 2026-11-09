@@ -36,7 +36,7 @@
       rate_locked: "Оценить можно после просмотра.",
       rate_feel: "Какие эмоции?",
       rate_actor: "Любимый актёр",
-      rate_actor_hint: "Нажмите на актёра, чтобы выбрать."
+      rate_actor_hint: "Нажми на актёра, чтобы выбрать."
     },
     es: {
       rate_title: "¿Qué tal estuvo?",
