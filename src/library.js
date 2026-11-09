@@ -98,13 +98,24 @@ export async function handleLibraryList(url, env, user) {
   const offset = Math.min(Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0), 100000);
   // Order by when the user actually watched (latest episode for series, watch date for movies,
   // then finished/started/added). Rating or editing a title does not move it to the top.
-  sql +=
+  // user_titles.last_activity_at holds exactly that value; database triggers keep it up to date
+  // (migration 18), so the list is read straight from an index instead of being worked out per title.
+  const tail = " LIMIT " + limit + " OFFSET " + offset;
+  const fast = sql + " ORDER BY ut.last_activity_at DESC, ut.id DESC" + tail;
+  const slow =
+    sql +
     " ORDER BY COALESCE(" +
     "(SELECT MAX(ep.watched_at) FROM episode_progress ep WHERE ep.user_id = ut.user_id AND ep.title_id = ut.title_id), " +
     "(SELECT MAX(wl.watched_on) FROM watch_log wl WHERE wl.user_id = ut.user_id AND wl.title_id = ut.title_id), " +
-    "ut.finished_at, ut.started_at, ut.created_at) DESC, ut.id DESC LIMIT " + limit + " OFFSET " + offset;
+    "ut.finished_at, ut.started_at, ut.created_at) DESC, ut.id DESC" + tail;
 
-  const rows = await env.DB.prepare(sql).bind(...binds).all();
+  let rows;
+  try {
+    rows = await env.DB.prepare(fast).bind(...binds).all();
+  } catch (e) {
+    // migration 18 has not been run yet: use the original (slower) ordering
+    rows = await env.DB.prepare(slow).bind(...binds).all();
+  }
   const countRows = await env.DB.prepare(
     "SELECT status, COUNT(*) AS n FROM user_titles WHERE user_id = ?1 GROUP BY status"
   )
