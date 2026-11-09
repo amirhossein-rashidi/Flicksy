@@ -11,7 +11,8 @@
 //   hours (estimated), best streak, genre masters, rewatcher, spoiler-safe, series finisher
 //     -> earned and can be pinned, but never chosen automatically as the main badge
 //   marathon (10 episodes on one day, counted by different watch times so "mark all" and imports do not count),
-//   seasonal: yalda (Dec 20-21), nowruz (Mar 20-23), hallo (Oct 31) -> watched something on those days
+//   seasonal: yalda (Dec 20-21), nowruz (Mar 20-23), hallo (Oct 31) -> watched something on those days,
+//     only days from SEASON_FROM on count; they can also be given by hand in user_badges
 // Not yet: leaderboard rank, night owl (needs the viewer's time zone), Oscar night (moving date).
 
 import { json } from "./util.js";
@@ -52,7 +53,9 @@ const SEASONS = { yalda: [12, 20, 12, 21], nowruz: [3, 20, 3, 23], hallo: [10, 3
 const EXTRA_ID = /^(h\d+|s\d+|rewatch|spoiler|finisher|marathon|yalda|nowruz|hallo|horror|scifi|comedy|drama|thriller|anim|doc|romance)$/;
 // special badges that are shown first, best first
 const SPECIAL_ORDER = ["team", "verified", "founder", "early", "beta", "supporter"];
-const MANUAL = ["team", "verified", "beta", "supporter"];
+const MANUAL = ["team", "verified", "beta", "supporter", "yalda", "nowruz", "hallo"];
+// seasonal days only count from this date on, so history imported from other apps (old dates) does not earn them
+const SEASON_FROM = "2026-11-09";
 
 function one(result) {
   return (result && result.results && result.results[0]) || {};
@@ -199,7 +202,7 @@ async function addExtraCounts(env, userId, counts) {
       const s = SEASONS[id];
       const hit = days.some((d) => {
         const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || "");
-        if (!m) return false;
+        if (!m || d < SEASON_FROM) return false;
         const v = +m[1] * 100 + +m[2];
         return v >= s[0] * 100 + s[1] && v <= s[2] * 100 + s[3];
       });
