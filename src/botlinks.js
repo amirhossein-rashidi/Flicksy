@@ -334,7 +334,7 @@ export async function inlineTitleResults(env, user, query, lang, max) {
   if (user) {
     const rows = ((await env.DB.prepare(
       "SELECT t.media_type, t.tmdb_id, ut.status FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
-        "WHERE ut.user_id = ?1 AND t.tmdb_id IN (SELECT value FROM json_each(?2))"
+        "WHERE ut.user_id = ?1 AND ut.title_id IN (SELECT id FROM titles WHERE tmdb_id IN (SELECT value FROM json_each(?2)))"
     )
       .bind(user.id, JSON.stringify(cards.map(function (c) { return c.tmdb; })))
       .all()).results) || [];
