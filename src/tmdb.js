@@ -70,6 +70,13 @@ export function mapSearchResults(data) {
     });
 }
 
+// The poster to show in lists and grids. Titles keep the default (English) poster in poster_path and the
+// Persian one (when there is one) in poster_fa; people who use the app in Persian get the Persian poster.
+// Returns an SQL piece that stands for the poster of table alias t; it contains no user input.
+export function posterSql(user) {
+  return user && user.app_lang === "fa" ? "COALESCE(NULLIF(t.poster_fa, ''), t.poster_path)" : "t.poster_path";
+}
+
 // Makes sure the title exists in our own table (fetching it from TMDB the first time).
 // Returns our internal title id, or null if TMDB does not know it.
 export async function ensureTitle(env, tmdbId, mediaType) {
@@ -107,8 +114,8 @@ export async function ensureTitle(env, tmdbId, mediaType) {
   await env.DB.prepare(
     "INSERT OR IGNORE INTO titles " +
       "(tmdb_id, media_type, imdb_id, title, original_title, title_fa, year, overview, " +
-      "poster_path, backdrop_path, genres, runtime, tmdb_rating) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)"
+      "poster_path, backdrop_path, genres, runtime, tmdb_rating, poster_fa) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)"
   )
     .bind(
       tmdbId,
@@ -119,11 +126,12 @@ export async function ensureTitle(env, tmdbId, mediaType) {
       titleFa,
       year,
       f.overview || e.overview || null,
-      f.poster_path || e.poster_path || null,
+      e.poster_path || f.poster_path || null,
       e.backdrop_path || null,
       genres,
       runtime,
-      typeof e.vote_average === "number" ? e.vote_average : null
+      typeof e.vote_average === "number" ? e.vote_average : null,
+      f.poster_path && f.poster_path !== e.poster_path ? f.poster_path : ""
     )
     .run();
 
