@@ -612,6 +612,20 @@
     input.placeholder = t("sx_search_ph");
     input.value = disc.q;
     box.appendChild(input);
+    // ✕ in a circle: one tap clears the text and goes back to Discover (shown while searching)
+    var clr = iconButton("sclear", "x", t("btn_close"), function () {
+      clearTimeout(disc.timer);
+      if (disc.controller) disc.controller.abort();
+      input.value = "";
+      disc.q = "";
+      disc.status = "idle";
+      disc.tab = "titles";
+      searching = false;
+      input.blur();
+      drawSeg(); drawChips(); drawBody();
+    });
+    clr.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    box.appendChild(clr);
     v.appendChild(box);
 
     // Browsing: one segment (All / Movies / Series). While the search box is in use (keyboard open) or has text:
@@ -627,6 +641,7 @@
     function searchMode() { return searching || disc.q.trim().length > 0; }
 
     function drawSeg() {
+      clr.style.display = searchMode() ? "flex" : "none";
       clear(seg);
       if (searchMode()) {
         [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
