@@ -129,7 +129,14 @@
       sx_header_empty: "ضع فيلمًا أو مسلسلًا في «شاهدته» أو «أشاهده» لتختار مشهدًا منه.",
       sx_header_noimg: "لا توجد مشاهد لهذا العمل.",
       sx_header_saved: "تم تحديث الغلاف",
-      sx_back: "رجوع"
+      sx_back: "رجوع",
+      sx_no_people_yet: "لا أحد هنا بعد.",
+      sx_search_people: "بحث…",
+      sx_n_creply: "{name} ردّ على تعليقك",
+      sx_n_clike: "{name} أعجبه تعليقك",
+      sx_n_clike_n: "{name} و{n} آخرون أعجبهم تعليقك",
+      sx_n_spoiler: "حرق أحداث",
+      sx_n_lfollow: "{name} تابع قائمتك {list}"
     },
     tr: {
       sx_search_ph: "Film, dizi ve kişi ara…",
@@ -167,7 +174,14 @@
       sx_header_empty: "Sahne seçebilmek için bir film veya diziyi İzledim ya da İzliyorum olarak işaretle.",
       sx_header_noimg: "Bu yapım için sahne bulunamadı.",
       sx_header_saved: "Kapak güncellendi",
-      sx_back: "Geri"
+      sx_back: "Geri",
+      sx_no_people_yet: "Burada henüz kimse yok.",
+      sx_search_people: "Ara…",
+      sx_n_creply: "{name} yorumuna yanıt verdi",
+      sx_n_clike: "{name} yorumunu beğendi",
+      sx_n_clike_n: "{name} ve {n} kişi daha yorumunu beğendi",
+      sx_n_spoiler: "Spoiler",
+      sx_n_lfollow: "{name} {list} listeni takip etti"
     },
     ru: {
       sx_search_ph: "Поиск фильмов, сериалов и людей…",
@@ -205,7 +219,14 @@
       sx_header_empty: "Отметь фильм или сериал как «Просмотрено» или «Смотрю», чтобы выбрать кадр из него.",
       sx_header_noimg: "Для этого названия нет кадров.",
       sx_header_saved: "Обложка обновлена",
-      sx_back: "Назад"
+      sx_back: "Назад",
+      sx_no_people_yet: "Здесь пока никого нет.",
+      sx_search_people: "Поиск…",
+      sx_n_creply: "{name} ответил(а) на твой комментарий",
+      sx_n_clike: "{name} оценил(а) твой комментарий",
+      sx_n_clike_n: "{name} и ещё {n} оценили твой комментарий",
+      sx_n_spoiler: "Спойлер",
+      sx_n_lfollow: "{name} подписался(ась) на твой список {list}"
     },
     es: {
       sx_search_ph: "Buscar títulos y personas…",
@@ -243,7 +264,14 @@
       sx_header_empty: "Marca una película o serie como Vista o Viendo para elegir una escena.",
       sx_header_noimg: "No hay escenas para este título.",
       sx_header_saved: "Portada actualizada",
-      sx_back: "Atrás"
+      sx_back: "Atrás",
+      sx_no_people_yet: "Aún no hay nadie aquí.",
+      sx_search_people: "Buscar…",
+      sx_n_creply: "{name} respondió a tu comentario",
+      sx_n_clike: "A {name} le gustó tu comentario",
+      sx_n_clike_n: "A {name} y a {n} más les gustó tu comentario",
+      sx_n_spoiler: "Spoiler",
+      sx_n_lfollow: "{name} siguió tu lista {list}"
     },
     fr: {
       sx_search_ph: "Rechercher titres et personnes…",
@@ -281,7 +309,14 @@
       sx_header_empty: "Marque un film ou une série comme Vu ou En cours pour choisir une scène.",
       sx_header_noimg: "Aucune scène pour ce titre.",
       sx_header_saved: "Bannière mise à jour",
-      sx_back: "Retour"
+      sx_back: "Retour",
+      sx_no_people_yet: "Personne ici pour l'instant.",
+      sx_search_people: "Rechercher…",
+      sx_n_creply: "{name} a répondu à ton commentaire",
+      sx_n_clike: "{name} a aimé ton commentaire",
+      sx_n_clike_n: "{name} et {n} autres ont aimé ton commentaire",
+      sx_n_spoiler: "Spoiler",
+      sx_n_lfollow: "{name} suit ta liste {list}"
     },
     de: {
       sx_search_ph: "Titel und Personen suchen…",
@@ -319,7 +354,14 @@
       sx_header_empty: "Markiere einen Film oder eine Serie als Gesehen oder Läuft, um eine Szene zu wählen.",
       sx_header_noimg: "Keine Szenen für diesen Titel.",
       sx_header_saved: "Titelbild aktualisiert",
-      sx_back: "Zurück"
+      sx_back: "Zurück",
+      sx_no_people_yet: "Hier ist noch niemand.",
+      sx_search_people: "Suchen…",
+      sx_n_creply: "{name} hat auf deinen Kommentar geantwortet",
+      sx_n_clike: "{name} gefällt dein Kommentar",
+      sx_n_clike_n: "{name} und {n} weiteren gefällt dein Kommentar",
+      sx_n_spoiler: "Spoiler",
+      sx_n_lfollow: "{name} folgt deiner Liste {list}"
     }
   };
 
