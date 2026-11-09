@@ -5,7 +5,7 @@
 
 import { json, parseTitleRef } from "./util.js";
 import { getPrefs, commentBellItems, markCommentNotifsRead, notifyFollowBot } from "./notify.js";
-import { TMDB_IMG, tmdbGet } from "./tmdb.js";
+import { TMDB_IMG, tmdbGet, posterSql } from "./tmdb.js";
 import { computeBadges, primaryBadgesFor } from "./badges.js";
 
 const MAX_FOLLOWING = 1000;
@@ -151,7 +151,7 @@ export async function handleProfile(url, env, user) {
       .all();
     const previews = await env.DB.prepare(
       "SELECT list_id, poster_path FROM (" +
-        "SELECT li.list_id AS list_id, t.poster_path AS poster_path, " +
+        "SELECT li.list_id AS list_id, " + posterSql(user) + " AS poster_path, " +
         "ROW_NUMBER() OVER (PARTITION BY li.list_id ORDER BY li.position, li.id) AS rn " +
         "FROM list_items li JOIN titles t ON t.id = li.title_id " +
         "WHERE li.list_id IN (SELECT id FROM lists WHERE owner_id = ?1 AND visibility = 'public')" +
