@@ -1,7 +1,7 @@
 // Custom lists: create, edit, delete, add/remove titles, view (own or shared by code).
 
 import { json, parseTitleRef } from "./util.js";
-import { TMDB_IMG, TMDB_BACKDROP, ensureTitle } from "./tmdb.js";
+import { TMDB_IMG, TMDB_BACKDROP, ensureTitle, posterSql } from "./tmdb.js";
 
 const VISIBILITIES = ["public", "unlisted", "private"];
 const MAX_LISTS = 50;
@@ -68,7 +68,7 @@ export async function handleListsGet(url, env, user) {
 
   const previews = await env.DB.prepare(
     "SELECT list_id, poster_path FROM (" +
-      "SELECT li.list_id AS list_id, t.poster_path AS poster_path, " +
+      "SELECT li.list_id AS list_id, " + posterSql(user) + " AS poster_path, " +
       "ROW_NUMBER() OVER (PARTITION BY li.list_id ORDER BY li.position, li.id) AS rn " +
       "FROM list_items li JOIN titles t ON t.id = li.title_id " +
       "WHERE li.list_id IN (SELECT id FROM lists WHERE owner_id = ?1)" +
@@ -216,7 +216,7 @@ export async function handleListView(url, env, user) {
   if (!list || (list.visibility === "private" && !isOwner)) return json({ error: "not_found" }, 404);
 
   const rows = await env.DB.prepare(
-    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, t.backdrop_path, t.tmdb_rating, " +
+    "SELECT t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, " + posterSql(user) + " AS poster_path, t.backdrop_path, t.tmdb_rating, " +
       "ut.status, ut.rating AS my_rating " +
       "FROM list_items li JOIN titles t ON t.id = li.title_id " +
       "LEFT JOIN user_titles ut ON ut.title_id = t.id AND ut.user_id = ?2 " +
