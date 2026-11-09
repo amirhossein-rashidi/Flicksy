@@ -5,7 +5,7 @@
 //  - the leaderboard shows everybody (private profiles too: you can tap them, a private one asks you to send a follow request)
 
 import { json } from "./util.js";
-import { TMDB_IMG } from "./tmdb.js";
+import { TMDB_IMG, posterSql } from "./tmdb.js";
 import { primaryBadgesFor } from "./badges.js";
 
 const FEED_PAGE = 30;
@@ -29,7 +29,7 @@ export async function handleFeed(url, env, user) {
   const rows = await env.DB.prepare(
     "SELECT a.id, a.type, a.value, a.created_at, " +
       "u.public_id, u.display_name, CASE WHEN u.username_visible = 1 THEN u.username END AS username, u.photo_url, " +
-      "t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, t.poster_path, " +
+      "t.tmdb_id, t.media_type, t.title, t.title_fa, t.year, " + posterSql(user) + " AS poster_path, " +
       "l.title AS list_title, l.share_code AS list_code " +
       "FROM activities a " +
       "JOIN follows f ON f.followed_id = a.actor_id AND f.follower_id = ?1 AND f.status = 'accepted' " +
