@@ -35,8 +35,8 @@ export async function handleDiscover(url, env, user) {
 }
 
 // Popular actors row. TMDB's own order follows what is trending right now, which puts unknown
-// names first, so we take the top 100 popular people and sort them by how famous their best-known
-// titles are (total votes of the titles they are known for). Cached for a day.
+// names first, so we take the top 100 popular people and mix long-time famous names (by total votes of their best-known
+// titles) with this week's hot names. Cached for a day.
 async function popularActors(url, env) {
   try {
     const lang = tmdbLang(url);
@@ -54,8 +54,24 @@ async function popularActors(url, env) {
         people.push({ id: p.id, name: p.name, photo: imgUrl(TMDB_PROFILE, p.profile_path), fame: fame });
       }
     }
-    people.sort((a, b) => b.fame - a.fame);
-    const out = people.slice(0, 20).map((p) => ({ id: p.id, name: p.name, photo: p.photo }));
+    // Mix: two long-time famous names, then one who is hot this week (TMDB's own order), repeating.
+    const trending = people.slice(0, 40);
+    const famous = people.slice().sort((a, b) => b.fame - a.fame);
+    const used = new Set();
+    const out = [];
+    let fi = 0, ti = 0;
+    const take = (list, idx) => {
+      while (idx < list.length && used.has(list[idx].id)) idx++;
+      if (idx >= list.length) return idx;
+      used.add(list[idx].id);
+      out.push({ id: list[idx].id, name: list[idx].name, photo: list[idx].photo });
+      return idx + 1;
+    };
+    while (out.length < 20 && (fi < famous.length || ti < trending.length)) {
+      fi = take(famous, fi);
+      if (out.length < 20) fi = take(famous, fi);
+      if (out.length < 20) ti = take(trending, ti);
+    }
     if (!out.length) return json({ error: "discover_unavailable" }, 502);
     return json({ results: out });
   } catch (e) {
