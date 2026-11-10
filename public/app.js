@@ -684,8 +684,9 @@
       }
       if (q.length < 2) {
         var f = disc.filter;
+        if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies", null, true)); }
         if (f === "all" && FX.hooks.discoverActors) FX.hooks.discoverActors(body);
-        if (f !== "tv") { body.appendChild(lazyRow("sec_top_movies", "top_movies", null, true)); body.appendChild(lazyRow("sec_popular_movies", "popular_movies", null, true)); }
+        if (f !== "tv") { body.appendChild(lazyRow("sec_popular_movies", "popular_movies", null, true)); }
         if (f !== "movie") { body.appendChild(lazyRow("sec_top_tv", "top_tv", null, true)); body.appendChild(lazyRow("sec_popular_tv", "popular_tv", null, true)); }
         if (f === "all" && FX.hooks.discoverLists) FX.hooks.discoverLists(body);
         return;
