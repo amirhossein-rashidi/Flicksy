@@ -19,7 +19,7 @@
     body.appendChild(wrap);
     FX.api(FX.L("/api/discover?kind=actors")).then(function (res) {
       var list = (res && res.results) || [];
-      if (!list.length || !wrap.isConnected) return;
+      if (!list.length) return;
       wrap.appendChild(el("h2", "sec", label()));
       var row = el("div", "hscroll cast-row");
       list.forEach(function (a, i) {
