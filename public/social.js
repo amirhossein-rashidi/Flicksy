@@ -913,6 +913,8 @@
       sec.appendChild(row);
     }
     body.appendChild(sec);
+    // series and movies shelves (a locked private profile shows none)
+    if (!d.lists_locked && FX.shelves) FX.shelves(body, pr.public_id, d.stats);
   }
 
   function loadProfile(p, quiet) {
@@ -1376,6 +1378,7 @@
       var st = res.data.stats || {};
       sMovies.firstChild.textContent = String(st.movies || 0);
       sEps.firstChild.textContent = String(st.episodes || 0);
+      if (FX.shelvesCounts) FX.shelvesCounts(st);
       if (FX.badgeAttach) FX.badgeAttach(myName, res.data.badges, { own: true });
       clear(socHolder);
       socHolder.appendChild(socLine(st, true));
