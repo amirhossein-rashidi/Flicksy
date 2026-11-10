@@ -34,7 +34,10 @@
         im.addEventListener("error", function () { im.remove(); });
         ph.appendChild(im);
         b.appendChild(ph);
-        b.appendChild(el("div", "cast-name", a.name));
+        var nm = el("div", "cast-name", a.name);
+        nm.style.cssText = "white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+        nm.title = a.name;
+        b.appendChild(nm);
         b.addEventListener("click", function () { FX.openPerson({ id: a.id, name: a.name, photo: a.photo }); });
         row.appendChild(b);
       });
