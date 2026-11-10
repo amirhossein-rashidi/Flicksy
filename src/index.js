@@ -2,6 +2,7 @@
 // Each feature lives in its own file in this folder.
 
 import { handleFixPosters } from "./fixposters.js";
+import { handleProfileTitles } from "./profiletitles.js";
 import { json } from "./util.js";
 import { allow } from "./ratelimit.js";
 import { authenticate, getOrCreateUser } from "./auth.js";
@@ -193,6 +194,9 @@ export default {
         }
         if (path === "/api/list-share" && method === "POST") {
           return await handleListShare(request, env, user);
+        }
+        if (path === "/api/profile-titles" && method === "GET") {
+          return await handleProfileTitles(url, env, user);
         }
         if (path === "/api/people-search" && method === "GET") {
           return await handlePeopleSearch(url, env, user);
