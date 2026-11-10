@@ -18,7 +18,7 @@
     wrap.style.display = "none";
     body.appendChild(wrap);
     FX.api(FX.L("/api/discover?kind=actors")).then(function (res) {
-      var list = (res && res.results) || [];
+      var list = (res && res.status === 200 && res.data && res.data.results) || [];
       if (!list.length) return;
       wrap.appendChild(el("h2", "sec", label()));
       var row = el("div", "hscroll cast-row");
