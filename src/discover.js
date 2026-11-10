@@ -34,14 +34,29 @@ export async function handleDiscover(url, env, user) {
   return json({ results: results });
 }
 
-// Popular actors row (TMDB /person/popular, cached for a day). Only people with a photo.
+// Popular actors row. TMDB's own order follows what is trending right now, which puts unknown
+// names first, so we take the top 100 popular people and sort them by how famous their best-known
+// titles are (total votes of the titles they are known for). Cached for a day.
 async function popularActors(url, env) {
   try {
-    const res = await tmdbGet(env, "/person/popular?language=" + tmdbLang(url) + "&page=1", 86400);
-    const out = (res.data.results || [])
-      .filter((p) => p.profile_path && p.known_for_department === "Acting")
-      .slice(0, 20)
-      .map((p) => ({ id: p.id, name: p.name, photo: imgUrl(TMDB_PROFILE, p.profile_path) }));
+    const lang = tmdbLang(url);
+    const pages = await Promise.all(
+      [1, 2, 3, 4, 5].map((n) => tmdbGet(env, "/person/popular?language=" + lang + "&page=" + n, 86400).then((r) => (r.data && r.data.results) || []).catch(() => []))
+    );
+    const seen = new Set();
+    const people = [];
+    for (const list of pages) {
+      for (const p of list) {
+        if (seen.has(p.id) || !p.profile_path || p.known_for_department !== "Acting") continue;
+        seen.add(p.id);
+        let fame = 0;
+        for (const k of p.known_for || []) fame += k.vote_count || 0;
+        people.push({ id: p.id, name: p.name, photo: imgUrl(TMDB_PROFILE, p.profile_path), fame: fame });
+      }
+    }
+    people.sort((a, b) => b.fame - a.fame);
+    const out = people.slice(0, 20).map((p) => ({ id: p.id, name: p.name, photo: p.photo }));
+    if (!out.length) return json({ error: "discover_unavailable" }, 502);
     return json({ results: out });
   } catch (e) {
     return json({ error: "discover_unavailable" }, 502);
