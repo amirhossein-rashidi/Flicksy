@@ -21,7 +21,7 @@ async function readBody(request) {
   }
 }
 
-function cleanPublicId(value) {
+export function cleanPublicId(value) {
   return typeof value === "string" && /^\d{8}$/.test(value.trim()) ? value.trim() : null;
 }
 
@@ -114,7 +114,8 @@ export async function handleProfile(url, env, user) {
   const [counts, eps, followers, following] = await env.DB.batch([
     env.DB.prepare(
       "SELECT " +
-        "COALESCE(SUM(CASE WHEN t.media_type = 'movie' AND ut.status = 'watched' THEN 1 ELSE 0 END), 0) AS movies " +
+        "COALESCE(SUM(CASE WHEN t.media_type = 'movie' AND ut.status = 'watched' THEN 1 ELSE 0 END), 0) AS movies, " +
+        "COALESCE(SUM(CASE WHEN t.media_type = 'tv' AND ut.status IN ('watched', 'watching') THEN 1 ELSE 0 END), 0) AS series " +
         "FROM user_titles ut JOIN titles t ON t.id = ut.title_id WHERE ut.user_id = ?1"
     ).bind(target.id),
     env.DB.prepare(
@@ -128,9 +129,10 @@ export async function handleProfile(url, env, user) {
     ).bind(target.id),
   ]);
 
-  const c = (counts.results && counts.results[0]) || { movies: 0 };
+  const c = (counts.results && counts.results[0]) || { movies: 0, series: 0 };
   const stats = {
     movies: c.movies || 0,
+    series: c.series || 0,
     episodes: (eps.results && eps.results[0] && eps.results[0].n) || 0,
     followers: (followers.results && followers.results[0] && followers.results[0].n) || 0,
     following: (following.results && following.results[0] && following.results[0].n) || 0,
