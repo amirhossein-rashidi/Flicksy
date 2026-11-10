@@ -1005,6 +1005,7 @@
     if (FX.hooks.profileHead) FX.hooks.profileHead(v, me);
     else v.appendChild(topBar(t("nav_profile")));
     if (FX.hooks.profileLists) FX.hooks.profileLists(v, me);
+    if (FX.hooks.profileShelves) FX.hooks.profileShelves(v, me);
 
     var tabs = el("div", "pf-tabline");
     tabs.appendChild(el("button", "", t("pf_myact")));
