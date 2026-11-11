@@ -699,9 +699,11 @@
 
   function closeProfile() {
     if (!page) return;
+    var reopen = page.reopen;
     page.root.remove();
     FX.popBack(page.back);
     page = null;
+    if (reopen) reopen();
   }
 
   function miniMosaic(posters) {
@@ -780,7 +782,14 @@
         sub.push(person.public_id);
         info.appendChild(el("div", "sp-sub", sub.join(" \u00b7 ")));
         row.appendChild(info);
-        row.addEventListener("click", function () { FX.closeSheet(); openProfile(person.public_id); });
+        row.addEventListener("click", function () {
+          FX.closeSheet();
+          if (page) { page.reopen = null; }
+          openProfile(person.public_id);
+          // going back from this profile brings the same Followers / Following sheet back
+          var tab = cur;
+          if (page) page.reopen = function () { if (pid) openProfile(pid); openFollowSheet(tab, pid); };
+        });
         box.appendChild(row);
       });
       holder.appendChild(box);
@@ -935,7 +944,7 @@
   }
 
   function openProfile(pid) {
-    if (page) closeProfile();
+    if (page) { page.reopen = null; closeProfile(); }
     var p = { pid: String(pid), data: null, error: "", root: el("div", "page spage"), back: closeProfile };
     page = p;
     document.body.appendChild(p.root);
