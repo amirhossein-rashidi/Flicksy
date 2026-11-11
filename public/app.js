@@ -546,6 +546,7 @@
     var contHolder = el("div");
     cont.appendChild(contHolder);
     v.appendChild(cont);
+    if (FX.hooks.homeUpcoming) FX.hooks.homeUpcoming(v);
 
     fetchRow("trending").then(function (items) {
       if (!items) { heroBox.remove(); return; }
@@ -563,10 +564,6 @@
     v.appendChild(lazyRow("sec_trending", "trending"));
     if (FX.hooks.homeRows) FX.hooks.homeRows(v);
     if (FX.hooks.homeLists) FX.hooks.homeLists(v);
-    v.appendChild(lazyRow("sec_popular_movies", "popular_movies"));
-    v.appendChild(lazyRow("sec_popular_tv", "popular_tv"));
-    v.appendChild(lazyRow("sec_top_movies", "top_movies"));
-    v.appendChild(lazyRow("sec_top_tv", "top_tv"));
   }
 
   // ---------- activity (the feed and the leaderboard are built later; for now an empty state) ----------
