@@ -1,6 +1,8 @@
 // New episodes: the next episode to air of the series you are watching or want to watch.
-//   GET /api/upcoming?days=14|60  -> { results: [{ ...title, air: "YYYY-MM-DD", season, episode }] } sorted by date
-// The next-episode info is cached on the title (columns next_*; migration 20) and refreshed from TMDB
+//   GET /api/upcoming?days=14|60|365&type=tv|movie
+//     -> { results: [{ ...title, air: "YYYY-MM-DD", season, episode }] } sorted by date
+//   tv: next episode of series he is watching / wants to watch. movie: release date of unreleased movies he wants to watch.
+// The info is cached on the title (columns next_*; migration 20) and refreshed from TMDB
 // when it is old. At most REFRESH_MAX series are refreshed per request (CPU limit), so a big
 // library fills in over the first few visits.
 
@@ -15,7 +17,10 @@ function parseDb(s) {
 }
 
 export async function handleUpcoming(url, env, user) {
-  const days = url.searchParams.get("days") === "60" ? 60 : 14;
+  const type = url.searchParams.get("type") === "movie" ? "movie" : "tv";
+  const dp = url.searchParams.get("days");
+  const days = dp === "365" ? 365 : dp === "60" ? 60 : 14;
+  const statuses = type === "movie" ? "('want')" : "('watching', 'want')";
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);
 
@@ -26,9 +31,9 @@ export async function handleUpcoming(url, env, user) {
         "SELECT t.id AS tid, t.tmdb_id, t.title, t.title_fa, t.year, " + posterSql(user) + " AS poster_path, t.tmdb_rating, " +
           "t.next_air_date, t.next_season, t.next_episode, t.next_checked_at, ut.status " +
           "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
-          "WHERE ut.user_id = ?1 AND t.media_type = 'tv' AND ut.status IN ('watching', 'want')"
+          "WHERE ut.user_id = ?1 AND t.media_type = ?2 AND ut.status IN " + statuses
       )
-        .bind(user.id)
+        .bind(user.id, type)
         .all()
     ).results || [];
   } catch (e) {
@@ -40,7 +45,7 @@ export async function handleUpcoming(url, env, user) {
     const age = now - parseDb(r.next_checked_at);
     if (!r.next_checked_at) return true;
     if (r.next_air_date && r.next_air_date < today) return true;
-    return age > (r.next_air_date ? 24 * HOUR : 72 * HOUR);
+    return age > (r.next_air_date ? 24 * HOUR : (type === "movie" ? 168 : 72) * HOUR);
   });
   stale.sort((a, b) => (a.next_checked_at ? 1 : 0) - (b.next_checked_at ? 1 : 0) || (a.status === "watching" ? 0 : 1) - (b.status === "watching" ? 0 : 1));
   const batch = stale.slice(0, REFRESH_MAX);
@@ -48,7 +53,7 @@ export async function handleUpcoming(url, env, user) {
   if (batch.length && env.TMDB_TOKEN) {
     const got = await Promise.all(
       batch.map((r) =>
-        tmdbGet(env, "/tv/" + r.tmdb_id + "?language=en-US", 3600)
+        tmdbGet(env, "/" + type + "/" + r.tmdb_id + "?language=en-US", 3600)
           .then((res) => ({ r: r, d: res.data }))
           .catch(() => ({ r: r, d: undefined }))
       )
@@ -56,10 +61,18 @@ export async function handleUpcoming(url, env, user) {
     const stmts = [];
     for (const g of got) {
       if (g.d === undefined) continue; // TMDB hiccup: try again next time
-      const ne = g.d && g.d.next_episode_to_air;
-      g.r.next_air_date = ne && ne.air_date ? ne.air_date : "";
-      g.r.next_season = ne && ne.season_number != null ? ne.season_number : null;
-      g.r.next_episode = ne && ne.episode_number != null ? ne.episode_number : null;
+      if (type === "movie") {
+        // only a release date that is still ahead counts; a movie that is already out has nothing to wait for
+        const rd = g.d && g.d.release_date;
+        g.r.next_air_date = rd && rd >= today ? rd : "";
+        g.r.next_season = null;
+        g.r.next_episode = null;
+      } else {
+        const ne = g.d && g.d.next_episode_to_air;
+        g.r.next_air_date = ne && ne.air_date ? ne.air_date : "";
+        g.r.next_season = ne && ne.season_number != null ? ne.season_number : null;
+        g.r.next_episode = ne && ne.episode_number != null ? ne.episode_number : null;
+      }
       g.r.next_checked_at = new Date(now).toISOString().slice(0, 19).replace("T", " ");
       stmts.push(
         env.DB.prepare("UPDATE titles SET next_air_date = ?1, next_season = ?2, next_episode = ?3, next_checked_at = ?4 WHERE id = ?5")
@@ -79,7 +92,7 @@ export async function handleUpcoming(url, env, user) {
     .sort((a, b) => (a.next_air_date < b.next_air_date ? -1 : a.next_air_date > b.next_air_date ? 1 : (a.title < b.title ? -1 : 1)))
     .map((r) => ({
       tmdb_id: r.tmdb_id,
-      media_type: "tv",
+      media_type: type,
       title: r.title_fa || r.title,
       original_title: r.title,
       title_en: r.title,
