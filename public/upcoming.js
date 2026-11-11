@@ -5,14 +5,14 @@
   var FX = window.FX, el = FX.el, clear = FX.clear, button = FX.button;
 
   var T = {
-    en: { title: "New episodes", today: "Today", tomorrow: "Tomorrow", empty: "No new episodes in the next 60 days.", err: "Could not load. Try again." },
-    fa: { title: "قسمت‌های جدید", today: "امروز", tomorrow: "فردا", empty: "تا ۶۰ روز آینده قسمت جدیدی نیست.", err: "بارگذاری نشد. دوباره امتحان کن." },
-    ar: { title: "حلقات جديدة", today: "اليوم", tomorrow: "غداً", empty: "لا حلقات جديدة خلال 60 يوماً القادمة.", err: "تعذّر التحميل. حاول مجدداً." },
-    tr: { title: "Yeni bölümler", today: "Bugün", tomorrow: "Yarın", empty: "Önümüzdeki 60 günde yeni bölüm yok.", err: "Yüklenemedi. Tekrar dene." },
-    ru: { title: "Новые серии", today: "Сегодня", tomorrow: "Завтра", empty: "В ближайшие 60 дней новых серий нет.", err: "Не загрузилось. Попробуй ещё раз." },
-    es: { title: "Nuevos episodios", today: "Hoy", tomorrow: "Mañana", empty: "No hay episodios nuevos en los próximos 60 días.", err: "No se pudo cargar. Inténtalo de nuevo." },
-    fr: { title: "Nouveaux épisodes", today: "Aujourd'hui", tomorrow: "Demain", empty: "Aucun nouvel épisode dans les 60 prochains jours.", err: "Chargement impossible. Réessaie." },
-    de: { title: "Neue Folgen", today: "Heute", tomorrow: "Morgen", empty: "Keine neuen Folgen in den nächsten 60 Tagen.", err: "Konnte nicht geladen werden. Versuch es noch einmal." }
+    en: { title: "New episodes", movies: "Upcoming movies", today: "Today", tomorrow: "Tomorrow", empty: "No new episodes in the next 60 days.", err: "Could not load. Try again." },
+    fa: { title: "قسمت‌های جدید", movies: "فیلم‌های در راه", today: "امروز", tomorrow: "فردا", empty: "تا ۶۰ روز آینده قسمت جدیدی نیست.", err: "بارگذاری نشد. دوباره امتحان کن." },
+    ar: { title: "حلقات جديدة", movies: "أفلام قادمة", today: "اليوم", tomorrow: "غداً", empty: "لا حلقات جديدة خلال 60 يوماً القادمة.", err: "تعذّر التحميل. حاول مجدداً." },
+    tr: { title: "Yeni bölümler", movies: "Yakında gelecek filmler", today: "Bugün", tomorrow: "Yarın", empty: "Önümüzdeki 60 günde yeni bölüm yok.", err: "Yüklenemedi. Tekrar dene." },
+    ru: { title: "Новые серии", movies: "Скоро в кино", today: "Сегодня", tomorrow: "Завтра", empty: "В ближайшие 60 дней новых серий нет.", err: "Не загрузилось. Попробуй ещё раз." },
+    es: { title: "Nuevos episodios", movies: "Próximos estrenos", today: "Hoy", tomorrow: "Mañana", empty: "No hay episodios nuevos en los próximos 60 días.", err: "No se pudo cargar. Inténtalo de nuevo." },
+    fr: { title: "Nouveaux épisodes", movies: "Films à venir", today: "Aujourd'hui", tomorrow: "Demain", empty: "Aucun nouvel épisode dans les 60 prochains jours.", err: "Chargement impossible. Réessaie." },
+    de: { title: "Neue Folgen", movies: "Kommende Filme", today: "Heute", tomorrow: "Morgen", empty: "Keine neuen Folgen in den nächsten 60 Tagen.", err: "Konnte nicht geladen werden. Versuch es noch einmal." }
   };
   function tr(k) { return (T[I18N.lang] && T[I18N.lang][k]) || T.en[k]; }
   function loc() { return I18N.lang === "fa" ? "fa-IR" : I18N.lang; }
@@ -48,7 +48,9 @@
   }
   function dateOf(iso) { var p = iso.split("-"); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
   function shortDate(iso) {
-    try { return dateOf(iso).toLocaleDateString(loc(), { day: "numeric", month: "short" }); } catch (e) { return iso; }
+    var o = { day: "numeric", month: "short" };
+    if (dateOf(iso).getFullYear() !== new Date().getFullYear()) o.year = "numeric";
+    try { return dateOf(iso).toLocaleDateString(loc(), o); } catch (e) { return iso; }
   }
   function label(iso) {
     var n = dayDiff(iso);
@@ -63,14 +65,15 @@
   }
 
   var cache = {};
-  function load(days) {
-    var c = cache[days];
+  function load(days, type) {
+    var key = type + days;
+    var c = cache[key];
     if (c && Date.now() - c.at < 300000) return Promise.resolve(c.items);
-    return FX.api("/api/upcoming?days=" + days).then(function (res) {
+    return FX.api("/api/upcoming?type=" + type + "&days=" + days).then(function (res) {
       if (res.status !== 200) return null;
       var items = (res.data.results || []).filter(function (it) { return dayDiff(it.air) >= 0; });
       FX.ingest(items);
-      cache[days] = { at: Date.now(), items: items };
+      cache[key] = { at: Date.now(), items: items };
       return items;
     }).catch(function () { return null; });
   }
@@ -80,7 +83,7 @@
       var holder = el("div");
       body.appendChild(holder);
       holder.appendChild(FX.msg(I18N.t("loading")));
-      load(60).then(function (items) {
+      load(60, "tv").then(function (items) {
         clear(holder);
         if (!items) { holder.appendChild(FX.msg(tr("err"), true)); return; }
         if (!items.length) { holder.appendChild(FX.msg(tr("empty"))); return; }
@@ -118,18 +121,21 @@
     });
   }
 
-  FX.hooks.homeUpcoming = function (v) {
+  // One Home row. `type` tv = next episodes (14 days, arrow opens the calendar); movie = release dates (next year, no arrow).
+  function homeRow(v, type) {
     var sec = el("section", "section");
     sec.style.display = "none";
     var head = el("h2", "sec");
-    head.appendChild(el("span", "", tr("title")));
-    var go = button("sec-go", null, openCalendar);
-    go.setAttribute("aria-label", tr("title"));
-    go.appendChild(arrow());
-    head.appendChild(go);
+    head.appendChild(el("span", "", tr(type === "tv" ? "title" : "movies")));
+    if (type === "tv") {
+      var go = button("sec-go", null, openCalendar);
+      go.setAttribute("aria-label", tr("title"));
+      go.appendChild(arrow());
+      head.appendChild(go);
+    }
     sec.appendChild(head);
     v.appendChild(sec);
-    load(14).then(function (items) {
+    load(type === "tv" ? 14 : 365, type).then(function (items) {
       if (!items || !items.length) return;
       var row = el("div", "hscroll");
       items.forEach(function (it) {
@@ -139,12 +145,19 @@
           var n = dayDiff(it.air);
           box.appendChild(el("span", "up-chip" + (n <= 1 ? " hot" : ""), label(it.air)));
         }
-        var sub = card.querySelector(".psub");
-        if (sub) sub.textContent = epText(it) || sub.textContent;
+        if (type === "tv") {
+          var sub = card.querySelector(".psub");
+          if (sub) sub.textContent = epText(it) || sub.textContent;
+        }
         row.appendChild(card);
       });
       sec.appendChild(row);
       sec.style.display = "";
     });
+  }
+
+  FX.hooks.homeUpcoming = function (v) {
+    homeRow(v, "tv");
+    homeRow(v, "movie");
   };
 })();
