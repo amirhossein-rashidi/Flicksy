@@ -561,6 +561,7 @@
     });
 
     v.appendChild(lazyRow("sec_trending", "trending"));
+    if (FX.hooks.homeRows) FX.hooks.homeRows(v);
     if (FX.hooks.homeLists) FX.hooks.homeLists(v);
     v.appendChild(lazyRow("sec_popular_movies", "popular_movies"));
     v.appendChild(lazyRow("sec_popular_tv", "popular_tv"));
