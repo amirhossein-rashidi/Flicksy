@@ -11,6 +11,7 @@ import { handleSearch } from "./search.js";
 import { handleLibraryList, handleLibrarySet, handleLibraryDelete } from "./library.js";
 import { handleDiscover } from "./discover.js";
 import { handleHomeRows } from "./homerows.js";
+import { handleUpcoming } from "./upcoming.js";
 import { handleTitle } from "./title.js";
 import { handleTvInfo, handleSeasonEpisodes, handleEpisodesSet, handleEpisodeNoteSet } from "./episodes.js";
 import {
@@ -140,6 +141,9 @@ export default {
         }
         if (path === "/api/home-rows" && method === "GET") {
           return await handleHomeRows(url, env, user);
+        }
+        if (path === "/api/upcoming" && method === "GET") {
+          return await handleUpcoming(url, env, user);
         }
         if (path === "/api/title" && method === "GET") {
           return await handleTitle(url, env, user);
