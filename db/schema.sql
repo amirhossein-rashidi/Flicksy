@@ -380,3 +380,12 @@ INSERT INTO schema_version (version) SELECT 18 WHERE NOT EXISTS (SELECT 1 FROM s
 ALTER TABLE titles ADD COLUMN poster_fa TEXT;
 
 INSERT INTO schema_version (version) SELECT 19 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 19);
+
+-- Migration 20: next episode to air, cached on the title (filled in by /api/upcoming, refreshed when old).
+-- next_air_date is YYYY-MM-DD, '' = no episode announced, NULL = never checked.
+ALTER TABLE titles ADD COLUMN next_air_date TEXT;
+ALTER TABLE titles ADD COLUMN next_season INTEGER;
+ALTER TABLE titles ADD COLUMN next_episode INTEGER;
+ALTER TABLE titles ADD COLUMN next_checked_at TEXT;
+
+INSERT INTO schema_version (version) SELECT 20 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 20);
