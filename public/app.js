@@ -627,7 +627,7 @@
     v.appendChild(box);
 
     // Browsing: one segment (All / Movies / Series). While the search box is in use (keyboard open) or has text:
-    // three tabs (Titles | People | Actors) and, under Titles, the All / Movies / Series chips.
+    // three tabs (Titles | Actors | People) and, under Titles, the All / Movies / Series chips.
     var seg = el("div", "segment sp-tabs");
     v.appendChild(seg);
     var chipsHolder = el("div");
@@ -642,7 +642,7 @@
       clr.style.display = searchMode() ? "flex" : "none";
       clear(seg);
       if (searchMode()) {
-        [["titles", "sx_tab_titles"], ["people", "sx_tab_people"], ["actors", ""]].forEach(function (pair) {
+        [["titles", "sx_tab_titles"], ["actors", ""], ["people", "sx_tab_people"]].forEach(function (pair) {
           if (pair[0] === "actors" && !FX.actorsLabel) return;
           var tabLabel = pair[0] === "actors" ? FX.actorsLabel() : t(pair[1]);
           seg.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), tabLabel, function () {
@@ -664,7 +664,7 @@
 
     function drawChips() {
       clear(chipsHolder);
-      // while searching there are only the tabs (Titles | People | Actors), no All / Movies / Series chips
+      // while searching there are only the tabs (Titles | Actors | People), no All / Movies / Series chips
       return;
     }
 
