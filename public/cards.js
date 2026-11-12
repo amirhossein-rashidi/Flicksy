@@ -755,6 +755,10 @@
       var vW = textWidth(g, d.rating, 700, size), eW = textWidth(g, d.outOf, 600, emSize);
       pills.push({ k: "rt", w: 2 + 2 * cfg.padX + cfg.svg + 10 + vW + 10 + eW, h: 2 + 2 * cfg.padY + Math.max(cfg.svg, tlh), vW: vW, eW: eW });
     }
+    (d.counts || []).forEach(function (c) {
+      var cT = textWidth(g, c.text, 700, size);
+      pills.push({ k: "cnt", icon: c.icon, w: 2 + 2 * cfg.padX + cfg.svg + 10 + cT, h: 2 + 2 * cfg.padY + Math.max(cfg.svg, tlh), tW: cT, t: c.text });
+    });
     if (d.who) {
       var wt = d.who + " " + d.rated, tW = textWidth(g, wt, 700, size);
       pills.push({ k: "who", w: 2 + 2 * cfg.padX + cfg.mini + 10 + tW, h: 2 + 2 * cfg.padY + Math.max(cfg.mini, tlh), tW: tW, t: wt });
@@ -776,6 +780,10 @@
         text(g, d.rating, vx, py, p.h, { weight: 700, size: size, fill: "#ffffff", align: al });
         var ex = rtl ? vx - p.vW - 10 : vx + p.vW + 10;
         text(g, d.outOf, ex, py, p.h, { weight: 600, size: emSize, fill: "#a3a3c4", align: al });
+      } else if (p.k === "cnt") {
+        var cx0 = rtl ? inR - cfg.svg : inL;
+        drawIcon(g, p.icon || "film", cx0, py + (p.h - cfg.svg) / 2, cfg.svg, "#cfcfe8", 2.2);
+        text(g, p.t, rtl ? cx0 - 10 : cx0 + cfg.svg + 10, py, p.h, { weight: 700, size: size, fill: "#e6e6f8", align: al });
       } else {
         var mxp = rtl ? inR - cfg.mini : inL, mc = [mxp + cfg.mini / 2, py + p.h / 2];
         var mg = g.createLinearGradient(mc[0] - cfg.mini / 2, mc[1] - cfg.mini / 2, mc[0] + cfg.mini / 2, mc[1] + cfg.mini / 2);
@@ -796,7 +804,7 @@
     g.fillStyle = "rgba(168,85,247,.2)"; g.fill();
     g.strokeStyle = "rgba(168,85,247,.45)"; g.lineWidth = 1; g.stroke();
     var ix = rtl ? cx0 + cw - 1 - pad - icon : cx0 + 1 + pad;
-    drawIcon(g, d.type === "series" ? "tv" : "film", ix, y + (chipH - icon) / 2, icon, "#e4d9ff", 2.2);
+    drawIcon(g, d.type === "series" ? "tv" : d.type === "person" ? "users" : "film", ix, y + (chipH - icon) / 2, icon, "#e4d9ff", 2.2);
     text(g, d.kind, rtl ? ix - 10 : ix + icon + 10, y, chipH, { weight: 800, size: fs, fill: "#e4d9ff", align: rtl ? "right" : "left", ls: ls });
     return cw;
   }
@@ -832,7 +840,7 @@
     }
     var mh = lineH(g, 600, o.metaSize, o.fa);
     y += o.metaGap;
-    var ml = wrap(g, o.metaStr, 600, o.metaSize, o.maxW, 2);
+    var ml = wrap(g, o.metaStr, 600, o.metaSize, o.maxW, d.metaLines || 2);
     ml.forEach(function (ln, k) {
       text(g, ln, o.x, y + k * mh, mh, { weight: 600, size: o.metaSize, fill: "#cfcfe8", align: o.align });
     });
@@ -867,7 +875,7 @@
     drawPoster(g, P.sp || { h: P.hue }, cx, 350 + 345, 460, 690, 0, 1, rtl, 34,
       { letter: 190, tkH: 50, tkInset: 20, borderA: 0.2, shadows: titlePoShadows(P.hue, 40, 80, -24) });
     var y = 350 + 690 + 40;
-    var metaStr = d.kind + " · " + d.meta;
+    var metaStr = d.type === "person" ? d.meta : d.kind + " · " + d.meta; // a person card has the biography here, the kind is already in the chat/tw chip
     var yy = titleText(g, d, { x: cx, align: "center", maxW: 920, size: 84, y: y, gap: 0, origMt: 6, origSize: 32, origX: cx, origAlign: "center", metaSize: 32, metaGap: 14, metaStr: metaStr, fa: fa, noWrap: true });
     y = yy + 30;
     titleRow(g, d, y, { size: 34, padX: 30, padY: 16, mini: 46, miniFs: 22, svg: 34, gap: 18 }, { cx: cx }, rtl, fa);
