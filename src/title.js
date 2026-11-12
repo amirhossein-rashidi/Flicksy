@@ -83,6 +83,30 @@ export async function handleTitle(url, env, user) {
   const similar = mapList(d.recommendations, ref.mediaType).slice(0, 14);
   await attachLibraryState(env, user.id, similar);
 
+  // The collection (franchise) this movie belongs to, e.g. all John Wick films, oldest first. Movies only.
+  let collection = null;
+  const coll = !isTv && d.belongs_to_collection;
+  if (coll && Number.isInteger(coll.id)) {
+    try {
+      const cres = await tmdbGet(env, "/collection/" + coll.id + "?language=" + language, 21600);
+      const parts = mapList({ results: (cres.data && cres.data.parts) || [] }, "movie");
+      if (parts.length >= 2) {
+        const dateOf = new Map((cres.data.parts || []).map((p) => [p.id, p.release_date || ""]));
+        parts.sort((a, b) => {
+          const da = dateOf.get(a.tmdb_id) || "", db = dateOf.get(b.tmdb_id) || "";
+          if (!da && !db) return 0;
+          if (!da) return 1;
+          if (!db) return -1;
+          return da.localeCompare(db);
+        });
+        await attachLibraryState(env, user.id, parts);
+        collection = { id: coll.id, name: (cres.data && cres.data.name) || coll.name || "", parts: parts };
+      }
+    } catch (e) {
+      collection = null;
+    }
+  }
+
   const mine = await env.DB.prepare(
     "SELECT ut.status, ut.rating, ut.mood, ut.fav_actor_id, ut.fav_actor_name, ut.fav_actor_photo " +
       "FROM user_titles ut JOIN titles t ON t.id = ut.title_id " +
@@ -201,6 +225,7 @@ export async function handleTitle(url, env, user) {
     crew: crew,
     stats: stats,
     similar: similar,
+    collection: collection,
     trailer_key: trailerKey,
     friends_watched: friendsWatched,
     my: myWatch,
