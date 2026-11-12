@@ -627,7 +627,7 @@
     v.appendChild(box);
 
     // Browsing: one segment (All / Movies / Series). While the search box is in use (keyboard open) or has text:
-    // two tabs (Titles | People) and, under Titles, the All / Movies / Series chips.
+    // three tabs (Titles | People | Actors) and, under Titles, the All / Movies / Series chips.
     var seg = el("div", "segment sp-tabs");
     v.appendChild(seg);
     var chipsHolder = el("div");
@@ -642,8 +642,10 @@
       clr.style.display = searchMode() ? "flex" : "none";
       clear(seg);
       if (searchMode()) {
-        [["titles", "sx_tab_titles"], ["people", "sx_tab_people"]].forEach(function (pair) {
-          seg.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), t(pair[1]), function () {
+        [["titles", "sx_tab_titles"], ["people", "sx_tab_people"], ["actors", ""]].forEach(function (pair) {
+          if (pair[0] === "actors" && !FX.actorsLabel) return;
+          var tabLabel = pair[0] === "actors" ? FX.actorsLabel() : t(pair[1]);
+          seg.appendChild(button("seg-btn" + (disc.tab === pair[0] ? " active" : ""), tabLabel, function () {
             if (disc.tab === pair[0]) return;
             disc.tab = pair[0];
             drawSeg(); drawChips(); drawBody();
@@ -662,7 +664,7 @@
 
     function drawChips() {
       clear(chipsHolder);
-      // while searching there are only the two tabs (Titles | People), no All / Movies / Series chips
+      // while searching there are only the tabs (Titles | People | Actors), no All / Movies / Series chips
       return;
     }
 
@@ -670,6 +672,10 @@
       clear(body);
       if (disc.tab === "people") {
         if (FX.hooks.people) FX.hooks.people(body, disc.q);
+        return;
+      }
+      if (disc.tab === "actors") {
+        if (FX.hooks.actorsSearch) FX.hooks.actorsSearch(body, disc.q);
         return;
       }
       var q = disc.q.trim();
@@ -737,7 +743,7 @@
       clearTimeout(disc.timer);
       disc.q = input.value;
       drawSeg(); drawChips();
-      if (disc.tab === "people") {
+      if (disc.tab === "people" || disc.tab === "actors") {
         disc.timer = setTimeout(drawBody, 400);
         return;
       }
