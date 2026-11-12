@@ -291,21 +291,24 @@
     return b;
   }
 
-  function posterCard(item) {
-    var card = el("button", "pcard");
+  // opts.current = true: the movie whose page is open (collection row); it is marked and does not open again.
+  function posterCard(item, opts) {
+    var isCurrent = !!(opts && opts.current);
+    var card = el("button", "pcard" + (isCurrent ? " cur" : ""));
     card.type = "button";
     var box = el("div", "pimg");
     box.appendChild(posterNode(item));
     if (item.rating) box.appendChild(ratingBadge(item.rating));
     var m = getMine(item);
     if (m.status) box.appendChild(statusBadge(m.status));
+    if (isCurrent) box.appendChild(el("span", "cur-chip", t("coll_here")));
     card.appendChild(box);
     card.appendChild(el("div", "ptitle", displayTitle(item)));
     var sub = [];
     if (item.year) sub.push(String(item.year));
     sub.push(typeLabel(item));
     card.appendChild(el("div", "psub", sub.join(" · ")));
-    card.addEventListener("click", function () { openDetail(item); });
+    if (!isCurrent) card.addEventListener("click", function () { openDetail(item); });
     return card;
   }
 
@@ -1309,15 +1312,52 @@
       renderPane(d);
     }
 
-    // "More like this" stays under every tab
-    if (d.data && d.data.similar && d.data.similar.length) {
-      var more = el("section", "section flush d-more");
-      more.appendChild(sectionHeader(t("sec_similar")));
-      more.appendChild(cardsRow(d.data.similar));
-      body.appendChild(more);
+    // "More like this" (and, for a movie in a franchise, "Collection" as a second tab) stays under every tab
+    var hasSimilar = !!(d.data && d.data.similar && d.data.similar.length);
+    var hasColl = !!(d.data && d.data.collection && d.data.collection.parts && d.data.collection.parts.length > 1);
+    if (hasSimilar || hasColl) {
+      d.els.more = el("section", "section flush d-more");
+      body.appendChild(d.els.more);
+      renderMore(d, hasSimilar, hasColl);
     }
 
     scroller.appendChild(body);
+  }
+
+  // The block under the cast: "More like this", plus a "Collection" tab when the movie belongs to a franchise.
+  function renderMore(d, hasSimilar, hasColl) {
+    var box = d.els.more;
+    clear(box);
+    if (!hasColl) {
+      box.appendChild(sectionHeader(t("sec_similar")));
+      box.appendChild(cardsRow(d.data.similar));
+      return;
+    }
+    if (d.moreTab !== "coll" && d.moreTab !== "similar") d.moreTab = hasSimilar ? "similar" : "coll";
+    if (d.moreTab === "similar" && !hasSimilar) d.moreTab = "coll";
+    var parts = d.data.collection.parts;
+    var tabs = el("div", "d-tabs");
+    var list = [];
+    if (hasSimilar) list.push(["similar", t("sec_similar")]);
+    list.push(["coll", t("tab_collection") + " (" + parts.length + ")"]);
+    list.forEach(function (pair) {
+      tabs.appendChild(button("dtab" + (d.moreTab === pair[0] ? " active" : ""), pair[1], function () {
+        d.moreTab = pair[0];
+        renderMore(d, hasSimilar, hasColl);
+      }));
+    });
+    box.appendChild(tabs);
+    var pane = el("div", "d-pane");
+    if (d.moreTab === "coll") {
+      var row = el("div", "hscroll");
+      parts.forEach(function (it) {
+        row.appendChild(posterCard(it, { current: d.item.media_type === "movie" && Number(it.tmdb_id) === Number(d.item.tmdb_id) }));
+      });
+      pane.appendChild(row);
+    } else {
+      pane.appendChild(cardsRow(d.data.similar));
+    }
+    box.appendChild(pane);
   }
 
   // ---------- person page: biography and filmography (newest first) ----------
