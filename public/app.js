@@ -1422,6 +1422,13 @@
     var name = d ? d.name : seed.name;
     var photo = d ? d.photo : seed.photo;
 
+    // share this person (card + link), like the title page
+    var ptools = el("div", "d-tools");
+    ptools.appendChild(iconButton("round-btn", "share", t("dt_share"), function () {
+      if (FX.share && FX.share.person) FX.share.person({ id: seed.id, name: name, photo: photo, department: d && d.department, bio: d && d.bio, movies: d && d.movie_count, series: d && d.tv_count, total: d && d.total, known_for: d && d.known_for });
+    }));
+    root.appendChild(ptools);
+
     var top = el("div", "pp-top");
     top.appendChild(personCard(name, "", photo, 0, "div"));
     var info = el("div", "pp-info");
@@ -2764,6 +2771,8 @@
     if (param === "backup" && FX.openBackup) FX.openBackup();
     var ti = /^title-(movie|tv)-(\d{1,9})$/.exec(param);
     if (ti) openDetail({ tmdb_id: parseInt(ti[2], 10), media_type: ti[1] });
+    var pe = /^person-(\d{1,9})$/.exec(param);
+    if (pe) openPerson({ id: parseInt(pe[1], 10) });
   }
 
   // The bot (Settings > Language) can change the language: follow the server's copy when it is different.
