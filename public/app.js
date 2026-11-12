@@ -1397,7 +1397,9 @@
       fh.appendChild(el("small", "", t("pp_newest")));
       body.appendChild(fh);
       var list = el("div", "pp-list");
-      d.credits.forEach(function (c) {
+      var shown = 0, PAGE = 40, moreBtn = null;
+      function addCredits() {
+      d.credits.slice(shown, shown + PAGE).forEach(function (c) {
         var r = button("pp-fi", null, function () {
           openDetail({ tmdb_id: c.tmdb_id, media_type: c.media_type, title: c.title, year: c.year, poster: c.poster });
         });
@@ -1411,7 +1413,16 @@
         if (c.year) r.appendChild(el("span", "pp-yr", String(c.year)));
         list.appendChild(r);
       });
+      shown += PAGE;
+      if (moreBtn) moreBtn.remove();
+      if (shown < d.credits.length) {
+        moreBtn = button("btn glass pp-showmore", t("fl_more"), addCredits);
+        moreBtn.style.cssText = "display:block;margin:12px auto 4px";
+        body.appendChild(moreBtn);
+      }
+      }
       body.appendChild(list);
+      addCredits();
     }
   }
 
