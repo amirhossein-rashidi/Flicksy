@@ -1,7 +1,8 @@
 // Title search (via TMDB), marking which results are already in the user's library.
+// With kind=actors the same endpoint searches actors by name instead (the "Actors" tab on Discover).
 
 import { json, tmdbLang } from "./util.js";
-import { tmdbGet, mapSearchResults } from "./tmdb.js";
+import { tmdbGet, mapSearchResults, imgUrl, TMDB_PROFILE } from "./tmdb.js";
 
 export async function handleSearch(url, env, user) {
   if (!env.TMDB_TOKEN) return json({ error: "server_misconfigured" }, 500);
@@ -9,6 +10,7 @@ export async function handleSearch(url, env, user) {
   const q = (url.searchParams.get("q") || "").trim();
   if (q.length < 2) return json({ results: [] });
   if (q.length > 100) return json({ error: "query_too_long" }, 400);
+  if (url.searchParams.get("kind") === "actors") return await searchActors(q, url, env);
 
   let data;
   try {
@@ -24,6 +26,36 @@ export async function handleSearch(url, env, user) {
 
   const results = mapSearchResults(data);
   await attachLibraryState(env, user.id, results);
+  return json({ results: results });
+}
+
+// Actors only (directors, writers and other crew are left out). TMDB already orders by popularity.
+async function searchActors(q, url, env) {
+  let data;
+  try {
+    const res = await tmdbGet(
+      env,
+      "/search/person?include_adult=false&language=" + tmdbLang(url) + "&page=1&query=" + encodeURIComponent(q),
+      3600
+    );
+    data = res.data;
+  } catch (e) {
+    return json({ error: "search_unavailable" }, 502);
+  }
+
+  const list = Array.isArray(data && data.results) ? data.results : [];
+  const results = list
+    .filter((p) => p.known_for_department === "Acting")
+    .slice(0, 20)
+    .map((p) => ({
+      id: p.id,
+      name: p.name || "",
+      photo: imgUrl(TMDB_PROFILE, p.profile_path),
+      known_for: (Array.isArray(p.known_for) ? p.known_for : [])
+        .map((k) => k.title || k.name || "")
+        .filter(Boolean)
+        .slice(0, 3),
+    }));
   return json({ results: results });
 }
 
