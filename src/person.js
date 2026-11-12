@@ -4,7 +4,7 @@ import { json, tmdbLang } from "./util.js";
 import { tmdbGet, imgUrl, TMDB_IMG, TMDB_PROFILE } from "./tmdb.js";
 
 const SKIP_GENRES = [10767, 10763, 10764]; // talk shows, news, reality
-const MAX_CREDITS = 60;
+const MAX_CREDITS = 500; // the app shows them 40 at a time with a "show more" button
 
 function isSelf(character) {
   return /^(self|himself|herself|themselves)\b/i.test(String(character || "").trim());
