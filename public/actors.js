@@ -69,6 +69,7 @@
   function actorRow(a, i) {
     var row = el("div", "sp-row");
     row.style.cursor = "pointer";
+    row.style.minWidth = "0";
     var av = el("div", "sp-av");
     av.style.cssText = "position:relative;overflow:hidden;background:linear-gradient(150deg,#" + COLORS[i % COLORS.length] + ",#14143a)";
     av.textContent = (a.name || "?").charAt(0).toUpperCase();
@@ -104,6 +105,7 @@
       var list = (res.data && res.data.results) || [];
       if (!list.length) { container.appendChild(FX.msg(pick(NONE))); return; }
       var box = el("div", "sp-list");
+      box.style.gridTemplateColumns = "minmax(0, 1fr)"; // long "known for" lines must not widen the column
       list.forEach(function (a, i) { box.appendChild(actorRow(a, i)); });
       container.appendChild(box);
     }).catch(function () {
