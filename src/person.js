@@ -83,7 +83,17 @@ export async function handlePerson(url, env, user) {
     return b.date.localeCompare(a.date);
   });
   const total = credits.length;
+  const movieCount = credits.filter((c) => c.media_type === "movie").length;
+  const tvCount = credits.filter((c) => c.media_type === "tv").length;
   credits = credits.slice(0, MAX_CREDITS);
+
+  // The three titles this person is best known for (most voted cast roles), used on the share card.
+  const known = (Array.isArray(cc.cast) ? cc.cast : [])
+    .filter((c) => (c.media_type === "movie" || c.media_type === "tv") && (c.vote_count || 0) > 0 && (c.title || c.name))
+    .filter((c) => !(Array.isArray(c.genre_ids) ? c.genre_ids : []).some((g) => SKIP_GENRES.includes(g)))
+    .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
+    .slice(0, 3)
+    .map((c) => c.title || c.name);
 
   return json({
     id: id,
@@ -95,6 +105,9 @@ export async function handlePerson(url, env, user) {
     place: d.place_of_birth || null,
     bio: bio.slice(0, 4000),
     total: total,
+    movie_count: movieCount,
+    tv_count: tvCount,
+    known_for: known,
     credits: credits,
   });
 }
