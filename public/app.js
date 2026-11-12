@@ -21,6 +21,8 @@
   var currentTab = "home";
   var mine = {};          // "type:id" -> { status, rating }   (the user's own state, shared by all screens)
   var rowsCache = {};     // "lang:kind" -> { items } or { promise }
+  var dataVersion = 0;    // goes up whenever the user changes something (status, episode, rating, list ...)
+  var renderedAt = {};    // tab name -> { v: dataVersion, lang, time } when that tab was last built
   var library = { items: [], loaded: false, stale: true, loading: null };
   var detailStack = [];
   // Everything opened on top of a tab, oldest first: title pages (entries of detailStack) and person pages.
@@ -166,8 +168,11 @@
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(options.body);
     }
+    // anything that is not a plain read changes the user's data: Home and Discover then rebuild when you come back to them
+    var writes = init.method !== "GET" && String(path).indexOf("/api/card-") !== 0;
+    if (writes) dataVersion++;
     return fetch(path, init).then(function (r) {
-      return r.json().then(function (data) { return { status: r.status, data: data }; });
+      return r.json().then(function (data) { if (writes) dataVersion++; return { status: r.status, data: data }; });
     });
   }
 
@@ -384,8 +389,18 @@
     });
   }
 
+  // Home and Discover are kept as they are when you come back from a title page (no reload, no new picks),
+  // unless something changed in between, the language changed, or the page is older than 10 minutes.
+  function tabIsFresh(name) {
+    if (name !== "home" && name !== "discover") return false;
+    var r = renderedAt[name], v = $("view-" + name);
+    if (!r || !v || !v.firstChild) return false;
+    return r.v === dataVersion && r.lang === I18N.lang && Date.now() - r.time < 600000;
+  }
+
   function renderTab(name) {
     stopHero();
+    renderedAt[name] = { v: dataVersion, lang: I18N.lang, time: Date.now() };
     if (name === "home") renderHome();
     else if (name === "discover") renderDiscover();
     else if (name === "library") renderLibrary();
@@ -408,10 +423,11 @@
   }
 
   function goTab(name) {
+    var again = currentTab === name; // tapping the tab you are already on refreshes it
     currentTab = name;
     TABS.forEach(function (n) { viewNode(n).classList.toggle("hidden", n !== name); });
     renderNav();
-    renderTab(name);
+    if (again || !tabIsFresh(name)) renderTab(name);
     window.scrollTo(0, 0);
   }
 
@@ -1079,7 +1095,7 @@
     } else {
       $("detail").classList.add("hidden");
       clear($("detail"));
-      renderTab(currentTab);
+      if (!tabIsFresh(currentTab)) renderTab(currentTab);
     }
     layerZ();
     syncLock();
