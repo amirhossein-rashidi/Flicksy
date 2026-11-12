@@ -140,8 +140,10 @@ export function langFor(user, from) {
   return (user && supportedLang(user.app_lang)) || pickLang(from && from.language_code);
 }
 
-function openButton(lang) {
-  return { text: t(lang, "open"), url: BOT_LINK };
+// The "Open Flicksy" button opens the Mini App itself (a t.me link with startapp), not the bot chat.
+// deep = what to open inside the app, e.g. "title-movie-603"; without it the app just opens.
+function openButton(lang, deep) {
+  return { text: t(lang, "open"), url: BOT_LINK + "?startapp=" + (deep || "home") };
 }
 
 export async function findUser(env, telegramId) {
@@ -159,7 +161,7 @@ export function statusKeyboard(lang, type, tmdbId, current) {
       callback_data: "a:" + (type === "tv" ? "t" : "m") + ":" + tmdbId + ":" + LETTER[s],
     };
   });
-  return { inline_keyboard: [row, [openButton(lang)]] };
+  return { inline_keyboard: [row, [openButton(lang, "title-" + (type === "tv" ? "tv" : "movie") + "-" + tmdbId)]] };
 }
 
 async function statusOf(env, userId, type, tmdbId) {
